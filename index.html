@@ -50,7 +50,6 @@
       gap:12px;
       font-size:14px;
     }
-    /* ✅ ボタン風に変更（event.htmlと統一） */
     header a{
       color:#fff;
       text-decoration:none;
@@ -80,7 +79,6 @@
       padding:12px;
     }
 
-    /* --- controls layout --- */
     .controls{
       display:grid;
       gap:10px;
@@ -132,7 +130,6 @@
       background:var(--brand2);
     }
 
-    /* --- Windy square frame --- */
     .frameWrap{
       padding:0;
       overflow:hidden;
@@ -162,6 +159,7 @@
       <div class="title">naonaoポータル</div>
       <div class="links">
         <a href="./event.html">レース&amp;イベント</a>
+        <a href="./RateCompare.html">レーティング</a>
       </div>
     </div>
   </header>
@@ -169,7 +167,6 @@
   <main>
     <section class="card">
       <div class="controls">
-        <!-- 1行目：地点 -->
         <div class="row1">
           <select id="place">
             <option value="urayasu">浦安マリーナ</option>
@@ -177,7 +174,6 @@
           </select>
         </div>
 
-        <!-- 2行目：表示＋ズーム＋開く -->
         <div class="row2">
           <select id="overlay">
             <option value="wind" selected>風</option>
@@ -209,13 +205,11 @@
   </main>
 
   <script>
-    // 地点（緯度経度）
     const PLACES = {
       urayasu: { name: "浦安マリーナ（千葉県）", lat: 35.62896904, lon: 139.8975477 },
       ybm:     { name: "横浜ベイサイドマリーナ（神奈川県）", lat: 35.38028,   lon: 139.64778   }
     };
 
-    // 埋め込みURL（embed2）
     function buildEmbedUrl(lat, lon, zoom, overlay){
       const params = new URLSearchParams({
         lat: String(lat),
@@ -232,7 +226,6 @@
       return `https://embed.windy.com/embed2.html?${params.toString()}`;
     }
 
-    // アプリ起動狙い：windy.com の通常URL
     function buildWebUrl(lat, lon, zoom, overlay){
       const params = new URLSearchParams({
         lat: String(lat),
@@ -263,7 +256,6 @@
       document.getElementById("openBtn").dataset.embedurl = embedUrl;
     }
 
-    // iFrameロード検知
     let loadTimer = null;
     function startLoadTimer(){
       clearTimeout(loadTimer);
@@ -281,7 +273,6 @@
     document.getElementById("overlay").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
     document.getElementById("zoom").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
 
-    // 「Windyで開く」：通常URLへ遷移（アプリがあればアプリ起動を狙う）
     document.getElementById("openBtn").addEventListener("click", () => {
       const webUrl = document.getElementById("openBtn").dataset.weburl;
       window.location.href = webUrl;
@@ -293,7 +284,6 @@
       }, 1200);
     });
 
-    // 初期表示
     updateFrame();
     startLoadTimer();
   </script>
