@@ -77,24 +77,33 @@
       color:var(--green);
     }
 
+    /* ===== フィールド行 ===== */
     .field{
       display:flex;
       align-items:center;
-      gap:10px;
+      gap:6px;
       margin-bottom:12px;
-      flex-wrap:wrap;
+      flex-wrap:nowrap;
     }
     .field-label{
-      font-size:14px;
+      font-size:13px;
       font-weight:700;
       color:var(--text);
-      min-width:120px;
+      flex:0 0 80px;
+      min-width:0;
+    }
+    .field-values{
+      display:flex;
+      align-items:center;
+      gap:4px;
+      flex:1 1 auto;
+      min-width:0;
     }
 
     /* 入力欄（赤枠） */
     .input-red{
       font-size:16px;
-      padding:10px 10px;
+      padding:10px 8px;
       border-radius:12px;
       border:2px solid #ef9a9a;
       background:#fff;
@@ -106,15 +115,16 @@
       box-shadow:0 0 0 4px rgba(229,57,53,.15);
     }
     .input-rating{
-      width:100px;
+      width:90px;
     }
     .input-time{
-      width:60px;
+      width:48px;
     }
     .time-sep{
-      font-size:14px;
+      font-size:12px;
       color:var(--muted);
       font-weight:700;
+      flex-shrink:0;
     }
 
     /* 結果欄（黒枠） */
@@ -125,8 +135,9 @@
       border:2px solid #424242;
       background:#fafafa;
       font-weight:700;
-      min-width:160px;
       text-align:center;
+      flex:1 1 auto;
+      min-width:0;
     }
     .result-box.negative{
       color:var(--danger);
@@ -151,6 +162,33 @@
     .btn-calc:hover{ background:var(--green2); }
     .btn-calc:active{ transform:translateY(1px); }
 
+    /* クリアボタン（✕） */
+    .btn-clear{
+      flex:0 0 auto;
+      width:36px;
+      height:36px;
+      border-radius:50%;
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--muted);
+      font-size:16px;
+      font-weight:700;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      transition:background .15s, color .15s;
+    }
+    .btn-clear:hover{
+      background:#fce4ec;
+      color:var(--danger);
+      border-color:var(--danger);
+    }
+    .btn-clear:active{
+      transform:translateY(1px);
+    }
+
     .note{
       font-size:12px;
       color:var(--muted);
@@ -166,7 +204,7 @@
     <div class="row">
       <div class="title">レーティング比較</div>
       <div class="links">
-        <a href="./index.html">← 戻る</a>
+        ./index.html
       </div>
     </div>
   </header>
@@ -177,23 +215,29 @@
       <div class="section-label">naonao</div>
 
       <div class="field">
-        <div class="field-label">レーティング1</div>
-        <input type="text" id="rating1" class="input-red input-rating" inputmode="decimal" placeholder="1.16">
+        <div class="field-label">レーティング</div>
+        <div class="field-values">
+          <input type="text" id="rating1" class="input-red input-rating" inputmode="decimal" placeholder="1.16">
+        </div>
       </div>
 
       <div class="field">
         <div class="field-label">レースタイム</div>
-        <input type="text" id="raceH" class="input-red input-time" inputmode="numeric" placeholder="0">
-        <span class="time-sep">時間</span>
-        <input type="text" id="raceM" class="input-red input-time" inputmode="numeric" placeholder="0">
-        <span class="time-sep">分</span>
-        <input type="text" id="raceS" class="input-red input-time" inputmode="numeric" placeholder="0">
-        <span class="time-sep">秒</span>
+        <div class="field-values">
+          <input type="text" id="raceH" class="input-red input-time" inputmode="numeric" placeholder="0">
+          <span class="time-sep">h</span>
+          <input type="text" id="raceM" class="input-red input-time" inputmode="numeric" placeholder="0">
+          <span class="time-sep">m</span>
+          <input type="text" id="raceS" class="input-red input-time" inputmode="numeric" placeholder="0">
+          <span class="time-sep">s</span>
+        </div>
       </div>
 
       <div class="field">
         <div class="field-label">修正タイム</div>
-        <div class="result-box" id="correctedTime">—</div>
+        <div class="field-values">
+          <div class="result-box" id="correctedTime">—</div>
+        </div>
       </div>
     </div>
 
@@ -202,13 +246,18 @@
       <div class="section-label">他艇</div>
 
       <div class="field">
-        <div class="field-label">レーティング2</div>
-        <input type="text" id="rating2" class="input-red input-rating" inputmode="decimal" placeholder="1.26">
+        <div class="field-label">レーティング</div>
+        <div class="field-values">
+          <input type="text" id="rating2" class="input-red input-rating" inputmode="decimal" placeholder="1.26">
+          <button class="btn-clear" onclick="clearRating2()">✕</button>
+        </div>
       </div>
 
       <div class="field">
-        <div class="field-label">naonao同タイム</div>
-        <div class="result-box" id="diffTime">—</div>
+        <div class="field-label">naonao比</div>
+        <div class="field-values">
+          <div class="result-box" id="diffTime">—</div>
+        </div>
       </div>
     </div>
 
@@ -216,8 +265,8 @@
     <button class="btn-calc" onclick="calculate()">計算する</button>
 
     <div class="note">
-      ※ ルール①：レースタイム（秒）× レーティング1 ＝ 修正タイム（秒）<br>
-      ※ ルール②：レースタイム（秒）× レーティング2 − 修正タイム → hh:mm:ss<br>
+      ※ ルール①：レースタイム（秒）× レーティング ＝ 修正タイム（秒）<br>
+      ※ ルール②：レースタイム（秒）× 他艇レーティング − 修正タイム → hh:mm:ss<br>
       ※ マイナスの場合は赤文字で表示されます（naonaoが速い＝有利）
     </div>
   </main>
@@ -245,7 +294,6 @@
       abs -= m * 60;
       const s = abs;
 
-      // 秒に小数があれば小数第2位まで表示
       const sStr = (s === Math.floor(s))
         ? String(Math.floor(s)).padStart(2, "0")
         : s.toFixed(2).padStart(5, "0");
@@ -265,16 +313,14 @@
       const correctedEl = document.getElementById("correctedTime");
       const diffEl = document.getElementById("diffTime");
 
-      // 入力値取得
       const rating1 = parseFloat(document.getElementById("rating1").value);
       const rating2 = parseFloat(document.getElementById("rating2").value);
       const h = document.getElementById("raceH").value;
       const m = document.getElementById("raceM").value;
       const s = document.getElementById("raceS").value;
 
-      // バリデーション
       if (isNaN(rating1) || rating1 <= 0){
-        alert("レーティング1を正しく入力してください");
+        alert("naonaoのレーティングを正しく入力してください");
         return;
       }
       if (h === "" && m === "" && s === ""){
@@ -293,9 +339,9 @@
       correctedEl.textContent = corrected.toFixed(2) + " 秒";
       correctedEl.classList.remove("negative");
 
-      // ルール②：naonao同タイム
+      // ルール②：naonao比
       if (isNaN(rating2) || rating2 <= 0){
-        diffEl.textContent = "レーティング2を入力してください";
+        diffEl.textContent = "他艇のレーティングを入力してください";
         diffEl.classList.remove("negative");
         return;
       }
@@ -312,8 +358,18 @@
       }
     }
 
+    // =========================
+    // 他艇レーティングクリア
+    // =========================
+    function clearRating2(){
+      document.getElementById("rating2").value = "";
+      document.getElementById("diffTime").textContent = "—";
+      document.getElementById("diffTime").classList.remove("negative");
+    }
+
     // グローバル公開
     window.calculate = calculate;
+    window.clearRating2 = clearRating2;
   </script>
 </body>
 </html>
