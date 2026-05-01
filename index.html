@@ -1,8 +1,9 @@
 <!doctype html>
+<html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>naonaoポータル</title>
+  <title>naonao ポータル</title>
   <style>
     :root{
       --bg:#f6f7fb;
@@ -48,12 +49,19 @@
       display:flex;
       gap:12px;
       font-size:14px;
-      opacity:.95;
     }
+    /* ✅ ボタン風に変更（event.htmlと統一） */
     header a{
       color:#fff;
-      text-decoration:underline;
-      text-underline-offset:3px;
+      text-decoration:none;
+      background:rgba(255,255,255,.25);
+      padding:6px 14px;
+      border-radius:10px;
+      font-weight:700;
+      font-size:14px;
+    }
+    header a:hover{
+      background:rgba(255,255,255,.4);
     }
 
     main{
@@ -103,7 +111,6 @@
       box-shadow:0 0 0 4px rgba(144,202,249,.35);
     }
 
-    /* 1行目：地点ドロップダウンは幅100% */
     #place{
       width:100%;
     }
@@ -131,7 +138,6 @@
       overflow:hidden;
     }
     .square{
-      /* 正方形を維持（幅に合わせて高さが決まる） */
       aspect-ratio: 1 / 1;
       width:100%;
       border:0;
@@ -153,9 +159,9 @@
 <body>
   <header>
     <div class="row">
-      <div class="title">naonaoポータル</div>
+      <div class="title">naonao</div>
       <div class="links">
-        <a href="./event.html">レース&イベント</a>
+        ./event.htmlレース&イベント</a>
       </div>
     </div>
   </header>
@@ -163,7 +169,7 @@
   <main>
     <section class="card">
       <div class="controls">
-        <!-- 1行目：地点（ラベル文字は削除） -->
+        <!-- 1行目：地点 -->
         <div class="row1">
           <select id="place">
             <option value="urayasu">浦安マリーナ</option>
@@ -171,7 +177,7 @@
           </select>
         </div>
 
-        <!-- 2行目：表示＋ズーム＋開く（ラベル文字は削除） -->
+        <!-- 2行目：表示＋ズーム＋開く -->
         <div class="row2">
           <select id="overlay">
             <option value="wind" selected>風</option>
@@ -210,7 +216,6 @@
     };
 
     // 埋め込みURL（embed2）
-    // Windyはiframeでの埋め込みウィジェットを案内しています。[1](https://community.windy.com/topic/10/how-to-embed-windy-to-your-website)
     function buildEmbedUrl(lat, lon, zoom, overlay){
       const params = new URLSearchParams({
         lat: String(lat),
@@ -227,12 +232,8 @@
       return `https://embed.windy.com/embed2.html?${params.toString()}`;
     }
 
-    // “アプリが入っていればアプリで開く”狙い：windy.com の通常URLを使う
-    // Windyコミュニティでは独自スキームより現行URL形式を使う流れが示唆されています。[2](https://community.windy.com/topic/12766/url-schema-support-of-windy-app)
-    // ※端末/OS/設定に依存し、確実にアプリ起動を保証するものではありません。
+    // アプリ起動狙い：windy.com の通常URL
     function buildWebUrl(lat, lon, zoom, overlay){
-      // windy.com の通常URL（embedではなく本体側へ寄せる）
-      // URL構造は windy 側で変わり得るため、最低限 lat/lon/zoom/overlay を持たせる
       const params = new URLSearchParams({
         lat: String(lat),
         lon: String(lon),
@@ -258,13 +259,11 @@
       notice.style.display = "none";
       frame.src = embedUrl;
 
-      // ボタンで開く用（アプリ起動の可能性がある方＝通常URL）
       document.getElementById("openBtn").dataset.weburl = webUrl;
-      // 予備：embedを直接開きたい場合
       document.getElementById("openBtn").dataset.embedurl = embedUrl;
     }
 
-    // iFrameロード検知（ロードしない場合があるのでタイマーで補助）
+    // iFrameロード検知
     let loadTimer = null;
     function startLoadTimer(){
       clearTimeout(loadTimer);
@@ -282,15 +281,11 @@
     document.getElementById("overlay").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
     document.getElementById("zoom").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
 
-    // 「Windyで開く」：まず通常URLへ遷移→OSがアプリを開けるなら開く（Universal Link/App Link依存）
-    // 開けなければブラウザで表示されます。[2](https://community.windy.com/topic/12766/url-schema-support-of-windy-app)
+    // 「Windyで開く」：通常URLへ遷移（アプリがあればアプリ起動を狙う）
     document.getElementById("openBtn").addEventListener("click", () => {
       const webUrl = document.getElementById("openBtn").dataset.weburl;
-      // iOS/Androidとも、まず同一タブ遷移を優先（アプリ起動判定が働きやすい）
       window.location.href = webUrl;
 
-      // 念のためのフォールバック：一定時間後もページが残っている場合は別タブで開く
-      // （ブラウザによってはこのフォールバックがブロックされることがあります）
       setTimeout(() => {
         try {
           window.open(webUrl, "_blank", "noopener");
@@ -304,4 +299,3 @@
   </script>
 </body>
 </html>
-``
