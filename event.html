@@ -7,14 +7,14 @@
   <style>
     :root{
       --bg:#f6f7fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
-      --brand:#1976d2; --brand2:#155fa8; --danger:#c62828;
+      --brand:#1976d2; --brand2:#155fa8; --danger:#c62828; --danger2:#b71c1c;
       --accent:#f57c00; --accent2:#ef6c00;
       --shadow:0 2px 14px rgba(0,0,0,.08); --radius:14px;
     }
     *{ box-sizing:border-box; }
     body{ margin:0; padding:0; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
 
-    /* ===== ヘッダー（薄いオレンジ）===== */
+    /* ===== ヘッダー ===== */
     header{
       position:sticky;
       top:0;
@@ -50,9 +50,7 @@
       font-weight:700;
       font-size:14px;
     }
-    header a:hover{
-      background:rgba(255,255,255,.4);
-    }
+    header a:hover{ background:rgba(255,255,255,.4); }
 
     /* ===== メイン ===== */
     main{
@@ -66,6 +64,8 @@
     .btn{ font-size:15px; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#fff; cursor:pointer; }
     .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; }
     .btn.primary:hover{ background:var(--accent2); border-color:var(--accent2); }
+    .btn.danger{ background:var(--danger); border-color:var(--danger); color:#fff; font-weight:700; }
+    .btn.danger:hover{ background:var(--danger2); border-color:var(--danger2); }
     .btn:active{ transform:translateY(1px); }
 
     input{ font-size:15px; padding:10px 10px; border-radius:12px; border:1px solid var(--border); background:#fff; }
@@ -76,112 +76,67 @@
     .title{ font-weight:800; }
     .sep{ height:1px; background:var(--border); margin:10px 0; }
 
-    /* ===== イベントカード：日付 ===== */
-    .event-date{
-      font-size:17px;
-      font-weight:700;
-      color:var(--text);
-    }
+    /* ===== 日付 ===== */
+    .event-date{ font-size:17px; font-weight:700; color:var(--text); }
 
     /* ===== 参加フォーム ===== */
-    .join-row{
+    .join-row{ display:flex; gap:8px; align-items:center; flex-wrap:nowrap; }
+    .join-row input{ flex:1 1 160px; min-width:0; }
+    .join-row .btn{ flex:0 0 auto; white-space:nowrap; }
+    .note-row{ margin-top:8px; }
+    .note-row input{ width:100%; }
+
+    /* ===== 取消フォーム ===== */
+    .cancel-row{
       display:flex;
       gap:8px;
       align-items:center;
       flex-wrap:nowrap;
-    }
-    .join-row input{
-      flex:1 1 160px;
-      min-width:0;
-    }
-    .join-row .btn{
-      flex:0 0 auto;
-      white-space:nowrap;
-    }
-    .note-row{
       margin-top:8px;
     }
-    .note-row input{
-      width:100%;
-    }
-
-    /* ===== 参加者一覧 ===== */
-    .participants{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
-    .participants .name{
-      background:#f3f4f6;
-      border:1px solid #e5e7eb;
-      padding:4px 10px;
-      border-radius:999px;
+    .cancel-row input{ flex:1 1 160px; min-width:0; }
+    .cancel-row .btn{ flex:0 0 auto; white-space:nowrap; }
+    .cancel-toggle{
       font-size:12px;
+      color:var(--muted);
       cursor:pointer;
+      margin-top:8px;
       user-select:none;
       -webkit-user-select:none;
-      transition:background .15s;
     }
-    /* 備考ありの参加者に視覚的ヒント（薄い下線） */
-    .participants .name.has-note{
-      border-bottom:2px solid var(--accent);
-    }
-    .participants .name:active{
-      background:#e5e7eb;
-    }
+    .cancel-toggle:hover{ color:var(--danger); }
+    .cancel-form{ display:none; margin-top:6px; }
+    .cancel-form.open{ display:block; }
 
-    /* ===== ポップアップ（備考表示用ミニモーダル）===== */
+    /* ===== 参加者 ===== */
+    .participants{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+    .participants .name{
+      background:#f3f4f6; border:1px solid #e5e7eb; padding:4px 10px;
+      border-radius:999px; font-size:12px; cursor:pointer;
+      user-select:none; -webkit-user-select:none; transition:background .15s;
+    }
+    .participants .name.has-note{ border-bottom:2px solid var(--accent); }
+    .participants .name:active{ background:#e5e7eb; }
+
+    /* ===== ポップアップ ===== */
     .popup-overlay{
-      display:none;
-      position:fixed;
-      inset:0;
-      z-index:100;
-      background:rgba(0,0,0,.35);
-      justify-content:center;
-      align-items:center;
-      padding:24px;
+      display:none; position:fixed; inset:0; z-index:100;
+      background:rgba(0,0,0,.35); justify-content:center; align-items:center; padding:24px;
     }
-    .popup-overlay.active{
-      display:flex;
-    }
+    .popup-overlay.active{ display:flex; }
     .popup-box{
-      background:#fff;
-      border-radius:16px;
-      box-shadow:0 8px 40px rgba(0,0,0,.18);
-      padding:20px;
-      max-width:340px;
-      width:100%;
-      text-align:left;
-      animation:popIn .15s ease-out;
+      background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,.18);
+      padding:20px; max-width:340px; width:100%; text-align:left; animation:popIn .15s ease-out;
     }
-    @keyframes popIn{
-      from{ transform:scale(.92); opacity:0; }
-      to{ transform:scale(1); opacity:1; }
-    }
-    .popup-box .popup-name{
-      font-weight:800;
-      font-size:16px;
-      margin-bottom:8px;
-    }
-    .popup-box .popup-note{
-      font-size:14px;
-      color:var(--text);
-      line-height:1.6;
-      white-space:pre-wrap;
-      word-break:break-word;
-    }
+    @keyframes popIn{ from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
+    .popup-box .popup-name{ font-weight:800; font-size:16px; margin-bottom:8px; }
+    .popup-box .popup-note{ font-size:14px; color:var(--text); line-height:1.6; white-space:pre-wrap; word-break:break-word; }
     .popup-box .popup-close{
-      display:block;
-      margin-top:14px;
-      text-align:center;
-      font-size:14px;
-      color:var(--accent);
-      font-weight:700;
-      cursor:pointer;
-      padding:8px;
-      border-radius:10px;
-      border:1px solid var(--accent);
-      background:#fff;
+      display:block; margin-top:14px; text-align:center; font-size:14px;
+      color:var(--accent); font-weight:700; cursor:pointer; padding:8px;
+      border-radius:10px; border:1px solid var(--accent); background:#fff;
     }
-    .popup-box .popup-close:active{
-      background:#fff3e0;
-    }
+    .popup-box .popup-close:active{ background:#fff3e0; }
 
     pre{ white-space:pre-wrap; word-break:break-word; margin:0; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; }
     details summary{ cursor:pointer; color:var(--muted); font-size:13px; }
@@ -189,12 +144,11 @@
 </head>
 <body>
 
-  <!-- ===== ヘッダー ===== -->
   <header>
     <div class="row">
       <div class="title">レース＆イベント</div>
       <div class="links">
-        ./index.html← 戻る</a>
+        <a href="./index.html">← 戻る</a>
       </div>
     </div>
   </header>
@@ -222,7 +176,7 @@
     <div id="list"></div>
   </main>
 
-  <!-- ===== ポップアップ（備考表示用）===== -->
+  <!-- ===== ポップアップ ===== -->
   <div class="popup-overlay" id="popupOverlay" onclick="closePopup()">
     <div class="popup-box" onclick="event.stopPropagation()">
       <div class="popup-name" id="popupName"></div>
@@ -283,7 +237,6 @@
       const mm = String(d.getMinutes()).padStart(2, "0");
       return `${hh}:${mm}`;
     }
-
     function escapeHtml(str){
       return String(str ?? "").replace(/[&<>"']/g, c => ({
         "&": "&amp;",
@@ -354,6 +307,13 @@
         participant_note: note || ""
       });
     }
+    async function apiCancelEvent(eventId, name){
+      return await postForm({
+        type: "cancelEvent",
+        event_id: pad6(eventId),
+        participant_name: name
+      });
+    }
 
     // =========================
     // 画面構築
@@ -381,13 +341,11 @@
         const card = document.createElement("div");
         card.className = "card";
 
-        // 参加者ピルを生成（備考ありは .has-note クラス付与＋onclick）
+        // 参加者ピル
         const pillsHtml = mem.map(p => {
           const name = escapeHtml(p.participant_name ?? "");
-          const note = escapeHtml(p.participant_note ?? "");
           const hasNote = (p.participant_note ?? "").trim() !== "";
           const cls = hasNote ? "name has-note" : "name";
-          // showPopup に渡す文字列はシングルクォートでエスケープ
           const nameForJs = (p.participant_name ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
           const noteForJs = (p.participant_note ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
           return `<span class="${cls}" onclick="showPopup('${nameForJs}','${noteForJs}')">${name}</span>`;
@@ -423,11 +381,28 @@
           <div class="participants">
             ${pillsHtml}
           </div>
+
+          <div class="cancel-toggle" onclick="toggleCancel('${eid}')">▸ 参加を取り消す場合はこちら</div>
+          <div class="cancel-form" id="cancelForm_${eid}">
+            <div class="cancel-row">
+              <input id="cancelName_${eid}" placeholder="取り消す名前を入力">
+              <button class="btn danger" onclick="handleCancel('${eid}')">取消</button>
+            </div>
+          </div>
         `;
 
         list.appendChild(card);
       }
     }
+
+    // =========================
+    // 取消フォームの開閉
+    // =========================
+    function toggleCancel(eid){
+      const form = document.getElementById("cancelForm_" + eid);
+      form.classList.toggle("open");
+    }
+    window.toggleCancel = toggleCancel;
 
     // =========================
     // メイン：再取得
@@ -447,7 +422,6 @@
 
         events.sort((a, b) => pad6(a.event_id).localeCompare(pad6(b.event_id)));
 
-        // ✅ 修正：「参加表明n件」を削除し、イベント件数のみ表示
         setStatus("OK", `イベント ${events.length} 件`);
         render(events, participants);
 
@@ -503,9 +477,54 @@
       }
     }
 
+    // =========================
+    // 取消処理
+    // =========================
+    async function handleCancel(eventId){
+      try{
+        const eid = pad6(eventId);
+        const cancelNameEl = document.getElementById("cancelName_" + eid);
+        const name = (cancelNameEl.value || "").trim();
+
+        if (!name){
+          alert("取り消す名前を入力してください");
+          return;
+        }
+
+        // 確認ダイアログ
+        if (!confirm(`「${name}」さんの参加を取り消しますか？`)){
+          return;
+        }
+
+        setStatus("送信中", `参加取消を送信しています... event_id=${eid}`);
+        logDebug(`cancelEvent start event_id=${eid} name=${name}`);
+
+        const res = await apiCancelEvent(eid, name);
+
+        if (res.status === "ok"){
+          alert("参加を取り消しました。");
+          cancelNameEl.value = "";
+          await reloadAll();
+          return;
+        }
+
+        if (res.status === "not_found"){
+          alert("該当する参加登録が見つかりませんでした。\n名前が正確に一致しているか確認してください。");
+          return;
+        }
+
+        throw new Error(res.message || "参加取消に失敗しました");
+      }catch(err){
+        setStatus("エラー", "参加取消に失敗しました。デバッグログを確認してください。");
+        logDebug("cancelEvent ERROR: " + (err?.message || String(err)));
+        alert("参加取消に失敗しました：" + (err?.message || String(err)));
+      }
+    }
+
     // グローバル公開（onclick用）
     window.reloadAll = reloadAll;
     window.handleJoin = handleJoin;
+    window.handleCancel = handleCancel;
 
     // 初期：自動で一度読み込み
     setStatus("待機中", "自動取得を開始します...");
