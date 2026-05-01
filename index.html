@@ -245,12 +245,6 @@
 
     // 初期表示
     updateFrame();
-
-    (value) {
-    const s = String(value ?? "").trim();
-    if (/^\d+$/.test(s)) return s.padStart(6, "0");
-    return s;
-    }
   </script>
 </body>
 </html>
