@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>イベント一覧（テスト）</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
+    .muted { color: #666; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>イベント一覧（テスト）</h1>
+  <p class="muted">Step4：GASからイベント一覧を取得できるか確認します。</p>
+
+  <button id="loadBtn">イベントを読み込む</button>
+  <pre id="raw" class="card">(ここにJSONを表示)</pre>
+  <div id="list"></div>
+
+  <script>
+    // ★ここをあなたのGAS WebアプリURLに置き換え
+    const API_URL = https://script.google.com/macros/s/AKfycbzaLPhysJ3_e18Hk25-dumu7324yqDwE7KWgqegPYd9j-6d5eiZsoP5Tze2KcnKkKOcEw/exec;
+
+    async function loadEvents() {
+      document.getElementById("raw").textContent = "読み込み中...";
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // GAS側で type === "getEvents" の分岐を作っている前提
+        body: JSON.stringify({ type: "getEvents" })
+      });
+
+      // ここでHTTPエラー検知（403/404/500など）
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}\n${text}`);
+      }
+
+      const data = await res.json();
+      console.log("GAS response:", data);
+
+      // 生データ表示
+      document.getElementById("raw").textContent = JSON.stringify(data, null, 2);
+
+      // イベントカード表示（data.events を想定）
+      const list = document.getElementById("list");
+      list.innerHTML = "";
+
+      const events = data.events || [];
+      if (events.length === 0) {
+        list.innerHTML = `<div class="card">イベントが0件です。</div>`;
+        return;
+      }
+
+      for (const ev of events) {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div><b>${ev.event_name ?? ""}</b></div>
+          <div class="muted">日付：${ev.event_date ?? ""} / 開始：${ev.event_start ?? ""}</div>
+          <div class="muted">メモ：${ev.event_memo ?? ""}</div>
+          <div class="muted">登録：${ev.event_submitted ?? ""}</div>
+          <div class="muted">ID：${ev.event_id ?? ""}</div>
+        `;
+        list.appendChild(card);
+      }
+    }
+
+    document.getElementById("loadBtn").addEventListener("click", () => {
+      loadEvents().catch(err => {
+        console.error(err);
+        document.getElementById("raw").textContent = "エラー:\n" + err.message;
+        alert("取得に失敗しました。Consoleと画面のエラー内容を確認してください。");
+      });
+    });
+  </script>
+</body>
+</html>
