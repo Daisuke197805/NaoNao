@@ -1,22 +1,83 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>天気ダッシュボード</title>
   <style>
-    body { margin:0; font-family: sans-serif; }
-    header { padding:12px; background:#1976d2; color:white; }
-    section { padding:12px; }
-    iframe { width:100%; height:70vh; border:0; }
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    header { padding: 12px 16px; background: #1976d2; color: #fff; }
+    .controls { padding: 12px 16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    select, button { font-size: 16px; padding: 10px; }
+    .frameWrap { padding: 0 0 8px; }
+    iframe { width: 100%; height: 75vh; border: 0; }
+    .note { padding: 0 16px 16px; color:#555; font-size: 13px; }
   </style>
 </head>
 <body>
-  <header>天気ダッシュボード</header>
+  <header>風（Windy）ダッシュボード</header>
 
-  <section>
-    <!-- Windy埋め込み例（後で差し替え） -->
-    <iframe src="https://embed.windy.com/embed2.html?lat=35.6&lon=139.7&zoom=6&overlay=rain"></iframe>
-  </section>
+  <div class="controls">
+    <label for="place">地点：</label>
+    <select id="place">
+      <option value="osaka">大阪府 大阪市</option>
+      <option value="machida">東京都 町田市</option>
+      <option value="tokyo">東京都（都心）</option>
+    </select>
+
+    <label for="zoom">ズーム：</label>
+    <select id="zoom">
+      <option value="7">広め</option>
+      <option value="9" selected>標準</option>
+      <option value="11">近く</option>
+    </select>
+  </div>
+
+  <div class="frameWrap">
+    <iframe id="windyFrame" allowfullscreen></iframe>
+  </div>
+
+  <div class="note">
+    ※Windyは埋め込みURL（iframe）を差し替えることで、地点を切り替えできます。[1](https://www.windy.com/embed2.html?lat=46.695&lon=2.505&zoom=6&level=surface&overlay=radar&type=map&location=coordinates&metricWind=default&metricTemp=default&radarRange=-1)
+  </div>
+
+  <script>
+    // ここに地点を追加していく（lat/lon は任意の座標に変更OK）
+    const PLACES = {
+      osaka:   { name: "大阪府 大阪市", lat: 34.6937, lon: 135.5023 },
+      machida: { name: "東京都 町田市", lat: 35.5486, lon: 139.4460 },
+      tokyo:   { name: "東京都（都心）", lat: 35.6895, lon: 139.6917 }
+    };
+
+    function buildWindyUrl(lat, lon, zoom) {
+      // Windy embed はクエリで lat/lon/zoom/overlay などを指定できる（例が公開されています）
+      const params = new URLSearchParams({
+        lat: String(lat),
+        lon: String(lon),
+        zoom: String(zoom),
+        level: "surface",
+        overlay: "wind",
+        type: "map",
+        location: "coordinates",
+        metricWind: "default",
+        metricTemp: "default",
+        radarRange: "-1"
+      });
+      return `https://embed.windy.com/embed2.html?${params.toString()}`;
+    }
+
+    function updateFrame() {
+      const key = document.getElementById("place").value;
+      const zoom = document.getElementById("zoom").value;
+      const p = PLACES[key];
+      document.getElementById("windyFrame").src = buildWindyUrl(p.lat, p.lon, zoom);
+    }
+
+    document.getElementById("place").addEventListener("change", updateFrame);
+    document.getElementById("zoom").addEventListener("change", updateFrame);
+
+    // 初期表示
+    updateFrame();
+  </script>
 </body>
 </html>
