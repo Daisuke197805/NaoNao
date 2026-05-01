@@ -3,31 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>naonaoポータル</title>
+  <title>レーティング比較</title>
   <style>
     :root{
-      --bg:#f6f7fb;
-      --card:#ffffff;
-      --text:#111827;
-      --muted:#6b7280;
-      --brand:#1976d2;
-      --brand2:#155fa8;
-      --border:#e5e7eb;
-      --shadow:0 2px 14px rgba(0,0,0,.08);
-      --radius:16px;
+      --bg:#f6f7fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
+      --green:#2e7d32; --green2:#388e3c; --green-light:#e8f5e9;
+      --danger:#c62828;
+      --shadow:0 2px 14px rgba(0,0,0,.08); --radius:14px;
     }
     *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-      background:var(--bg);
-      color:var(--text);
-    }
+    body{ margin:0; padding:0; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+
+    /* ===== ヘッダー（グリーン系）===== */
     header{
       position:sticky;
       top:0;
       z-index:10;
-      background:linear-gradient(90deg, #1565c0, #1976d2);
+      background:linear-gradient(90deg, #2e7d32, #43a047);
       color:#fff;
       padding:12px 16px;
       box-shadow:0 2px 10px rgba(0,0,0,.12);
@@ -42,7 +34,6 @@
     header .title{
       font-weight:800;
       letter-spacing:.02em;
-      text-transform:none;
     }
     header .links{
       margin-left:auto;
@@ -59,16 +50,13 @@
       font-weight:700;
       font-size:14px;
     }
-    header a:hover{
-      background:rgba(255,255,255,.4);
-    }
+    header a:hover{ background:rgba(255,255,255,.4); }
 
+    /* ===== メイン ===== */
     main{
-      max-width:980px;
+      max-width:600px;
       margin:0 auto;
       padding:12px;
-      display:grid;
-      gap:12px;
     }
 
     .card{
@@ -76,216 +64,273 @@
       border:1px solid var(--border);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
-      padding:12px;
+      padding:16px;
+      margin:12px 0;
     }
 
-    .controls{
-      display:grid;
-      gap:10px;
-    }
-    .row1{
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-    .row2{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
+    .section-label{
+      font-weight:800;
+      font-size:16px;
+      margin-bottom:12px;
+      padding-bottom:6px;
+      border-bottom:2px solid var(--green);
+      color:var(--green);
     }
 
-    select, button{
+    /* ===== フィールド行 ===== */
+    .field{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      margin-bottom:12px;
+      flex-wrap:nowrap;
+    }
+    .field-label{
+      font-size:13px;
+      font-weight:700;
+      color:var(--text);
+      flex:0 0 80px;
+      min-width:0;
+    }
+    .field-values{
+      display:flex;
+      align-items:center;
+      gap:4px;
+      flex:1 1 auto;
+      min-width:0;
+    }
+
+    /* 入力欄（赤枠） */
+    .input-red{
+      font-size:16px;
+      padding:10px 8px;
+      border-radius:12px;
+      border:2px solid #ef9a9a;
+      background:#fff;
+      outline:none;
+      text-align:center;
+    }
+    .input-red:focus{
+      border-color:#e53935;
+      box-shadow:0 0 0 4px rgba(229,57,53,.15);
+    }
+    .input-rating{
+      width:90px;
+    }
+    .input-time{
+      width:48px;
+    }
+    .time-sep{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:700;
+      flex-shrink:0;
+    }
+
+    /* 結果欄（黒枠） */
+    .result-box{
       font-size:16px;
       padding:10px 12px;
-      border:1px solid var(--border);
       border-radius:12px;
-      background:#fff;
-      color:var(--text);
-      outline:none;
+      border:2px solid #424242;
+      background:#fafafa;
+      font-weight:700;
+      text-align:center;
+      flex:1 1 auto;
+      min-width:0;
     }
-    select:focus, button:focus{
-      border-color:#90caf9;
-      box-shadow:0 0 0 4px rgba(144,202,249,.35);
+    .result-box.negative{
+      color:var(--danger);
+      border-color:var(--danger);
     }
 
-    #place{
+    /* 計算ボタン */
+    .btn-calc{
+      display:block;
       width:100%;
-    }
-    .row1{ width:100%; }
-    .row2 select{
-      flex:1 1 140px;
-      min-width:140px;
-    }
-
-    .btn-primary{
-      background:var(--brand);
-      border-color:transparent;
+      font-size:16px;
+      padding:14px;
+      border-radius:12px;
+      border:none;
+      background:var(--green);
       color:#fff;
       font-weight:800;
-      flex:1 1 160px;
-      min-width:160px;
+      cursor:pointer;
+      margin-top:8px;
+      transition:background .15s;
     }
-    .btn-primary:hover{
-      background:var(--brand2);
-    }
+    .btn-calc:hover{ background:var(--green2); }
+    .btn-calc:active{ transform:translateY(1px); }
 
-    .frameWrap{
-      padding:0;
-      overflow:hidden;
-    }
-    .square{
-      aspect-ratio: 1 / 1;
-      width:100%;
-      border:0;
-      display:block;
-      background:#fff;
-      border-radius: calc(var(--radius) - 2px);
-    }
-
-    .notice{
+    .note{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
       margin-top:10px;
-      font-size:13px;
-      color:#b71c1c;
-      display:none;
-      line-height:1.4;
     }
   </style>
 </head>
-
 <body>
+
+  <!-- ===== ヘッダー ===== -->
   <header>
     <div class="row">
-      <div class="title">naonaoポータル</div>
+      <div class="title">レーティング比較</div>
       <div class="links">
-        <a href="./event.html">レース&amp;イベント</a>
-        <a href="./RateCompare.html">レーティング</a>
+        <a href="./index.html">← 戻る</a>
       </div>
     </div>
   </header>
 
   <main>
-    <section class="card">
-      <div class="controls">
-        <div class="row1">
-          <select id="place">
-            <option value="urayasu">浦安マリーナ</option>
-            <option value="ybm">横浜ベイサイドマリーナ</option>
-          </select>
-        </div>
+    <!-- ===== naonao セクション ===== -->
+    <div class="card">
+      <div class="section-label">naonao</div>
 
-        <div class="row2">
-          <select id="overlay">
-            <option value="wind" selected>風</option>
-            <option value="waves">波</option>
-            <option value="rain">雨</option>
-            <option value="temp">気温</option>
-            <option value="gust">ガスト（突風）</option>
-          </select>
-
-          <select id="zoom">
-            <option value="8">広め</option>
-            <option value="9">標準</option>
-            <option value="11" selected>近く</option>
-          </select>
-
-          <button class="btn-primary" id="openBtn">Windyで開く</button>
-        </div>
-
-        <div id="notice" class="notice">
-          Windyの埋め込みがブロックされている可能性があります。<br>
-          「Windyで開く」を押して、アプリ（またはブラウザ）で開けるか確認してください。
+      <div class="field">
+        <div class="field-label">レーティング</div>
+        <div class="field-values">
+          <input type="text" id="rating1" class="input-red input-rating" inputmode="decimal" placeholder="1.16">
         </div>
       </div>
-    </section>
 
-    <section class="card frameWrap">
-      <iframe id="windyFrame" class="square" allowfullscreen loading="lazy"></iframe>
-    </section>
+      <div class="field">
+        <div class="field-label">レースタイム</div>
+        <div class="field-values">
+          <input type="text" id="raceH" class="input-red input-time" inputmode="numeric" placeholder="0">
+          <span class="time-sep">h</span>
+          <input type="text" id="raceM" class="input-red input-time" inputmode="numeric" placeholder="0">
+          <span class="time-sep">m</span>
+          <input type="text" id="raceS" class="input-red input-time" inputmode="numeric" placeholder="0">
+          <span class="time-sep">s</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">修正タイム</div>
+        <div class="field-values">
+          <div class="result-box" id="correctedTime">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 他艇セクション ===== -->
+    <div class="card">
+      <div class="section-label">他艇</div>
+
+      <div class="field">
+        <div class="field-label">レーティング</div>
+        <div class="field-values">
+          <input type="text" id="rating2" class="input-red input-rating" inputmode="decimal" placeholder="1.26">
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">naonao比</div>
+        <div class="field-values">
+          <div class="result-box" id="diffTime">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 計算ボタン ===== -->
+    <button class="btn-calc" onclick="calculate()">計算する</button>
+
+    <div class="note">
+      ※ ルール①：レースタイム（秒）× レーティング ＝ 修正タイム（秒）<br>
+      ※ ルール②：レースタイム（秒）× 他艇レーティング − 修正タイム → hh:mm:ss<br>
+      ※ マイナスの場合は赤文字で表示されます（naonaoが速い＝有利）
+    </div>
   </main>
 
   <script>
-    const PLACES = {
-      urayasu: { name: "浦安マリーナ（千葉県）", lat: 35.62896904, lon: 139.8975477 },
-      ybm:     { name: "横浜ベイサイドマリーナ（神奈川県）", lat: 35.38028,   lon: 139.64778   }
-    };
-
-    function buildEmbedUrl(lat, lon, zoom, overlay){
-      const params = new URLSearchParams({
-        lat: String(lat),
-        lon: String(lon),
-        zoom: String(zoom),
-        level: "surface",
-        overlay: overlay,
-        type: "map",
-        location: "coordinates",
-        metricWind: "default",
-        metricTemp: "default",
-        radarRange: "-1"
-      });
-      return `https://embed.windy.com/embed2.html?${params.toString()}`;
+    // =========================
+    // hh:mm:ss → 秒
+    // =========================
+    function toSeconds(h, m, s){
+      return (parseFloat(h) || 0) * 3600
+           + (parseFloat(m) || 0) * 60
+           + (parseFloat(s) || 0);
     }
 
-    function buildWebUrl(lat, lon, zoom, overlay){
-      const params = new URLSearchParams({
-        lat: String(lat),
-        lon: String(lon),
-        zoom: String(zoom),
-        overlay: overlay,
-        level: "surface"
-      });
-      return `https://www.windy.com/?${params.toString()}`;
+    // =========================
+    // 秒 → hh:mm:ss（マイナス対応）
+    // =========================
+    function toHMS(totalSec){
+      const negative = totalSec < 0;
+      let abs = Math.abs(totalSec);
+
+      const h = Math.floor(abs / 3600);
+      abs -= h * 3600;
+      const m = Math.floor(abs / 60);
+      abs -= m * 60;
+      const s = abs;
+
+      const sStr = (s === Math.floor(s))
+        ? String(Math.floor(s)).padStart(2, "0")
+        : s.toFixed(2).padStart(5, "0");
+
+      let result = "";
+      if (h > 0) result += `${h}時間`;
+      if (h > 0 || m > 0) result += `${String(m).padStart(2, "0")}分`;
+      result += `${sStr}秒`;
+
+      return (negative ? "−" : "") + result;
     }
 
-    function updateFrame(){
-      const placeKey = document.getElementById("place").value;
-      const overlay  = document.getElementById("overlay").value;
-      const zoom     = document.getElementById("zoom").value;
+    // =========================
+    // 計算メイン
+    // =========================
+    function calculate(){
+      const correctedEl = document.getElementById("correctedTime");
+      const diffEl = document.getElementById("diffTime");
 
-      const p = PLACES[placeKey];
-      const embedUrl = buildEmbedUrl(p.lat, p.lon, zoom, overlay);
-      const webUrl   = buildWebUrl(p.lat, p.lon, zoom, overlay);
+      const rating1 = parseFloat(document.getElementById("rating1").value);
+      const rating2 = parseFloat(document.getElementById("rating2").value);
+      const h = document.getElementById("raceH").value;
+      const m = document.getElementById("raceM").value;
+      const s = document.getElementById("raceS").value;
 
-      const frame = document.getElementById("windyFrame");
-      const notice = document.getElementById("notice");
+      if (isNaN(rating1) || rating1 <= 0){
+        alert("naonaoのレーティングを正しく入力してください");
+        return;
+      }
+      if (h === "" && m === "" && s === ""){
+        alert("レースタイムを入力してください");
+        return;
+      }
 
-      notice.style.display = "none";
-      frame.src = embedUrl;
+      const raceSec = toSeconds(h, m, s);
+      if (raceSec <= 0){
+        alert("レースタイムは0より大きい値を入力してください");
+        return;
+      }
 
-      document.getElementById("openBtn").dataset.weburl = webUrl;
-      document.getElementById("openBtn").dataset.embedurl = embedUrl;
+      // ルール①：修正タイム
+      const corrected = raceSec * rating1;
+      correctedEl.textContent = corrected.toFixed(2) + " 秒";
+      correctedEl.classList.remove("negative");
+
+      // ルール②：naonao比
+      if (isNaN(rating2) || rating2 <= 0){
+        diffEl.textContent = "他艇のレーティングを入力してください";
+        diffEl.classList.remove("negative");
+        return;
+      }
+
+      const otherCorrected = raceSec * rating2;
+      const diff = otherCorrected - corrected;
+
+      diffEl.textContent = toHMS(diff);
+
+      if (diff < 0){
+        diffEl.classList.add("negative");
+      } else {
+        diffEl.classList.remove("negative");
+      }
     }
 
-    let loadTimer = null;
-    function startLoadTimer(){
-      clearTimeout(loadTimer);
-      loadTimer = setTimeout(() => {
-        document.getElementById("notice").style.display = "block";
-      }, 4500);
-    }
-
-    document.getElementById("windyFrame").addEventListener("load", () => {
-      document.getElementById("notice").style.display = "none";
-      clearTimeout(loadTimer);
-    });
-
-    document.getElementById("place").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
-    document.getElementById("overlay").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
-    document.getElementById("zoom").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
-
-    document.getElementById("openBtn").addEventListener("click", () => {
-      const webUrl = document.getElementById("openBtn").dataset.weburl;
-      window.location.href = webUrl;
-
-      setTimeout(() => {
-        try {
-          window.open(webUrl, "_blank", "noopener");
-        } catch (e) {}
-      }, 1200);
-    });
-
-    updateFrame();
-    startLoadTimer();
+    window.calculate = calculate;
   </script>
 </body>
 </html>
