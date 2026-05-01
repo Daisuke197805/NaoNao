@@ -68,7 +68,7 @@
 
   <script>
     // =========================
-    // 固定：あなたのGAS WebアプリURL
+    // 固定：GAS WebアプリURL
     // =========================
     const API_URL = "https://script.google.com/macros/s/AKfycbzaLPhysJ3_e18Hk25-dumu7324yqDwE7KWgqegPYd9j-6d5eiZsoP5Tze2KcnKkKOcEw/exec";
 
@@ -97,8 +97,6 @@
 
     // =========================
     // 表示整形
-    // - event_date: "2026-05-01T15:00:00.000Z" のようなISOが来る前提
-    // - event_start: 時刻だけセル→ 1899年が付くことがあるので HH:mmだけ抜く
     // =========================
     function formatDateJST(value){
       if (!value) return "";
@@ -117,27 +115,43 @@
       const mm = String(d.getMinutes()).padStart(2, "0");
       return `${hh}:${mm}`;
     }
+
+    // =========================
+    // ✅ 修正済み：escapeHtml（正しい実文字でエスケープ）
+    // =========================
     function escapeHtml(str){
       return String(str ?? "").replace(/[&<>"']/g, c => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
       }[c]));
     }
 
     // =========================
     // CORS回避：フォームPOST
+    // ✅ 修正済み：res.ok チェック追加
     // =========================
     async function postForm(paramsObj){
       const body = new URLSearchParams(paramsObj);
       logDebug("POST " + JSON.stringify(paramsObj));
 
       const res = await fetch(API_URL, { method:"POST", body });
+
+      // HTTP エラー検知（403/500等）
+      if (!res.ok){
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText.slice(0, 200)}`);
+      }
+
       const text = await res.text();
 
       let json;
       try{
         json = JSON.parse(text);
       }catch{
-        throw new Error("JSON解析失敗（先頭200文字）: " + text.slice(0,200));
+        throw new Error("JSON解析失敗（先頭200文字）: " + text.slice(0, 200));
       }
       return json;
     }
@@ -146,15 +160,14 @@
     // API呼び出し
     // =========================
     async function apiGetEvents(){
-      return await postForm({ type:"getEvents" });
+      return await postForm({ type: "getEvents" });
     }
     async function apiGetParticipants(){
-      return await postForm({ type:"getParticipants" });
+      return await postForm({ type: "getParticipants" });
     }
     async function apiJoinEvent(eventId, name, note){
-      // 送信時にも必ず6桁化
       return await postForm({
-        type:"joinEvent",
+        type: "joinEvent",
         event_id: pad6(eventId),
         participant_name: name,
         participant_note: note || ""
@@ -163,6 +176,7 @@
 
     // =========================
     // 画面構築
+    // ✅ 修正済み：DOM ID には escapeHtml を使わない（pad6 済みの eid をそのまま使用）
     // =========================
     function render(events, participants){
       // event_id -> participants[]
@@ -204,9 +218,9 @@
           <div class="sep"></div>
 
           <div class="row">
-            <input id="name_${escapeHtml(eid)}" placeholder="名前（ニックネーム可）">
-            <input id="note_${escapeHtml(eid)}" placeholder="備考（任意）">
-            <button class="btn primary" onclick="handleJoin('${escapeHtml(eid)}')">参加</button>
+            <input id="name_${eid}" placeholder="名前（ニックネーム可）">
+            <input id="note_${eid}" placeholder="備考（任意）">
+            <button class="btn primary" onclick="handleJoin('${eid}')">参加</button>
           </div>
 
           <div class="muted" style="margin-top:10px;">参加者：${mem.length} 名</div>
@@ -236,7 +250,7 @@
         const participants = (ptRes.participants || []).map(p => ({ ...p, event_id: pad6(p.event_id) }));
 
         // event_id でソート（000001 → 000010 → 000100 の順）
-        events.sort((a,b) => pad6(a.event_id).localeCompare(pad6(b.event_id)));
+        events.sort((a, b) => pad6(a.event_id).localeCompare(pad6(b.event_id)));
 
         setStatus("OK", `イベント ${events.length} 件 / 参加表明 ${participants.length} 件`);
         render(events, participants);
@@ -297,7 +311,7 @@
     window.reloadAll = reloadAll;
     window.handleJoin = handleJoin;
 
-    // 初期：自動で一度読み込み（好みで削除OK）
+    // 初期：自動で一度読み込み
     setStatus("待機中", "自動取得を開始します...");
     reloadAll();
   </script>
