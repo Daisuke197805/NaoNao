@@ -46,3 +46,205 @@
       margin-left:auto;
       display:flex;
       gap:12px;
+      font-size:14px;
+      opacity:.95;
+    }
+    header a{
+      color:#fff;
+      text-decoration:underline;
+      text-underline-offset:3px;
+    }
+
+    main{
+      max-width:980px;
+      margin:0 auto;
+      padding:12px;
+      display:grid;
+      gap:12px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:12px;
+    }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .controls label{
+      font-size:13px;
+      color:var(--muted);
+      font-weight:700;
+    }
+    select, button{
+      font-size:16px;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      color:var(--text);
+      outline:none;
+    }
+    select:focus, button:focus{
+      border-color:#90caf9;
+      box-shadow:0 0 0 4px rgba(144,202,249,.35);
+    }
+    button{
+      cursor:pointer;
+      background:#fff;
+    }
+    .btn-primary{
+      background:var(--brand);
+      border-color:transparent;
+      color:#fff;
+      font-weight:800;
+    }
+
+    .frameWrap{
+      padding:0;
+      overflow:hidden;
+    }
+    iframe{
+      width:100%;
+      height:75vh;
+      border:0;
+      display:block;
+      background:#fff;
+    }
+
+    /* Windyがロードできないときのメッセージ表示用 */
+    .notice{
+      margin-top:10px;
+      font-size:13px;
+      color:#b71c1c;
+      display:none;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="row">
+      <div class="title">NaoNaoポータル</div>
+      <div class="links">
+        <a href="./event.html/a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="controls">
+        <label for="place">地点</label>
+        <select id="place">
+          <option value="urayasu">浦安マリーナ</option>
+          <option value="ybm">横浜ベイサイドマリーナ</option>
+        </select>
+
+        <label for="overlay">表示</label>
+        <select id="overlay">
+          <option value="wind" selected>風</option>
+          <option value="waves">波</option>
+          <option value="rain">雨</option>
+          <option value="temp">気温</option>
+          <!-- gust は環境によって効かない場合があるので、必要なら後で調整 -->
+          <option value="gust">ガスト（突風）</option>
+        </select>
+
+        <label for="zoom">ズーム</label>
+        <select id="zoom">
+          <option value="8">広め</option>
+          <option value="9">標準</option>
+          <option value="11" selected>近く</option>
+        </select>
+
+        <button class="btn-primary" id="openBtn">Windyで開く</button>
+      </div>
+
+      <div id="notice" class="notice">
+        Windyの読み込みに失敗しました。下の「Windyで開く」から直接開けるか確認してください。
+      </div>
+    </section>
+
+    <section class="card frameWrap">
+      <iframe id="windyFrame" allowfullscreen loading="lazy"></iframe>
+    </section>
+  </main>
+
+  <script>
+    // 地点（緯度経度）
+    const PLACES = {
+      urayasu: { name: "浦安マリーナ（千葉県）", lat: 35.62896904, lon: 139.8975477 },
+      ybm:     { name: "横浜ベイサイドマリーナ（神奈川県）", lat: 35.38028,   lon: 139.64778   }
+    };
+
+    function buildWindyUrl(lat, lon, zoom, overlay){
+      const params = new URLSearchParams({
+        lat: String(lat),
+        lon: String(lon),
+        zoom: String(zoom),
+        level: "surface",
+        overlay: overlay,
+        type: "map",
+        location: "coordinates",
+        metricWind: "default",
+        metricTemp: "default",
+        radarRange: "-1"
+      });
+      return `https://embed.windy.com/embed2.html?${params.toString()}`;
+    }
+
+    function updateFrame(){
+      const placeKey = document.getElementById("place").value;
+      const overlay  = document.getElementById("overlay").value;
+      const zoom     = document.getElementById("zoom").value;
+
+      const p = PLACES[placeKey];
+      const url = buildWindyUrl(p.lat, p.lon, zoom, overlay);
+
+      const frame = document.getElementById("windyFrame");
+      const notice = document.getElementById("notice");
+
+      notice.style.display = "none";
+      frame.src = url;
+
+      document.getElementById("openBtn").dataset.url = url;
+    }
+
+    // Windyがロードできないときの検知（完全ではないですが目安になります）
+    document.getElementById("windyFrame").addEventListener("load", () => {
+      // loadが来たら一旦OK扱い
+      document.getElementById("notice").style.display = "none";
+    });
+
+    // もしiframeがブロックされている場合は load 自体が来ないこともあります
+    // → 一定時間たってもロードしなければメッセージを出す
+    let loadTimer = null;
+    function startLoadTimer(){
+      clearTimeout(loadTimer);
+      loadTimer = setTimeout(() => {
+        document.getElementById("notice").style.display = "block";
+      }, 4000);
+    }
+
+    document.getElementById("place").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
+    document.getElementById("overlay").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
+    document.getElementById("zoom").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
+
+    document.getElementById("openBtn").addEventListener("click", () => {
+      const url = document.getElementById("openBtn").dataset.url;
+      window.open(url, "_blank", "noopener");
+    });
+
+    // 初期表示
+    updateFrame();
+    startLoadTimer();
+  </script>
+</body>
+</html>
