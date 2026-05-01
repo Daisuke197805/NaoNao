@@ -3,83 +3,142 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>イベント一覧（テスト）</title>
+  <title>イベント一覧（テスト：デバッグ版）</title>
   <style>
-    body { font-family: system-ui, sans-serif; padding: 12px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
-    .muted { color: #666; font-size: 13px; }
+    body { font-family: system-ui, sans-serif; padding: 12px; margin: 0; background: #f6f7fb; }
+    h1 { margin: 8px 0 6px; }
+    .muted { color: #666; font-size: 13px; line-height: 1.5; }
+    .card { background:#fff; border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
+    button { font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; }
+    button:active { transform: translateY(1px); }
+    pre { white-space: pre-wrap; word-break: break-word; }
   </style>
 </head>
 <body>
-  <h1>イベント一覧（テスト）</h1>
-  <p class="muted">Step4：GASからイベント一覧を取得できるか確認します。</p>
+  <h1>イベント一覧（テスト：デバッグ版）</h1>
+  <p class="muted">
+    Step4：GASからイベント一覧を取得できるか確認します。<br>
+    進捗がこの画面に表示されるので、Consoleを見なくても原因切り分けができます。
+  </p>
 
+  <!-- onclick 直書き：確実に動かすため -->
   <button id="loadBtn" onclick="loadEvents()">イベントを読み込む</button>
 
-  <pre id="raw" class="card">(ここにJSONを表示)</pre>
+  <pre id="raw" class="card">(ここに進捗/JSON/エラーを表示)</pre>
   <div id="list"></div>
 
   <script>
-    console.log("script loaded");          // ページ読み込み時にConsoleへ
-    window.loadEvents = loadEvents;        // onclick から呼べるようにする
-
-    
-    // ★ここをあなたのGAS WebアプリURLに置き換え
+    // =========================
+    // 1) ★ここだけ必ず編集★
+    // =========================
     const API_URL = "https://script.google.com/macros/s/AKfycbzaLPhysJ3_e18Hk25-dumu7324yqDwE7KWgqegPYd9j-6d5eiZsoP5Tze2KcnKkKOcEw/exec";
+    // 例：https://script.google.com/macros/s/XXXXXXXXXXXX/exec
 
+    // =========================
+    // 2) 画面表示ヘルパー
+    // =========================
+    const raw = document.getElementById("raw");
+    const list = document.getElementById("list");
+
+    function show(msg) {
+      raw.textContent = msg;
+    }
+
+    // =========================
+    // 3) メイン：イベント取得
+    // =========================
     async function loadEvents() {
-      document.getElementById("raw").textContent = "読み込み中...";
+      try {
+        show("1) ボタン押下：loadEvents() 開始");
 
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // GAS側で type === "getEvents" の分岐を作っている前提
-        body: JSON.stringify({ type: "getEvents" })
-      });
+        // API_URL未設定チェック
+        if (!API_URL || API_URL.includes("ここに")) {
+          show("エラー：API_URL が未設定です。\n\n" +
+               "events.html の const API_URL = \"...\" を\n" +
+               "あなたの Apps Script WebアプリURL に置き換えてください。");
+          return;
+        }
 
-      // ここでHTTPエラー検知（403/404/500など）
-      if (!res.ok) {
+        // POST送信
+        show("2) fetch() 実行中…（GASへPOST送信）");
+
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "getEvents" })
+        });
+
+        show(`3) 応答受信：HTTP ${res.status}`);
+
+        // まずは text() で受ける（JSON以外のHTMLエラーでも表示できる）
         const text = await res.text();
-        throw new Error(`HTTP ${res.status}\n${text}`);
-      }
+        show(`4) 応答本文（先頭200文字）:\n${text.slice(0, 200)}\n\n---\n全文は下へ解析します`);
 
-      const data = await res.json();
-      console.log("GAS response:", data);
+        // JSON解析
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          show(
+            "エラー：応答がJSONではありません。\n\n" +
+            "考えられる原因：\n" +
+            "・GASがエラーHTMLを返している\n" +
+            "・URLが違う/古いデプロイ\n" +
+            "・doPost側でJSONを返していない\n\n" +
+            "受け取った本文（全体）：\n" + text
+          );
+          return;
+        }
 
-      // 生データ表示
-      document.getElementById("raw").textContent = JSON.stringify(data, null, 2);
+        // JSON表示
+        show("5) JSON解析成功:\n" + JSON.stringify(data, null, 2));
 
-      // イベントカード表示（data.events を想定）
-      const list = document.getElementById("list");
-      list.innerHTML = "";
+        // events表示（画面下）
+        list.innerHTML = "";
+        const events = data.events || [];
 
-      const events = data.events || [];
-      if (events.length === 0) {
-        list.innerHTML = `<div class="card">イベントが0件です。</div>`;
-        return;
-      }
+        if (events.length === 0) {
+          list.innerHTML = `<div class="card">イベントが0件です（tbl_eventが空、または取得できていない可能性）</div>`;
+          return;
+        }
 
-      for (const ev of events) {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <div><b>${ev.event_name ?? ""}</b></div>
-          <div class="muted">日付：${ev.event_date ?? ""} / 開始：${ev.event_start ?? ""}</div>
-          <div class="muted">メモ：${ev.event_memo ?? ""}</div>
-          <div class="muted">登録：${ev.event_submitted ?? ""}</div>
-          <div class="muted">ID：${ev.event_id ?? ""}</div>
-        `;
-        list.appendChild(card);
+        for (const ev of events) {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div><b>${escapeHtml(ev.event_name ?? "")}</b></div>
+            <div class="muted">日付：${escapeHtml(ev.event_date ?? "")} / 開始：${escapeHtml(ev.event_start ?? "")}</div>
+            <div class="muted">メモ：${escapeHtml(ev.event_memo ?? "")}</div>
+            <div class="muted">ID：${escapeHtml(ev.event_id ?? "")}</div>
+          `;
+          list.appendChild(card);
+        }
+
+      } catch (err) {
+        show("例外エラー（fetch失敗など）:\n" + (err?.message || String(err)));
       }
     }
 
-    document.getElementById("loadBtn").addEventListener("click", () => {
-      loadEvents().catch(err => {
-        console.error(err);
-        document.getElementById("raw").textContent = "エラー:\n" + err.message;
-        alert("取得に失敗しました。Consoleと画面のエラー内容を確認してください。");
-      });
-    });
+    // =========================
+    // 4) HTMLエスケープ（安全対策）
+    // =========================
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[c]));
+    }
+
+    // =========================
+    // 5) onclick用に公開（重要）
+    // =========================
+    window.loadEvents = loadEvents;
+
+    // 起動確認：ここが変われば script が動いている
+    show("ページ読込完了：ボタンを押してください");
   </script>
 </body>
 </html>
