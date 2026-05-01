@@ -1,9 +1,9 @@
-<!doctype html>
+>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>イベント一覧（テスト：デバッグ版）</title>
+  <title>イベント一覧（整形版）</title>
   <style>
     body { font-family: system-ui, sans-serif; padding: 12px; margin: 0; background: #f6f7fb; }
     h1 { margin: 8px 0 6px; }
@@ -15,86 +15,154 @@
   </style>
 </head>
 <body>
-  <h1>イベント一覧（テスト：デバッグ版）</h1>
+  <h1>イベント一覧（整形版）</h1>
   <p class="muted">
-    Step4：GASからイベント一覧を取得できるか確認します。<br>
-    進捗がこの画面に表示されるので、Consoleを見なくても原因切り分けができます。
+    Step5-1：<b>日付/時刻の表示整形</b>を反映しました（ISO文字列や1899年問題を見た目で解消）。<br>
+    進捗とJSONも画面に出るので、トラブル時の切り分けにも使えます。
   </p>
 
-  <!-- onclick 直書き：確実に動かすため -->
   <button id="loadBtn" onclick="loadEvents()">イベントを読み込む</button>
 
   <pre id="raw" class="card">(ここに進捗/JSON/エラーを表示)</pre>
   <div id="list"></div>
 
-<script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbzaLPhysJ3_e18Hk25-dumu7324yqDwE7KWgqegPYd9j-6d5eiZsoP5Tze2KcnKkKOcEw/exec";
+  <script>
+    // =========================
+    // ★ここだけ必ず編集★
+    // =========================
+    const API_URL = "ここにGASのWebアプリURLを貼る";
+    // 例：https://script.google.com/macros/s/XXXXXXXXXXXX/exec
 
-  const raw = document.getElementById("raw");
-  const list = document.getElementById("list");
+    // =========================
+    // 画面表示ヘルパー
+    // =========================
+    const raw = document.getElementById("raw");
+    const list = document.getElementById("list");
 
-  function show(msg){ raw.textContent = msg; }
-
-  async function loadEvents() {
-    try {
-      show("1) ボタン押下：loadEvents() 開始");
-
-      if (!API_URL || API_URL.includes("ここに")) {
-        show("エラー：API_URL が未設定です");
-        return;
-      }
-
-      show("2) fetch() 実行中…（フォーム形式でPOST）");
-
-      // ★CORSのプリフライトを避ける：フォームPOST（safelisted）
-      const body = new URLSearchParams({ type: "getEvents" });
-
-      const res = await fetch(API_URL, {
-        method: "POST",
-        body
-        // headers を明示しない（ブラウザが適切に設定）
-      });
-
-      show(`3) 応答受信：HTTP ${res.status}`);
-
-      const text = await res.text();
-      show(`4) 応答本文（先頭200文字）:\n${text.slice(0,200)}`);
-
-      let data;
-      try { data = JSON.parse(text); }
-      catch {
-        show("エラー：JSONではありません。\n\n" + text);
-        return;
-      }
-
-      show("5) JSON解析成功:\n" + JSON.stringify(data, null, 2));
-
-      list.innerHTML = "";
-      const events = data.events || [];
-      if (events.length === 0) {
-        list.innerHTML = `<div class="card">イベントが0件です</div>`;
-        return;
-      }
-
-      for (const ev of events) {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <div><b>${ev.event_name ?? ""}</b></div>
-          <div class="muted">日付：${ev.event_date ?? ""} / 開始：${ev.event_start ?? ""}</div>
-          <div class="muted">メモ：${ev.event_memo ?? ""}</div>
-          <div class="muted">ID：${ev.event_id ?? ""}</div>
-        `;
-        list.appendChild(card);
-      }
-
-    } catch (err) {
-      show("例外エラー（fetch失敗など）:\n" + (err?.message || String(err)));
+    function show(msg) {
+      raw.textContent = msg;
     }
-  }
 
-  window.loadEvents = loadEvents;
-  show("ページ読込完了：ボタンを押してください");
-</script>
+    // =========================
+    // Step5-1：日付/時刻の整形関数
+    // =========================
+
+    // 例： "2026-04-30T15:00:00.000Z" → "2026/05/01" (JST基準で見やすく)
+    function formatDateJST(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}/${m}/${day}`;
+    }
+
+    // 例： "1899-12-29T23:30:00.000Z" → "08:30" のように「時刻だけ」抜く
+    // ※シートの時刻セルがDate扱いになると1899年が付くことがあるため、HH:mmだけ表示
+    function formatTimeHHMM(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      return `${hh}:${mm}`;
+    }
+
+    // 文字列安全対策
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[c]));
+    }
+
+    // =========================
+    // イベント取得（フォームPOST方式：CORS回避）
+    // =========================
+    async function loadEvents() {
+      try {
+        show("1) ボタン押下：loadEvents() 開始");
+
+        if (!API_URL || API_URL.includes("ここに")) {
+          show("エラー：API_URL が未設定です。\n\n" +
+               "const API_URL = \"...\" を\n" +
+               "あなたの Apps Script WebアプリURL に置き換えてください。");
+          return;
+        }
+
+        show("2) fetch() 実行中…（フォーム形式でPOST）");
+
+        // CORSプリフライト回避：フォームPOST
+        const body = new URLSearchParams({ type: "getEvents" });
+
+        const res = await fetch(API_URL, {
+          method: "POST",
+          body
+        });
+
+        show(`3) 応答受信：HTTP ${res.status}`);
+
+        const text = await res.text();
+
+        // 先頭表示（デバッグ用）
+        show(`4) 応答本文（先頭200文字）:\n${text.slice(0, 200)}`);
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          show(
+            "エラー：応答がJSONではありません。\n\n" +
+            "受け取った本文（全体）：\n" + text
+          );
+          return;
+        }
+
+        show("5) JSON解析成功:\n" + JSON.stringify(data, null, 2));
+
+        // =========================
+        // 表示（Step5-1：整形を適用）
+        // =========================
+        list.innerHTML = "";
+        const events = data.events || [];
+
+        if (events.length === 0) {
+          list.innerHTML = `<div class="card">イベントが0件です（tbl_eventが空、または取得対象がありません）</div>`;
+          return;
+        }
+
+        for (const ev of events) {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const dateStr = formatDateJST(ev.event_date);
+          const timeStr = formatTimeHHMM(ev.event_start);
+
+          card.innerHTML = `
+            <div><b>${escapeHtml(ev.event_name ?? "")}</b></div>
+            <div class="muted">日付：${escapeHtml(dateStr)} / 開始：${escapeHtml(timeStr)}</div>
+            <div class="muted">メモ：${escapeHtml(ev.event_memo ?? "")}</div>
+            <div class="muted">ID：${escapeHtml(ev.event_id ?? "")}</div>
+          `;
+          list.appendChild(card);
+        }
+
+      } catch (err) {
+        show("例外エラー（fetch失敗など）:\n" + (err?.message || String(err)));
+      }
+    }
+
+    // onclick用に公開
+    window.loadEvents = loadEvents;
+
+    // 起動確認
+    show("ページ読込完了：ボタンを押してください");
+  </script>
 </body>
 </html>
