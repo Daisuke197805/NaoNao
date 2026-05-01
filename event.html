@@ -14,7 +14,7 @@
     *{ box-sizing:border-box; }
     body{ margin:0; padding:0; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
 
-    /* ===== ヘッダー（index.htmlと同じ構造・薄いオレンジ）===== */
+    /* ===== ヘッダー（薄いオレンジ）===== */
     header{
       position:sticky;
       top:0;
@@ -76,14 +76,14 @@
     .title{ font-weight:800; }
     .sep{ height:1px; background:var(--border); margin:10px 0; }
 
-    /* ===== イベントカード：日付を大きく ===== */
+    /* ===== イベントカード：日付 ===== */
     .event-date{
       font-size:17px;
       font-weight:700;
       color:var(--text);
     }
 
-    /* ===== 参加フォーム：名前＋参加ボタンを同じ行 ===== */
+    /* ===== 参加フォーム ===== */
     .join-row{
       display:flex;
       gap:8px;
@@ -98,8 +98,6 @@
       flex:0 0 auto;
       white-space:nowrap;
     }
-
-    /* ===== 備考欄：最大幅 ===== */
     .note-row{
       margin-top:8px;
     }
@@ -109,7 +107,81 @@
 
     /* ===== 参加者一覧 ===== */
     .participants{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
-    .participants .name{ background:#f3f4f6; border:1px solid #e5e7eb; padding:4px 10px; border-radius:999px; font-size:12px; }
+    .participants .name{
+      background:#f3f4f6;
+      border:1px solid #e5e7eb;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+      transition:background .15s;
+    }
+    /* 備考ありの参加者に視覚的ヒント（薄い下線） */
+    .participants .name.has-note{
+      border-bottom:2px solid var(--accent);
+    }
+    .participants .name:active{
+      background:#e5e7eb;
+    }
+
+    /* ===== ポップアップ（備考表示用ミニモーダル）===== */
+    .popup-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:100;
+      background:rgba(0,0,0,.35);
+      justify-content:center;
+      align-items:center;
+      padding:24px;
+    }
+    .popup-overlay.active{
+      display:flex;
+    }
+    .popup-box{
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 8px 40px rgba(0,0,0,.18);
+      padding:20px;
+      max-width:340px;
+      width:100%;
+      text-align:left;
+      animation:popIn .15s ease-out;
+    }
+    @keyframes popIn{
+      from{ transform:scale(.92); opacity:0; }
+      to{ transform:scale(1); opacity:1; }
+    }
+    .popup-box .popup-name{
+      font-weight:800;
+      font-size:16px;
+      margin-bottom:8px;
+    }
+    .popup-box .popup-note{
+      font-size:14px;
+      color:var(--text);
+      line-height:1.6;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .popup-box .popup-close{
+      display:block;
+      margin-top:14px;
+      text-align:center;
+      font-size:14px;
+      color:var(--accent);
+      font-weight:700;
+      cursor:pointer;
+      padding:8px;
+      border-radius:10px;
+      border:1px solid var(--accent);
+      background:#fff;
+    }
+    .popup-box .popup-close:active{
+      background:#fff3e0;
+    }
 
     pre{ white-space:pre-wrap; word-break:break-word; margin:0; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; }
     details summary{ cursor:pointer; color:var(--muted); font-size:13px; }
@@ -117,12 +189,12 @@
 </head>
 <body>
 
-  <!-- ===== ヘッダー（薄いオレンジ・右端に戻るボタン）===== -->
+  <!-- ===== ヘッダー ===== -->
   <header>
     <div class="row">
       <div class="title">レース＆イベント</div>
       <div class="links">
-        <a href="./index.html">← 戻る</a>
+        ./index.html← 戻る</a>
       </div>
     </div>
   </header>
@@ -149,6 +221,15 @@
 
     <div id="list"></div>
   </main>
+
+  <!-- ===== ポップアップ（備考表示用）===== -->
+  <div class="popup-overlay" id="popupOverlay" onclick="closePopup()">
+    <div class="popup-box" onclick="event.stopPropagation()">
+      <div class="popup-name" id="popupName"></div>
+      <div class="popup-note" id="popupNote"></div>
+      <div class="popup-close" onclick="closePopup()">閉じる</div>
+    </div>
+  </div>
 
   <script>
     // =========================
@@ -214,7 +295,25 @@
     }
 
     // =========================
-    // CORS回避：フォームPOST（res.okチェック付き）
+    // ポップアップ（備考表示）
+    // =========================
+    const popupOverlay = document.getElementById("popupOverlay");
+    const popupName = document.getElementById("popupName");
+    const popupNote = document.getElementById("popupNote");
+
+    function showPopup(name, note){
+      popupName.textContent = name;
+      popupNote.textContent = note || "（備考なし）";
+      popupOverlay.classList.add("active");
+    }
+    function closePopup(){
+      popupOverlay.classList.remove("active");
+    }
+    window.showPopup = showPopup;
+    window.closePopup = closePopup;
+
+    // =========================
+    // CORS回避：フォームPOST
     // =========================
     async function postForm(paramsObj){
       const body = new URLSearchParams(paramsObj);
@@ -282,6 +381,18 @@
         const card = document.createElement("div");
         card.className = "card";
 
+        // 参加者ピルを生成（備考ありは .has-note クラス付与＋onclick）
+        const pillsHtml = mem.map(p => {
+          const name = escapeHtml(p.participant_name ?? "");
+          const note = escapeHtml(p.participant_note ?? "");
+          const hasNote = (p.participant_note ?? "").trim() !== "";
+          const cls = hasNote ? "name has-note" : "name";
+          // showPopup に渡す文字列はシングルクォートでエスケープ
+          const nameForJs = (p.participant_name ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+          const noteForJs = (p.participant_note ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+          return `<span class="${cls}" onclick="showPopup('${nameForJs}','${noteForJs}')">${name}</span>`;
+        }).join("");
+
         card.innerHTML = `
           <div class="row" style="justify-content:space-between;">
             <div>
@@ -310,7 +421,7 @@
 
           <div class="muted" style="margin-top:10px;">参加者：${mem.length} 名</div>
           <div class="participants">
-            ${mem.map(p => `<span class="name">${escapeHtml(p.participant_name ?? "")}</span>`).join("")}
+            ${pillsHtml}
           </div>
         `;
 
@@ -336,7 +447,8 @@
 
         events.sort((a, b) => pad6(a.event_id).localeCompare(pad6(b.event_id)));
 
-        setStatus("OK", `イベント ${events.length} 件 / 参加表明 ${participants.length} 件`);
+        // ✅ 修正：「参加表明n件」を削除し、イベント件数のみ表示
+        setStatus("OK", `イベント ${events.length} 件`);
         render(events, participants);
 
         logDebug("reloadAll ok");
