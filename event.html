@@ -5,46 +5,107 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>イベント管理（参加表明）</title>
   <style>
-    body { font-family: system-ui, sans-serif; padding: 12px; margin: 0; background: #f6f7fb; }
-    h1 { margin: 8px 0 6px; }
-    .muted { color: #666; font-size: 13px; line-height: 1.5; }
-    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .card { background:#fff; border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
-    button { font-size: 15px; padding: 10px 12px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; }
-    button.primary { background:#1976d2; color:#fff; border-color:#1976d2; font-weight:700; }
-    input { font-size: 15px; padding: 10px 10px; border-radius: 10px; border: 1px solid #bbb; min-width: 180px; }
-    pre { white-space: pre-wrap; word-break: break-word; }
-    .pill { display:inline-block; padding:3px 10px; border-radius:999px; background:#eef3ff; border:1px solid #dbe7ff; color:#1a3e8a; font-size:12px; margin-right:6px; }
-    .participants { margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; }
-    .participants .name { background:#f3f4f6; border:1px solid #e5e7eb; padding:4px 10px; border-radius:999px; font-size:12px; }
+    :root{
+      --bg:#f6f7fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
+      --brand:#1976d2; --brand2:#155fa8; --danger:#c62828;
+      --shadow:0 2px 14px rgba(0,0,0,.08); --radius:14px;
+    }
+    *{ box-sizing:border-box; }
+    body{ margin:0; padding:12px; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+    header{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin:6px 0 12px; }
+    h1{ margin:0; font-size:22px; }
+    .sub{ color:var(--muted); font-size:13px; line-height:1.5; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:12px; margin:12px 0; }
+    .btn{ font-size:15px; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#fff; cursor:pointer; }
+    .btn.primary{ background:var(--brand); border-color:var(--brand); color:#fff; font-weight:700; }
+    .btn.primary:hover{ background:var(--brand2); border-color:var(--brand2); }
+    .btn.ghost{ background:#fff; }
+    .btn.danger{ background:var(--danger); border-color:var(--danger); color:#fff; font-weight:700; }
+    .btn:active{ transform:translateY(1px); }
+
+    input{ font-size:15px; padding:10px 10px; border-radius:12px; border:1px solid var(--border); min-width:180px; background:#fff; }
+    input:focus{ outline:none; border-color:#90caf9; box-shadow:0 0 0 4px rgba(144,202,249,.35); }
+
+    .pill{ display:inline-block; padding:3px 10px; border-radius:999px; background:#eef3ff; border:1px solid #dbe7ff; color:#1a3e8a; font-size:12px; }
+    .muted{ color:var(--muted); font-size:13px; }
+    .title{ font-weight:800; }
+    .sep{ height:1px; background:var(--border); margin:10px 0; }
+
+    .participants{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+    .participants .name{ background:#f3f4f6; border:1px solid #e5e7eb; padding:4px 10px; border-radius:999px; font-size:12px; }
+
+    pre{ white-space:pre-wrap; word-break:break-word; margin:0; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; }
+    details summary{ cursor:pointer; color:var(--muted); font-size:13px; }
   </style>
 </head>
 <body>
-  <h1>イベント管理（参加表明）</h1>
-  <p class="muted">
-    Step5-2：イベント一覧を表示し、各イベントに<b>参加表明（複数人）</b>できるようにします。<br>
-    ※データ保存はGoogleスプレッドシート（tbl_participant）です。
-  </p>
+  <header>
+    <h1>イベント管理（参加表明）</h1>
+    <div class="sub">
+      event_id は <b>6桁テキスト</b>（例：000001）として扱います。<br>
+      イベント一覧取得・参加表明・参加者一覧は Google Sheets に保存します。
+    </div>
+  </header>
 
   <div class="row">
-    <button class="primary" onclick="reloadAll()">イベントを読み込む</button>
-    <span class="muted">（取得：getEvents / 参加：joinEvent / 参加者：getParticipants）</span>
+    <button class="btn primary" onclick="reloadAll()">更新（イベント＆参加者を再取得）</button>
+    <span class="muted">※スマホでも動作します</span>
   </div>
 
-  <pre id="raw" class="card">(ここに進捗/エラーを表示)</pre>
+  <div class="card">
+    <div class="row" style="justify-content:space-between;">
+      <div class="title">状態</div>
+      <span class="pill" id="statusPill">待機中</span>
+    </div>
+    <div class="sep"></div>
+    <div class="muted" id="statusText">ページ読込完了：更新ボタンを押してください</div>
+
+    <details style="margin-top:10px;">
+      <summary>デバッグログ（必要なときだけ開く）</summary>
+      <div class="sep"></div>
+      <pre id="debug">(ログ)</pre>
+    </details>
+  </div>
+
   <div id="list"></div>
 
   <script>
-    // ★固定（あなたのGAS WebアプリURL）
+    // =========================
+    // 固定：あなたのGAS WebアプリURL
+    // =========================
     const API_URL = "https://script.google.com/macros/s/AKfycbzaLPhysJ3_e18Hk25-dumu7324yqDwE7KWgqegPYd9j-6d5eiZsoP5Tze2KcnKkKOcEw/exec";
 
-    const raw = document.getElementById("raw");
     const list = document.getElementById("list");
+    const statusPill = document.getElementById("statusPill");
+    const statusText = document.getElementById("statusText");
+    const debug = document.getElementById("debug");
 
-    function show(msg) { raw.textContent = msg; }
+    function setStatus(label, text){
+      statusPill.textContent = label;
+      statusText.textContent = text;
+    }
+    function logDebug(msg){
+      const t = new Date().toISOString();
+      debug.textContent = `${t}  ${msg}\n` + debug.textContent;
+    }
 
-    // 日付/時刻整形（表示用）
-    function formatDateJST(value) {
+    // =========================
+    // 6桁 event_id 正規化（超重要）
+    // =========================
+    function pad6(value){
+      const s = String(value ?? "").trim();
+      if (/^\d+$/.test(s)) return s.padStart(6, "0");
+      return s;
+    }
+
+    // =========================
+    // 表示整形
+    // - event_date: "2026-05-01T15:00:00.000Z" のようなISOが来る前提
+    // - event_start: 時刻だけセル→ 1899年が付くことがあるので HH:mmだけ抜く
+    // =========================
+    function formatDateJST(value){
       if (!value) return "";
       const d = new Date(value);
       if (Number.isNaN(d.getTime())) return String(value);
@@ -53,7 +114,7 @@
       const day = String(d.getDate()).padStart(2, "0");
       return `${y}/${m}/${day}`;
     }
-    function formatTimeHHMM(value) {
+    function formatTimeHHMM(value){
       if (!value) return "";
       const d = new Date(value);
       if (Number.isNaN(d.getTime())) return String(value);
@@ -61,150 +122,189 @@
       const mm = String(d.getMinutes()).padStart(2, "0");
       return `${hh}:${mm}`;
     }
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, c => ({
+    function escapeHtml(str){
+      return String(str ?? "").replace(/[&<>"']/g, c => ({
         "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
       }[c]));
     }
 
-    // CORSプリフライト回避：フォームPOST統一
-    async function postForm(paramsObj) {
+    // =========================
+    // CORS回避：フォームPOST
+    // =========================
+    async function postForm(paramsObj){
       const body = new URLSearchParams(paramsObj);
-      const res = await fetch(API_URL, { method: "POST", body });
+      logDebug("POST " + JSON.stringify(paramsObj));
+
+      const res = await fetch(API_URL, { method:"POST", body });
       const text = await res.text();
+
       let json;
-      try { json = JSON.parse(text); }
-      catch { throw new Error("JSON解析失敗: " + text.slice(0, 200)); }
+      try{
+        json = JSON.parse(text);
+      }catch{
+        throw new Error("JSON解析失敗（先頭200文字）: " + text.slice(0,200));
+      }
       return json;
     }
 
-    async function getEvents() {
-      return await postForm({ type: "getEvents" });
+    // =========================
+    // API呼び出し
+    // =========================
+    async function apiGetEvents(){
+      return await postForm({ type:"getEvents" });
     }
-
-    async function getParticipants() {
-      return await postForm({ type: "getParticipants" });
+    async function apiGetParticipants(){
+      return await postForm({ type:"getParticipants" });
     }
-
-    async function joinEvent(eventId, name, note) {
+    async function apiJoinEvent(eventId, name, note){
+      // 送信時にも必ず6桁化
       return await postForm({
-        type: "joinEvent",
-        event_id: eventId,
+        type:"joinEvent",
+        event_id: pad6(eventId),
         participant_name: name,
         participant_note: note || ""
       });
     }
 
-    // 画面再描画
-    async function reloadAll() {
-      try {
-        show("読み込み中...");
+    // =========================
+    // 画面構築
+    // =========================
+    function render(events, participants){
+      // event_id -> participants[]
+      const byEvent = new Map();
+      for (const p of participants){
+        const eid = pad6(p.event_id);
+        if (!byEvent.has(eid)) byEvent.set(eid, []);
+        byEvent.get(eid).push(p);
+      }
 
-        const [evRes, ptRes] = await Promise.all([getEvents(), getParticipants()]);
-        if (evRes.status !== "ok") throw new Error("getEvents失敗: " + (evRes.message || ""));
-        if (ptRes.status !== "ok") throw new Error("getParticipants失敗: " + (ptRes.message || ""));
+      list.innerHTML = "";
+      if (!events.length){
+        list.innerHTML = `<div class="card">イベントが0件です（tbl_event を確認してください）</div>`;
+        return;
+      }
 
-        const events = evRes.events || [];
-        const participants = ptRes.participants || [];
+      for (const ev of events){
+        const eid = pad6(ev.event_id);
+        const dateStr = formatDateJST(ev.event_date);
+        const timeStr = formatTimeHHMM(ev.event_start);
+        const mem = byEvent.get(eid) || [];
 
-        // event_id -> 参加者配列 のMap
-        const byEvent = new Map();
-        for (const p of participants) {
-          const eid = String(p.event_id || "");
-          if (!byEvent.has(eid)) byEvent.set(eid, []);
-          byEvent.get(eid).push(p);
-        }
+        const card = document.createElement("div");
+        card.className = "card";
 
-        show(`OK：イベント ${events.length} 件 / 参加表明 ${participants.length} 件`);
-
-        list.innerHTML = "";
-        if (events.length === 0) {
-          list.innerHTML = `<div class="card">イベントが0件です（tbl_eventを確認）</div>`;
-          return;
-        }
-
-        for (const ev of events) {
-          const eid = String(ev.event_id || "");
-          const dateStr = formatDateJST(ev.event_date);
-          const timeStr = formatTimeHHMM(ev.event_start);
-          const mem = byEvent.get(eid) || [];
-
-          const card = document.createElement("div");
-          card.className = "card";
-          card.innerHTML = `
-            <div class="row" style="justify-content:space-between;">
-              <div>
-                <span class="pill">${escapeHtml(eid)}</span>
-                <b>${escapeHtml(ev.event_name ?? "")}</b>
-              </div>
-              <div class="muted">${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</div>
+        card.innerHTML = `
+          <div class="row" style="justify-content:space-between;">
+            <div>
+              <span class="pill">${escapeHtml(eid)}</span>
+              <span class="title">${escapeHtml(ev.event_name ?? "")}</span>
             </div>
-            <div class="muted" style="margin-top:6px;">メモ：${escapeHtml(ev.event_memo ?? "")}</div>
+            <div class="muted">${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</div>
+          </div>
 
-            <div class="row" style="margin-top:12px;">
-              <input id="name_${escapeHtml(eid)}" placeholder="名前（ニックネーム可）">
-              <input id="note_${escapeHtml(eid)}" placeholder="備考（任意）">
-              <button class="primary" onclick="handleJoin('${escapeHtml(eid)}')">参加</button>
-            </div>
+          <div class="muted" style="margin-top:6px;">
+            メモ：${escapeHtml(ev.event_memo ?? "")}
+          </div>
 
-            <div class="muted" style="margin-top:10px;">参加者：${mem.length} 名</div>
-            <div class="participants">
-              ${mem.map(p => `<span class="name">${escapeHtml(p.participant_name ?? "")}</span>`).join("")}
-            </div>
-          `;
-          list.appendChild(card);
-        }
+          <div class="sep"></div>
 
-      } catch (err) {
-        show("エラー:\n" + (err?.message || String(err)));
+          <div class="row">
+            <input id="name_${escapeHtml(eid)}" placeholder="名前（ニックネーム可）">
+            <input id="note_${escapeHtml(eid)}" placeholder="備考（任意）">
+            <button class="btn primary" onclick="handleJoin('${escapeHtml(eid)}')">参加</button>
+          </div>
+
+          <div class="muted" style="margin-top:10px;">参加者：${mem.length} 名</div>
+          <div class="participants">
+            ${mem.map(p => `<span class="name">${escapeHtml(p.participant_name ?? "")}</span>`).join("")}
+          </div>
+        `;
+
+        list.appendChild(card);
       }
     }
 
-    // 参加ボタン処理
-    async function handleJoin(eventId) {
-      try {
-        const nameEl = document.getElementById("name_" + eventId);
-        const noteEl = document.getElementById("note_" + eventId);
+    // =========================
+    // メイン：再取得
+    // =========================
+    async function reloadAll(){
+      try{
+        setStatus("取得中", "イベント・参加者を取得しています...");
+        logDebug("reloadAll start");
+
+        const [evRes, ptRes] = await Promise.all([apiGetEvents(), apiGetParticipants()]);
+
+        if (evRes.status !== "ok") throw new Error("getEvents失敗: " + (evRes.message || ""));
+        if (ptRes.status !== "ok") throw new Error("getParticipants失敗: " + (ptRes.message || ""));
+
+        const events = (evRes.events || []).map(e => ({ ...e, event_id: pad6(e.event_id) }));
+        const participants = (ptRes.participants || []).map(p => ({ ...p, event_id: pad6(p.event_id) }));
+
+        // event_id でソート（000001 → 000010 → 000100 の順）
+        events.sort((a,b) => pad6(a.event_id).localeCompare(pad6(b.event_id)));
+
+        setStatus("OK", `イベント ${events.length} 件 / 参加表明 ${participants.length} 件`);
+        render(events, participants);
+
+        logDebug("reloadAll ok");
+      }catch(err){
+        setStatus("エラー", "取得に失敗しました。デバッグログを確認してください。");
+        logDebug("ERROR: " + (err?.message || String(err)));
+        alert("取得に失敗しました：" + (err?.message || String(err)));
+      }
+    }
+
+    // =========================
+    // 参加処理
+    // =========================
+    async function handleJoin(eventId){
+      try{
+        const eid = pad6(eventId);
+        const nameEl = document.getElementById("name_" + eid);
+        const noteEl = document.getElementById("note_" + eid);
+
         const name = (nameEl.value || "").trim();
         const note = (noteEl.value || "").trim();
 
-        if (!name) {
+        if (!name){
           alert("名前を入力してください");
           return;
         }
 
-        show(`参加表明送信中... event_id=${eventId}`);
+        setStatus("送信中", `参加表明を送信しています... event_id=${eid}`);
+        logDebug(`joinEvent start event_id=${eid} name=${name}`);
 
-        const res = await joinEvent(eventId, name, note);
+        const res = await apiJoinEvent(eid, name, note);
 
-        if (res.status === "ok") {
+        if (res.status === "ok"){
           alert("参加表明しました！");
           nameEl.value = "";
           noteEl.value = "";
-          await reloadAll(); // 再取得して参加者数を反映
+          await reloadAll();
           return;
         }
 
-        if (res.status === "exists") {
+        if (res.status === "exists"){
           alert("すでに参加しています（同名の参加表明が存在します）。");
           await reloadAll();
           return;
         }
 
         throw new Error(res.message || "参加表明に失敗しました");
-
-      } catch (err) {
-        show("参加表明エラー:\n" + (err?.message || String(err)));
-        alert("参加表明に失敗しました。画面のエラー表示を確認してください。");
+      }catch(err){
+        setStatus("エラー", "参加表明に失敗しました。デバッグログを確認してください。");
+        logDebug("joinEvent ERROR: " + (err?.message || String(err)));
+        alert("参加表明に失敗しました：" + (err?.message || String(err)));
       }
     }
 
-    // グローバル公開
+    // グローバル公開（onclick用）
     window.reloadAll = reloadAll;
     window.handleJoin = handleJoin;
 
-    // 初期表示
-    show("ページ読込完了：ボタンで読み込んでください");
+    // 初期：自動で一度読み込み（好みで削除OK）
+    setStatus("待機中", "自動取得を開始します...");
+    reloadAll();
   </script>
 </body>
 </html>
