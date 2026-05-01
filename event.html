@@ -14,11 +14,17 @@
   <h1>イベント一覧（テスト）</h1>
   <p class="muted">Step4：GASからイベント一覧を取得できるか確認します。</p>
 
-  <button id="loadBtn">イベントを読み込む</button>
+  <button id="loadBtn" onclick="loadEvents()">イベントを読み込む</button>
+
+  //<button id="loadBtn">イベントを読み込む</button>
   <pre id="raw" class="card">(ここにJSONを表示)</pre>
   <div id="list"></div>
 
   <script>
+    console.log("script loaded");          // ページ読み込み時にConsoleへ
+    window.loadEvents = loadEvents;        // onclick から呼べるようにする
+
+    
     // ★ここをあなたのGAS WebアプリURLに置き換え
     const API_URL = https://script.google.com/macros/s/AKfycbzaLPhysJ3_e18Hk25-dumu7324yqDwE7KWgqegPYd9j-6d5eiZsoP5Tze2KcnKkKOcEw/exec;
 
