@@ -190,7 +190,11 @@
 
   </main>
 
-  <script>
+  <script>(value) {
+  const s = String(value ?? "").trim();
+  if (/^\d+$/.test(s)) return s.padStart(6, "0");
+  return s;
+}
     // 地点（緯度経度）
     // 浦安マリーナ：Mapionの中心点情報（35.62896904, 139.8975477）[1](https://wiki.openstreetmap.org/wiki/Leaflet-openweathermap)
     // 横浜ベイサイドマリーナ：Wikipediaの座標（35.38028, 139.64778）[2](https://qiita.com/nishifeoda/items/de3e8b7081a9381c0ce7)
@@ -241,6 +245,12 @@
 
     // 初期表示
     updateFrame();
+
+    (value) {
+    const s = String(value ?? "").trim();
+    if (/^\d+$/.test(s)) return s.padStart(6, "0");
+    return s;
+    }
   </script>
 </body>
 </html>
