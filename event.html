@@ -8,31 +8,106 @@
     :root{
       --bg:#f6f7fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
       --brand:#1976d2; --brand2:#155fa8; --danger:#c62828;
+      --accent:#f57c00; --accent2:#ef6c00;
       --shadow:0 2px 14px rgba(0,0,0,.08); --radius:14px;
     }
     *{ box-sizing:border-box; }
-    body{ margin:0; padding:12px; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
-    header{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin:6px 0 12px; }
-    h1{ margin:0; font-size:22px; }
-    .sub{ color:var(--muted); font-size:13px; line-height:1.5; }
+    body{ margin:0; padding:0; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+
+    /* ===== ヘッダー（index.htmlと同じ構造・薄いオレンジ）===== */
+    header{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:linear-gradient(90deg, #fb8c00, #ffa726);
+      color:#fff;
+      padding:12px 16px;
+      box-shadow:0 2px 10px rgba(0,0,0,.12);
+    }
+    header .row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      max-width:980px;
+      margin:0 auto;
+    }
+    header .title{
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+    header .links{
+      margin-left:auto;
+      display:flex;
+      gap:12px;
+      font-size:14px;
+    }
+    header a{
+      color:#fff;
+      text-decoration:none;
+      background:rgba(255,255,255,.25);
+      padding:6px 14px;
+      border-radius:10px;
+      font-weight:700;
+      font-size:14px;
+    }
+    header a:hover{
+      background:rgba(255,255,255,.4);
+    }
+
+    /* ===== メイン ===== */
+    main{
+      max-width:980px;
+      margin:0 auto;
+      padding:12px;
+    }
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:12px; margin:12px 0; }
     .btn{ font-size:15px; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#fff; cursor:pointer; }
-    .btn.primary{ background:var(--brand); border-color:var(--brand); color:#fff; font-weight:700; }
-    .btn.primary:hover{ background:var(--brand2); border-color:var(--brand2); }
-    .btn.ghost{ background:#fff; }
-    .btn.danger{ background:var(--danger); border-color:var(--danger); color:#fff; font-weight:700; }
+    .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; }
+    .btn.primary:hover{ background:var(--accent2); border-color:var(--accent2); }
     .btn:active{ transform:translateY(1px); }
 
-    input{ font-size:15px; padding:10px 10px; border-radius:12px; border:1px solid var(--border); min-width:180px; background:#fff; }
-    input:focus{ outline:none; border-color:#90caf9; box-shadow:0 0 0 4px rgba(144,202,249,.35); }
+    input{ font-size:15px; padding:10px 10px; border-radius:12px; border:1px solid var(--border); background:#fff; }
+    input:focus{ outline:none; border-color:#ffcc80; box-shadow:0 0 0 4px rgba(255,167,38,.25); }
 
     .pill{ display:inline-block; padding:3px 10px; border-radius:999px; background:#eef3ff; border:1px solid #dbe7ff; color:#1a3e8a; font-size:12px; }
     .muted{ color:var(--muted); font-size:13px; }
     .title{ font-weight:800; }
     .sep{ height:1px; background:var(--border); margin:10px 0; }
 
+    /* ===== イベントカード：日付を大きく ===== */
+    .event-date{
+      font-size:17px;
+      font-weight:700;
+      color:var(--text);
+    }
+
+    /* ===== 参加フォーム：名前＋参加ボタンを同じ行 ===== */
+    .join-row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:nowrap;
+    }
+    .join-row input{
+      flex:1 1 160px;
+      min-width:0;
+    }
+    .join-row .btn{
+      flex:0 0 auto;
+      white-space:nowrap;
+    }
+
+    /* ===== 備考欄：最大幅 ===== */
+    .note-row{
+      margin-top:8px;
+    }
+    .note-row input{
+      width:100%;
+    }
+
+    /* ===== 参加者一覧 ===== */
     .participants{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
     .participants .name{ background:#f3f4f6; border:1px solid #e5e7eb; padding:4px 10px; border-radius:999px; font-size:12px; }
 
@@ -41,30 +116,39 @@
   </style>
 </head>
 <body>
+
+  <!-- ===== ヘッダー（薄いオレンジ・右端に戻るボタン）===== -->
   <header>
-    <h1>レース&イベント</h1>
+    <div class="row">
+      <div class="title">レース＆イベント</div>
+      <div class="links">
+        <a href="./index.html">← 戻る</a>
+      </div>
+    </div>
   </header>
 
-  <div class="row">
-    <button class="btn primary" onclick="reloadAll()">更新（イベント＆参加者を再取得）</button>
-  </div>
-
-  <div class="card">
-    <div class="row" style="justify-content:space-between;">
-      <div class="title">状態</div>
-      <span class="pill" id="statusPill">待機中</span>
+  <main>
+    <div class="row">
+      <button class="btn primary" onclick="reloadAll()">更新（イベント＆参加者を再取得）</button>
     </div>
-    <div class="sep"></div>
-    <div class="muted" id="statusText">ページ読込完了：更新ボタンを押してください</div>
 
-    <details style="margin-top:10px;">
-      <summary>デバッグログ（必要なときだけ開く）</summary>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div class="title">状態</div>
+        <span class="pill" id="statusPill">待機中</span>
+      </div>
       <div class="sep"></div>
-      <pre id="debug">(ログ)</pre>
-    </details>
-  </div>
+      <div class="muted" id="statusText">ページ読込完了：更新ボタンを押してください</div>
 
-  <div id="list"></div>
+      <details style="margin-top:10px;">
+        <summary>デバッグログ（必要なときだけ開く）</summary>
+        <div class="sep"></div>
+        <pre id="debug">(ログ)</pre>
+      </details>
+    </div>
+
+    <div id="list"></div>
+  </main>
 
   <script>
     // =========================
@@ -87,7 +171,7 @@
     }
 
     // =========================
-    // 6桁 event_id 正規化（超重要）
+    // 6桁 event_id 正規化
     // =========================
     function pad6(value){
       const s = String(value ?? "").trim();
@@ -98,6 +182,8 @@
     // =========================
     // 表示整形
     // =========================
+    const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+
     function formatDateJST(value){
       if (!value) return "";
       const d = new Date(value);
@@ -105,7 +191,8 @@
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
       const day = String(d.getDate()).padStart(2, "0");
-      return `${y}/${m}/${day}`;
+      const w = WEEKDAYS[d.getDay()];
+      return `${y}/${m}/${day}（${w}）`;
     }
     function formatTimeHHMM(value){
       if (!value) return "";
@@ -116,9 +203,6 @@
       return `${hh}:${mm}`;
     }
 
-    // =========================
-    // ✅ 修正済み：escapeHtml（正しい実文字でエスケープ）
-    // =========================
     function escapeHtml(str){
       return String(str ?? "").replace(/[&<>"']/g, c => ({
         "&": "&amp;",
@@ -130,8 +214,7 @@
     }
 
     // =========================
-    // CORS回避：フォームPOST
-    // ✅ 修正済み：res.ok チェック追加
+    // CORS回避：フォームPOST（res.okチェック付き）
     // =========================
     async function postForm(paramsObj){
       const body = new URLSearchParams(paramsObj);
@@ -139,7 +222,6 @@
 
       const res = await fetch(API_URL, { method:"POST", body });
 
-      // HTTP エラー検知（403/500等）
       if (!res.ok){
         const errText = await res.text();
         throw new Error(`HTTP ${res.status}: ${errText.slice(0, 200)}`);
@@ -176,10 +258,8 @@
 
     // =========================
     // 画面構築
-    // ✅ 修正済み：DOM ID には escapeHtml を使わない（pad6 済みの eid をそのまま使用）
     // =========================
     function render(events, participants){
-      // event_id -> participants[]
       const byEvent = new Map();
       for (const p of participants){
         const eid = pad6(p.event_id);
@@ -205,10 +285,12 @@
         card.innerHTML = `
           <div class="row" style="justify-content:space-between;">
             <div>
-              <span class="pill">${escapeHtml(eid)}</span>
               <span class="title">${escapeHtml(ev.event_name ?? "")}</span>
             </div>
-            <div class="muted">${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</div>
+          </div>
+
+          <div class="event-date" style="margin-top:6px;">
+            ${escapeHtml(dateStr)} ${escapeHtml(timeStr)}
           </div>
 
           <div class="muted" style="margin-top:6px;">
@@ -217,10 +299,13 @@
 
           <div class="sep"></div>
 
-          <div class="row">
-            <input id="name_${eid}" placeholder="名前（ニックネーム可）">
-            <input id="note_${eid}" placeholder="備考（任意）">
+          <div class="join-row">
+            <input id="name_${eid}" placeholder="名前">
             <button class="btn primary" onclick="handleJoin('${eid}')">参加</button>
+          </div>
+
+          <div class="note-row">
+            <input id="note_${eid}" placeholder="備考（任意）">
           </div>
 
           <div class="muted" style="margin-top:10px;">参加者：${mem.length} 名</div>
@@ -249,7 +334,6 @@
         const events = (evRes.events || []).map(e => ({ ...e, event_id: pad6(e.event_id) }));
         const participants = (ptRes.participants || []).map(p => ({ ...p, event_id: pad6(p.event_id) }));
 
-        // event_id でソート（000001 → 000010 → 000100 の順）
         events.sort((a, b) => pad6(a.event_id).localeCompare(pad6(b.event_id)));
 
         setStatus("OK", `イベント ${events.length} 件 / 参加表明 ${participants.length} 件`);
