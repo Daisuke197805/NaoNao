@@ -3,60 +3,224 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>天気ダッシュボード</title>
+  <title>マリーナ天気（Windy）</title>
   <style>
-    body { margin: 0; font-family: system-ui, sans-serif; }
-    header { padding: 12px 16px; background: #1976d2; color: #fff; }
-    .controls { padding: 12px 16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    select, button { font-size: 16px; padding: 10px; }
-    .frameWrap { padding: 0 0 8px; }
-    iframe { width: 100%; height: 75vh; border: 0; }
-    .note { padding: 0 16px 16px; color:#555; font-size: 13px; }
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --brand:#1976d2;
+      --border:#e5e7eb;
+      --shadow:0 2px 14px rgba(0,0,0,.08);
+      --radius:16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    header{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:linear-gradient(90deg, #1565c0, #1976d2);
+      color:#fff;
+      padding:12px 16px;
+      box-shadow:0 2px 10px rgba(0,0,0,.12);
+    }
+    header .row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      max-width:980px;
+      margin:0 auto;
+    }
+    header .title{
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+    header .links{
+      margin-left:auto;
+      display:flex;
+      gap:12px;
+      font-size:14px;
+      opacity:.95;
+    }
+    header a{
+      color:#fff;
+      text-decoration:underline;
+      text-underline-offset:3px;
+    }
+
+    main{
+      max-width:980px;
+      margin:0 auto;
+      padding:12px;
+      display:grid;
+      gap:12px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:12px;
+    }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .controls label{
+      font-size:13px;
+      color:var(--muted);
+      font-weight:700;
+    }
+    select, button{
+      font-size:16px;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      color:var(--text);
+      outline:none;
+    }
+    select:focus, button:focus{
+      border-color:#90caf9;
+      box-shadow:0 0 0 4px rgba(144,202,249,.35);
+    }
+    button{
+      cursor:pointer;
+      background:#fff;
+    }
+    .btn-primary{
+      background:var(--brand);
+      border-color:transparent;
+      color:#fff;
+      font-weight:800;
+    }
+
+    .meta{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.5;
+      margin-top:8px;
+    }
+
+    /* iframe をスマホでもいい感じに（高さはvhで確保） */
+    .frameWrap{
+      padding:0;
+      overflow:hidden;
+    }
+    iframe{
+      width:100%;
+      height:75vh;
+      border:0;
+      display:block;
+    }
+
+    .footerNote{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .badge{
+      display:inline-block;
+      font-size:12px;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#eef3ff;
+      color:#1a3e8a;
+      margin-right:6px;
+      border:1px solid #dbe7ff;
+    }
   </style>
 </head>
+
 <body>
-  <header>風（Windy）ダッシュボード</header>
+  <header>
+    <div class="row">
+      <div class="title">マリーナ天気（Windy）</div>
+      <div class="links">
+        <!-- events.html を作っている場合はリンクが生きます。無いなら消してOK -->
+        <a href="./events.html">イベント</a>
+      </div>
+    </div>
+  </header>
 
-  <div class="controls">
-    <label for="place">地点：</label>
-    <select id="place">
-      <option value="osaka">大阪府 大阪市</option>
-      <option value="machida">東京都 町田市</option>
-      <option value="tokyo">東京都（都心）</option>
-    </select>
+  <main>
+    <section class="card">
+      <div class="controls">
+        <label for="place">地点</label>
+        <select id="place">
+          <option value="urayasu">浦安マリーナ（千葉県）</option>
+          <option value="ybm">横浜ベイサイドマリーナ（神奈川県）</option>
+        </select>
 
-    <label for="zoom">ズーム：</label>
-    <select id="zoom">
-      <option value="7">広め</option>
-      <option value="9" selected>標準</option>
-      <option value="11">近く</option>
-    </select>
-  </div>
+        <label for="overlay">表示</label>
+        <select id="overlay">
+          <option value="wind" selected>風</option>
+          <option value="gust">ガスト（突風）</option>
+          <option value="waves">波</option>
+          <option value="rain">雨</option>
+          <option value="temp">気温</option>
+        </select>
 
-  <div class="frameWrap">
-    <iframe id="windyFrame" allowfullscreen></iframe>
-  </div>
+        <label for="zoom">ズーム</label>
+        <select id="zoom">
+          <option value="8">広め</option>
+          <option value="9" selected>標準</option>
+          <option value="11">近く</option>
+        </select>
 
-  <div class="note">
-    ※Windyは埋め込みURL（iframe）を差し替えることで、地点を切り替えできます。[1](https://www.windy.com/embed2.html?lat=46.695&lon=2.505&zoom=6&level=surface&overlay=radar&type=map&location=coordinates&metricWind=default&metricTemp=default&radarRange=-1)
-  </div>
+        <button class="btn-primary" id="openBtn">Windyで開く</button>
+      </div>
+
+      <div class="meta">
+        <span class="badge">スマホ最適</span>
+        プルダウンで地点・表示レイヤーを切り替えます。Windyはiframe埋め込み（Embed widget）を提供しています。[3](https://latitude.to/map/jp/japan/cities/urayasu)
+      </div>
+    </section>
+
+    <section class="card frameWrap">
+      <iframe id="windyFrame" allowfullscreen loading="lazy"></iframe>
+    </section>
+
+    <section class="card">
+      <div class="footerNote">
+        <div><span class="badge">座標ソース</span></div>
+        <div>
+          ・浦安マリーナ：Mapion掲載の中心点（35.62896904, 139.8975477）を使用。[1](https://wiki.openstreetmap.org/wiki/Leaflet-openweathermap)<br>
+          ・横浜ベイサイドマリーナ：Wikipedia掲載の座標（35.38028, 139.64778）を使用。[2](https://qiita.com/nishifeoda/items/de3e8b7081a9381c0ce7)
+        </div>
+      </div>
+    </section>
+  </main>
 
   <script>
-    // ここに地点を追加していく（lat/lon は任意の座標に変更OK）
+    // 地点（緯度経度）
+    // 浦安マリーナ：Mapionの中心点情報（35.62896904, 139.8975477）[1](https://wiki.openstreetmap.org/wiki/Leaflet-openweathermap)
+    // 横浜ベイサイドマリーナ：Wikipediaの座標（35.38028, 139.64778）[2](https://qiita.com/nishifeoda/items/de3e8b7081a9381c0ce7)
     const PLACES = {
-      osaka:   { name: "大阪府 大阪市", lat: 34.6937, lon: 135.5023 },
-      machida: { name: "東京都 町田市", lat: 35.5486, lon: 139.4460 },
-      tokyo:   { name: "東京都（都心）", lat: 35.6895, lon: 139.6917 }
+      urayasu: { name: "浦安マリーナ（千葉県）", lat: 35.62896904, lon: 139.8975477 },
+      ybm:     { name: "横浜ベイサイドマリーナ（神奈川県）", lat: 35.38028,   lon: 139.64778   }
     };
 
-    function buildWindyUrl(lat, lon, zoom) {
-      // Windy embed はクエリで lat/lon/zoom/overlay などを指定できる（例が公開されています）
+    // overlay値は Windy 側の仕様変更があり得ます。
+    // まずは wind / temp / rain / waves あたりは実用上よく使われます。
+    function buildWindyUrl(lat, lon, zoom, overlay){
       const params = new URLSearchParams({
         lat: String(lat),
         lon: String(lon),
         zoom: String(zoom),
         level: "surface",
-        overlay: "wind",
+        overlay: overlay,
         type: "map",
         location: "coordinates",
         metricWind: "default",
@@ -66,15 +230,27 @@
       return `https://embed.windy.com/embed2.html?${params.toString()}`;
     }
 
-    function updateFrame() {
-      const key = document.getElementById("place").value;
-      const zoom = document.getElementById("zoom").value;
-      const p = PLACES[key];
-      document.getElementById("windyFrame").src = buildWindyUrl(p.lat, p.lon, zoom);
+    function updateFrame(){
+      const placeKey = document.getElementById("place").value;
+      const overlay  = document.getElementById("overlay").value;
+      const zoom     = document.getElementById("zoom").value;
+
+      const p = PLACES[placeKey];
+      const url = buildWindyUrl(p.lat, p.lon, zoom, overlay);
+      document.getElementById("windyFrame").src = url;
+
+      // 「Windyで開く」ボタン用に保持
+      document.getElementById("openBtn").dataset.url = url;
     }
 
     document.getElementById("place").addEventListener("change", updateFrame);
+    document.getElementById("overlay").addEventListener("change", updateFrame);
     document.getElementById("zoom").addEventListener("change", updateFrame);
+
+    document.getElementById("openBtn").addEventListener("click", () => {
+      const url = document.getElementById("openBtn").dataset.url;
+      window.open(url, "_blank", "noopener");
+    });
 
     // 初期表示
     updateFrame();
