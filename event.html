@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>イベント管理（参加表明）</title>
+  <title>レース&イベント</title>
   <style>
     :root{
       --bg:#f6f7fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
@@ -42,16 +42,11 @@
 </head>
 <body>
   <header>
-    <h1>イベント管理（参加表明）</h1>
-    <div class="sub">
-      event_id は <b>6桁テキスト</b>（例：000001）として扱います。<br>
-      イベント一覧取得・参加表明・参加者一覧は Google Sheets に保存します。
-    </div>
+    <h1>レース&イベント</h1>
   </header>
 
   <div class="row">
     <button class="btn primary" onclick="reloadAll()">更新（イベント＆参加者を再取得）</button>
-    <span class="muted">※スマホでも動作します</span>
   </div>
 
   <div class="card">
