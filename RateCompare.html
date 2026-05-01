@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>レーティング比較</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
+      --green:#2e7d32; --green2:#388e3c; --green-light:#e8f5e9;
+      --danger:#c62828;
+      --shadow:0 2px 14px rgba(0,0,0,.08); --radius:14px;
+    }
+    *{ box-sizing:border-box; }
+    body{ margin:0; padding:0; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+
+    /* ===== ヘッダー（グリーン系）===== */
+    header{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:linear-gradient(90deg, #2e7d32, #43a047);
+      color:#fff;
+      padding:12px 16px;
+      box-shadow:0 2px 10px rgba(0,0,0,.12);
+    }
+    header .row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      max-width:980px;
+      margin:0 auto;
+    }
+    header .title{
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+    header .links{
+      margin-left:auto;
+      display:flex;
+      gap:12px;
+      font-size:14px;
+    }
+    header a{
+      color:#fff;
+      text-decoration:none;
+      background:rgba(255,255,255,.25);
+      padding:6px 14px;
+      border-radius:10px;
+      font-weight:700;
+      font-size:14px;
+    }
+    header a:hover{ background:rgba(255,255,255,.4); }
+
+    /* ===== メイン ===== */
+    main{
+      max-width:600px;
+      margin:0 auto;
+      padding:12px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+      margin:12px 0;
+    }
+
+    .section-label{
+      font-weight:800;
+      font-size:16px;
+      margin-bottom:12px;
+      padding-bottom:6px;
+      border-bottom:2px solid var(--green);
+      color:var(--green);
+    }
+
+    .field{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+    .field-label{
+      font-size:14px;
+      font-weight:700;
+      color:var(--text);
+      min-width:120px;
+    }
+
+    /* 入力欄（赤枠） */
+    .input-red{
+      font-size:16px;
+      padding:10px 10px;
+      border-radius:12px;
+      border:2px solid #ef9a9a;
+      background:#fff;
+      outline:none;
+      text-align:center;
+    }
+    .input-red:focus{
+      border-color:#e53935;
+      box-shadow:0 0 0 4px rgba(229,57,53,.15);
+    }
+    .input-rating{
+      width:100px;
+    }
+    .input-time{
+      width:60px;
+    }
+    .time-sep{
+      font-size:14px;
+      color:var(--muted);
+      font-weight:700;
+    }
+
+    /* 結果欄（黒枠） */
+    .result-box{
+      font-size:16px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:2px solid #424242;
+      background:#fafafa;
+      font-weight:700;
+      min-width:160px;
+      text-align:center;
+    }
+    .result-box.negative{
+      color:var(--danger);
+      border-color:var(--danger);
+    }
+
+    /* 計算ボタン */
+    .btn-calc{
+      display:block;
+      width:100%;
+      font-size:16px;
+      padding:14px;
+      border-radius:12px;
+      border:none;
+      background:var(--green);
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      margin-top:8px;
+      transition:background .15s;
+    }
+    .btn-calc:hover{ background:var(--green2); }
+    .btn-calc:active{ transform:translateY(1px); }
+
+    .note{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+      margin-top:10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== ヘッダー ===== -->
+  <header>
+    <div class="row">
+      <div class="title">レーティング比較</div>
+      <div class="links">
+        <a href="./index.html">← 戻る</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== naonao セクション ===== -->
+    <div class="card">
+      <div class="section-label">naonao</div>
+
+      <div class="field">
+        <div class="field-label">レーティング1</div>
+        <input type="text" id="rating1" class="input-red input-rating" inputmode="decimal" placeholder="1.16">
+      </div>
+
+      <div class="field">
+        <div class="field-label">レースタイム</div>
+        <input type="text" id="raceH" class="input-red input-time" inputmode="numeric" placeholder="0">
+        <span class="time-sep">時間</span>
+        <input type="text" id="raceM" class="input-red input-time" inputmode="numeric" placeholder="0">
+        <span class="time-sep">分</span>
+        <input type="text" id="raceS" class="input-red input-time" inputmode="numeric" placeholder="0">
+        <span class="time-sep">秒</span>
+      </div>
+
+      <div class="field">
+        <div class="field-label">修正タイム</div>
+        <div class="result-box" id="correctedTime">—</div>
+      </div>
+    </div>
+
+    <!-- ===== 他艇セクション ===== -->
+    <div class="card">
+      <div class="section-label">他艇</div>
+
+      <div class="field">
+        <div class="field-label">レーティング2</div>
+        <input type="text" id="rating2" class="input-red input-rating" inputmode="decimal" placeholder="1.26">
+      </div>
+
+      <div class="field">
+        <div class="field-label">naonao同タイム</div>
+        <div class="result-box" id="diffTime">—</div>
+      </div>
+    </div>
+
+    <!-- ===== 計算ボタン ===== -->
+    <button class="btn-calc" onclick="calculate()">計算する</button>
+
+    <div class="note">
+      ※ ルール①：レースタイム（秒）× レーティング1 ＝ 修正タイム（秒）<br>
+      ※ ルール②：レースタイム（秒）× レーティング2 − 修正タイム → hh:mm:ss<br>
+      ※ マイナスの場合は赤文字で表示されます（naonaoが速い＝有利）
+    </div>
+  </main>
+
+  <script>
+    // =========================
+    // hh:mm:ss → 秒
+    // =========================
+    function toSeconds(h, m, s){
+      return (parseFloat(h) || 0) * 3600
+           + (parseFloat(m) || 0) * 60
+           + (parseFloat(s) || 0);
+    }
+
+    // =========================
+    // 秒 → hh:mm:ss（マイナス対応）
+    // =========================
+    function toHMS(totalSec){
+      const negative = totalSec < 0;
+      let abs = Math.abs(totalSec);
+
+      const h = Math.floor(abs / 3600);
+      abs -= h * 3600;
+      const m = Math.floor(abs / 60);
+      abs -= m * 60;
+      const s = abs;
+
+      // 秒に小数があれば小数第2位まで表示
+      const sStr = (s === Math.floor(s))
+        ? String(Math.floor(s)).padStart(2, "0")
+        : s.toFixed(2).padStart(5, "0");
+
+      let result = "";
+      if (h > 0) result += `${h}時間`;
+      if (h > 0 || m > 0) result += `${String(m).padStart(2, "0")}分`;
+      result += `${sStr}秒`;
+
+      return (negative ? "−" : "") + result;
+    }
+
+    // =========================
+    // 計算メイン
+    // =========================
+    function calculate(){
+      const correctedEl = document.getElementById("correctedTime");
+      const diffEl = document.getElementById("diffTime");
+
+      // 入力値取得
+      const rating1 = parseFloat(document.getElementById("rating1").value);
+      const rating2 = parseFloat(document.getElementById("rating2").value);
+      const h = document.getElementById("raceH").value;
+      const m = document.getElementById("raceM").value;
+      const s = document.getElementById("raceS").value;
+
+      // バリデーション
+      if (isNaN(rating1) || rating1 <= 0){
+        alert("レーティング1を正しく入力してください");
+        return;
+      }
+      if (h === "" && m === "" && s === ""){
+        alert("レースタイムを入力してください");
+        return;
+      }
+
+      const raceSec = toSeconds(h, m, s);
+      if (raceSec <= 0){
+        alert("レースタイムは0より大きい値を入力してください");
+        return;
+      }
+
+      // ルール①：修正タイム
+      const corrected = raceSec * rating1;
+      correctedEl.textContent = corrected.toFixed(2) + " 秒";
+      correctedEl.classList.remove("negative");
+
+      // ルール②：naonao同タイム
+      if (isNaN(rating2) || rating2 <= 0){
+        diffEl.textContent = "レーティング2を入力してください";
+        diffEl.classList.remove("negative");
+        return;
+      }
+
+      const otherCorrected = raceSec * rating2;
+      const diff = otherCorrected - corrected;
+
+      diffEl.textContent = toHMS(diff);
+
+      if (diff < 0){
+        diffEl.classList.add("negative");
+      } else {
+        diffEl.classList.remove("negative");
+      }
+    }
+
+    // グローバル公開
+    window.calculate = calculate;
+  </script>
+</body>
+</html>
