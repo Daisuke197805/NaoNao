@@ -91,3 +91,120 @@
         type: "joinEvent",
         event_id: eventId,
         participant_name: name,
+        participant_note: note || ""
+      });
+    }
+
+    // 画面再描画
+    async function reloadAll() {
+      try {
+        show("読み込み中...");
+
+        const [evRes, ptRes] = await Promise.all([getEvents(), getParticipants()]);
+        if (evRes.status !== "ok") throw new Error("getEvents失敗: " + (evRes.message || ""));
+        if (ptRes.status !== "ok") throw new Error("getParticipants失敗: " + (ptRes.message || ""));
+
+        const events = evRes.events || [];
+        const participants = ptRes.participants || [];
+
+        // event_id -> 参加者配列 のMap
+        const byEvent = new Map();
+        for (const p of participants) {
+          const eid = String(p.event_id || "");
+          if (!byEvent.has(eid)) byEvent.set(eid, []);
+          byEvent.get(eid).push(p);
+        }
+
+        show(`OK：イベント ${events.length} 件 / 参加表明 ${participants.length} 件`);
+
+        list.innerHTML = "";
+        if (events.length === 0) {
+          list.innerHTML = `<div class="card">イベントが0件です（tbl_eventを確認）</div>`;
+          return;
+        }
+
+        for (const ev of events) {
+          const eid = String(ev.event_id || "");
+          const dateStr = formatDateJST(ev.event_date);
+          const timeStr = formatTimeHHMM(ev.event_start);
+          const mem = byEvent.get(eid) || [];
+
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between;">
+              <div>
+                <span class="pill">${escapeHtml(eid)}</span>
+                <b>${escapeHtml(ev.event_name ?? "")}</b>
+              </div>
+              <div class="muted">${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</div>
+            </div>
+            <div class="muted" style="margin-top:6px;">メモ：${escapeHtml(ev.event_memo ?? "")}</div>
+
+            <div class="row" style="margin-top:12px;">
+              <input id="name_${escapeHtml(eid)}" placeholder="名前（ニックネーム可）">
+              <input id="note_${escapeHtml(eid)}" placeholder="備考（任意）">
+              <button class="primary" onclick="handleJoin('${escapeHtml(eid)}')">参加</button>
+            </div>
+
+            <div class="muted" style="margin-top:10px;">参加者：${mem.length} 名</div>
+            <div class="participants">
+              ${mem.map(p => `<span class="name">${escapeHtml(p.participant_name ?? "")}</span>`).join("")}
+            </div>
+          `;
+          list.appendChild(card);
+        }
+
+      } catch (err) {
+        show("エラー:\n" + (err?.message || String(err)));
+      }
+    }
+
+    // 参加ボタン処理
+    async function handleJoin(eventId) {
+      try {
+        const nameEl = document.getElementById("name_" + eventId);
+        const noteEl = document.getElementById("note_" + eventId);
+        const name = (nameEl.value || "").trim();
+        const note = (noteEl.value || "").trim();
+
+        if (!name) {
+          alert("名前を入力してください");
+          return;
+        }
+
+        show(`参加表明送信中... event_id=${eventId}`);
+
+        const res = await joinEvent(eventId, name, note);
+
+        if (res.status === "ok") {
+          alert("参加表明しました！");
+          nameEl.value = "";
+          noteEl.value = "";
+          await reloadAll(); // 再取得して参加者数を反映
+          return;
+        }
+
+        if (res.status === "exists") {
+          alert("すでに参加しています（同名の参加表明が存在します）。");
+          await reloadAll();
+          return;
+        }
+
+        throw new Error(res.message || "参加表明に失敗しました");
+
+      } catch (err) {
+        show("参加表明エラー:\n" + (err?.message || String(err)));
+        alert("参加表明に失敗しました。画面のエラー表示を確認してください。");
+      }
+    }
+
+    // グローバル公開
+    window.reloadAll = reloadAll;
+    window.handleJoin = handleJoin;
+
+    // 初期表示
+    show("ページ読込完了：ボタンで読み込んでください");
+  </script>
+</body>
+</html>
