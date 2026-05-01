@@ -76,6 +76,30 @@
     .title{ font-weight:800; }
     .sep{ height:1px; background:var(--border); margin:10px 0; }
 
+    /* ===== ツールバー（更新ボタン＋チェックボックス）===== */
+    .toolbar{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .toolbar label{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:13px;
+      color:var(--muted);
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    .toolbar input[type="checkbox"]{
+      width:18px;
+      height:18px;
+      accent-color:var(--accent);
+      cursor:pointer;
+    }
+
     /* ===== 日付 ===== */
     .event-date{ font-size:17px; font-weight:700; color:var(--text); }
 
@@ -118,7 +142,7 @@
     .participants .name.has-note{ border-bottom:2px solid var(--accent); }
     .participants .name:active{ background:#e5e7eb; }
 
-    /* ===== ポップアップ ===== */
+    /* ===== ポップアップ（備考表示）===== */
     .popup-overlay{
       display:none; position:fixed; inset:0; z-index:100;
       background:rgba(0,0,0,.35); justify-content:center; align-items:center; padding:24px;
@@ -138,12 +162,40 @@
     }
     .popup-box .popup-close:active{ background:#fff3e0; }
 
+    /* ===== ローディングオーバーレイ ===== */
+    .loading-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:200;
+      background:rgba(255,255,255,.7);
+      justify-content:center;
+      align-items:center;
+      flex-direction:column;
+      gap:12px;
+    }
+    .loading-overlay.active{ display:flex; }
+    .spinner{
+      width:36px; height:36px;
+      border:4px solid var(--border);
+      border-top-color:var(--accent);
+      border-radius:50%;
+      animation:spin .7s linear infinite;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading-overlay .loading-text{
+      font-size:14px;
+      color:var(--muted);
+      font-weight:700;
+    }
+
     pre{ white-space:pre-wrap; word-break:break-word; margin:0; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; }
     details summary{ cursor:pointer; color:var(--muted); font-size:13px; }
   </style>
 </head>
 <body>
 
+  <!-- ===== ヘッダー ===== -->
   <header>
     <div class="row">
       <div class="title">レース＆イベント</div>
@@ -154,8 +206,13 @@
   </header>
 
   <main>
-    <div class="row">
-      <button class="btn primary" onclick="reloadAll()">更新（イベント＆参加者を再取得）</button>
+    <!-- ===== ツールバー（更新＋過去非表示チェック）===== -->
+    <div class="toolbar">
+      <button class="btn primary" onclick="reloadAll()">更新</button>
+      <label>
+        <input type="checkbox" id="hidePast" checked onchange="applyFilter()">
+        過去のイベントを非表示
+      </label>
     </div>
 
     <div class="card">
@@ -176,13 +233,19 @@
     <div id="list"></div>
   </main>
 
-  <!-- ===== ポップアップ ===== -->
+  <!-- ===== ポップアップ（備考表示）===== -->
   <div class="popup-overlay" id="popupOverlay" onclick="closePopup()">
     <div class="popup-box" onclick="event.stopPropagation()">
       <div class="popup-name" id="popupName"></div>
       <div class="popup-note" id="popupNote"></div>
       <div class="popup-close" onclick="closePopup()">閉じる</div>
     </div>
+  </div>
+
+  <!-- ===== ローディングオーバーレイ ===== -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">データ更新中…</div>
   </div>
 
   <script>
@@ -195,6 +258,11 @@
     const statusPill = document.getElementById("statusPill");
     const statusText = document.getElementById("statusText");
     const debug = document.getElementById("debug");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+
+    // 最後に取得したデータを保持（フィルタ切替用）
+    let cachedEvents = [];
+    let cachedParticipants = [];
 
     function setStatus(label, text){
       statusPill.textContent = label;
@@ -203,6 +271,16 @@
     function logDebug(msg){
       const t = new Date().toISOString();
       debug.textContent = `${t}  ${msg}\n` + debug.textContent;
+    }
+
+    // =========================
+    // ローディング制御
+    // =========================
+    function showLoading(){
+      loadingOverlay.classList.add("active");
+    }
+    function hideLoading(){
+      loadingOverlay.classList.remove("active");
     }
 
     // =========================
@@ -237,6 +315,19 @@
       const mm = String(d.getMinutes()).padStart(2, "0");
       return `${hh}:${mm}`;
     }
+
+    // 日付比較用：event_date を JST の日付だけ（時刻を切り捨て）で比較
+    function toDateOnlyMs(value){
+      if (!value) return 0;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return 0;
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    }
+    function todayMs(){
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    }
+
     function escapeHtml(str){
       return String(str ?? "").replace(/[&<>"']/g, c => ({
         "&": "&amp;",
@@ -326,13 +417,25 @@
         byEvent.get(eid).push(p);
       }
 
+      // 過去イベント非表示フィルタ
+      const hidePast = document.getElementById("hidePast").checked;
+      const today = todayMs();
+
+      let filtered = events;
+      if (hidePast){
+        filtered = events.filter(ev => toDateOnlyMs(ev.event_date) >= today);
+      }
+
       list.innerHTML = "";
-      if (!events.length){
-        list.innerHTML = `<div class="card">イベントが0件です（tbl_event を確認してください）</div>`;
+      if (!filtered.length){
+        const msg = hidePast
+          ? "表示するイベントがありません（過去のイベントは非表示中）"
+          : "イベントが0件です（tbl_event を確認してください）";
+        list.innerHTML = `<div class="card">${msg}</div>`;
         return;
       }
 
-      for (const ev of events){
+      for (const ev of filtered){
         const eid = pad6(ev.event_id);
         const dateStr = formatDateJST(ev.event_date);
         const timeStr = formatTimeHHMM(ev.event_start);
@@ -396,6 +499,14 @@
     }
 
     // =========================
+    // フィルタ切替（再取得なし・キャッシュから再描画）
+    // =========================
+    function applyFilter(){
+      render(cachedEvents, cachedParticipants);
+    }
+    window.applyFilter = applyFilter;
+
+    // =========================
     // 取消フォームの開閉
     // =========================
     function toggleCancel(eid){
@@ -409,6 +520,7 @@
     // =========================
     async function reloadAll(){
       try{
+        showLoading();
         setStatus("取得中", "イベント・参加者を取得しています...");
         logDebug("reloadAll start");
 
@@ -420,7 +532,16 @@
         const events = (evRes.events || []).map(e => ({ ...e, event_id: pad6(e.event_id) }));
         const participants = (ptRes.participants || []).map(p => ({ ...p, event_id: pad6(p.event_id) }));
 
-        events.sort((a, b) => pad6(a.event_id).localeCompare(pad6(b.event_id)));
+        // ✅ 日付が近い順（昇順）でソート
+        events.sort((a, b) => {
+          const da = new Date(a.event_date);
+          const db = new Date(b.event_date);
+          return da - db;
+        });
+
+        // キャッシュに保存（フィルタ切替用）
+        cachedEvents = events;
+        cachedParticipants = participants;
 
         setStatus("OK", `イベント ${events.length} 件`);
         render(events, participants);
@@ -430,6 +551,8 @@
         setStatus("エラー", "取得に失敗しました。デバッグログを確認してください。");
         logDebug("ERROR: " + (err?.message || String(err)));
         alert("取得に失敗しました：" + (err?.message || String(err)));
+      }finally{
+        hideLoading();
       }
     }
 
@@ -438,6 +561,7 @@
     // =========================
     async function handleJoin(eventId){
       try{
+        showLoading();
         const eid = pad6(eventId);
         const nameEl = document.getElementById("name_" + eid);
         const noteEl = document.getElementById("note_" + eid);
@@ -446,6 +570,7 @@
         const note = (noteEl.value || "").trim();
 
         if (!name){
+          hideLoading();
           alert("名前を入力してください");
           return;
         }
@@ -474,6 +599,8 @@
         setStatus("エラー", "参加登録に失敗しました。デバッグログを確認してください。");
         logDebug("joinEvent ERROR: " + (err?.message || String(err)));
         alert("参加登録に失敗しました：" + (err?.message || String(err)));
+      }finally{
+        hideLoading();
       }
     }
 
@@ -491,11 +618,11 @@
           return;
         }
 
-        // 確認ダイアログ
         if (!confirm(`「${name}」さんの参加を取り消しますか？`)){
           return;
         }
 
+        showLoading();
         setStatus("送信中", `参加取消を送信しています... event_id=${eid}`);
         logDebug(`cancelEvent start event_id=${eid} name=${name}`);
 
@@ -518,6 +645,8 @@
         setStatus("エラー", "参加取消に失敗しました。デバッグログを確認してください。");
         logDebug("cancelEvent ERROR: " + (err?.message || String(err)));
         alert("参加取消に失敗しました：" + (err?.message || String(err)));
+      }finally{
+        hideLoading();
       }
     }
 
