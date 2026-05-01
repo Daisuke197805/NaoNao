@@ -170,6 +170,7 @@
           <select id="place">
             <option value="urayasu">浦安マリーナ</option>
             <option value="ybm">横浜ベイサイドマリーナ</option>
+             <option value="kenzaki">剣崎</option>
           </select>
         </div>
 
@@ -204,9 +205,12 @@
   </main>
 
   <script>
+  
+  
     const PLACES = {
       urayasu: { name: "浦安マリーナ（千葉県）", lat: 35.62896904, lon: 139.8975477 },
-      ybm:     { name: "横浜ベイサイドマリーナ（神奈川県）", lat: 35.38028,   lon: 139.64778   }
+      ybm:     { name: "横浜ベイサイドマリーナ（神奈川県）", lat: 35.38028,   lon: 139.64778   },
+      kenzaki: { name: "剣崎（神奈川県）", lat: 35.1417, lon: 139.6706 }
     };
 
     function buildEmbedUrl(lat, lon, zoom, overlay){
