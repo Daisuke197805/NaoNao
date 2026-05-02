@@ -1,7 +1,199 @@
-<!DOCTYPE html> <html lang="ja"> <head> <meta charset="utf-8"> <title>AIS表示（改善版）</title> <meta name="viewport" content="width=device-width, initial-scale=1.0">  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" /> <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>  <style> html, body {   margin: 0;   height: 100%; } #map {   width: 100%;   height: 100%; } </style> </head>  <body> <div id="map"></div>  <script> //const API_KEY = "ec11fdc799701ab614b7e7e59020172c693f77ed";  
-let map; let ships = {}; let socket;  /* ===== 初期化 ===== */ window.onload = () => {   setTimeout(initMap, 100); };  function initMap() {   map = L.map('map').setView([35.6, 139.7], 8);    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {     attribution: '&copy; OpenStreetMap contributors'   }).addTo(map);    setTimeout(() => map.invalidateSize(), 300);    
-// テストマーカー（表示確認用）
-   L.marker([35.6, 139.7]).addTo(map).bindPopup("テスト");    getMyLocation(); }  
-/* ===== 現在地 ===== */ function getMyLocation() {   navigator.geolocation.getCurrentPosition(pos => {     const lat = pos.coords.latitude;     const lng = pos.coords.longitude;      console.log("現在地:", lat, lng);      map.setView([lat, lng], 9);      startAIS(lat, lng);    }, err => {     alert("位置情報エラー: " + err.message);   }); }  /* ===== AIS開始 ===== */ function startAIS(lat, lng) {   
-     // 広めに設定（まずは見えること優先）   
-const delta = 1.0;    socket = new WebSocket("wss://stream.aisstream.io/v0/stream");    socket.onopen = () => {     console.log("AIS接続OK");      socket.send(JSON.stringify({       APIKey: API_KEY,       BoundingBoxes: [[         [lat - delta, lng - delta],         [lat + delta, lng + delta]       ]]     }));   };    socket.onmessage = (msg) => {      console.log("受信:", msg.data);      const msgObj = JSON.parse(msg.data);      if (!msgObj.Message) return;      let report =       msgObj.Message.PositionReport ||       msgObj.Message.StandardClassBPositionReport;      if (!report) return;      const mmsi = report.UserID;     const lat = report.Latitude;     const lng = report.Longitude;      updateShip(mmsi, lat, lng);   };    socket.onerror = (err) => {     console.error("WebSocketエラー:", err);   }; }  /* ===== 船表示 ===== */ function updateShip(mmsi, lat, lng) {    if (!lat || !lng) return;    if (ships[mmsi]) {     ships[mmsi].setLatLng([lat, lng]);   } else {     let marker = L.circleMarker([lat, lng], {       radius: 5,       color: 'blue'     }).addTo(map);      ships[mmsi] = marker;   } }  </script> </body> </html> 
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+
+<meta charset="utf-8">
+
+<title>AIS表示（改善版）</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+
+html, body {
+
+  margin: 0;
+
+  height: 100%;
+
+}
+
+#map {
+
+  width: 100%;
+
+  height: 100%;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<script>
+
+const API_KEY = "ec11fdc799701ab614b7e7e59020172c693f77ed";
+
+let map;
+
+let ships = {};
+
+let socket;
+
+/* ===== 初期化 ===== */
+
+window.onload = () => {
+
+  setTimeout(initMap, 100);
+
+};
+
+function initMap() {
+
+  map = L.map('map').setView([35.6, 139.7], 8);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+    attribution: '&copy; OpenStreetMap contributors'
+
+  }).addTo(map);
+
+  setTimeout(() => map.invalidateSize(), 300);
+
+  // テストマーカー（表示確認用）
+
+  L.marker([35.6, 139.7]).addTo(map).bindPopup("テスト");
+
+  getMyLocation();
+
+}
+
+/* ===== 現在地 ===== */
+
+function getMyLocation() {
+
+  navigator.geolocation.getCurrentPosition(pos => {
+
+    const lat = pos.coords.latitude;
+
+    const lng = pos.coords.longitude;
+
+    console.log("現在地:", lat, lng);
+
+    map.setView([lat, lng], 9);
+
+    startAIS(lat, lng);
+
+  }, err => {
+
+    alert("位置情報エラー: " + err.message);
+
+  });
+
+}
+
+/* ===== AIS開始 ===== */
+
+function startAIS(lat, lng) {
+
+  // 広めに設定（まずは見えること優先）
+
+  const delta = 1.0;
+
+  socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
+
+  socket.onopen = () => {
+
+    console.log("AIS接続OK");
+
+    socket.send(JSON.stringify({
+
+      APIKey: API_KEY,
+
+      BoundingBoxes: [[
+
+        [lat - delta, lng - delta],
+
+        [lat + delta, lng + delta]
+
+      ]]
+
+    }));
+
+  };
+
+  socket.onmessage = (msg) => {
+
+    console.log("受信:", msg.data);
+
+    const msgObj = JSON.parse(msg.data);
+
+    if (!msgObj.Message) return;
+
+    let report =
+
+      msgObj.Message.PositionReport ||
+
+      msgObj.Message.StandardClassBPositionReport;
+
+    if (!report) return;
+
+    const mmsi = report.UserID;
+
+    const lat = report.Latitude;
+
+    const lng = report.Longitude;
+
+    updateShip(mmsi, lat, lng);
+
+  };
+
+  socket.onerror = (err) => {
+
+    console.error("WebSocketエラー:", err);
+
+  };
+
+}
+
+/* ===== 船表示 ===== */
+
+function updateShip(mmsi, lat, lng) {
+
+  if (!lat || !lng) return;
+
+  if (ships[mmsi]) {
+
+    ships[mmsi].setLatLng([lat, lng]);
+
+  } else {
+
+    let marker = L.circleMarker([lat, lng], {
+
+      radius: 5,
+
+      color: 'blue'
+
+    }).addTo(map);
+
+    ships[mmsi] = marker;
+
+  }
+
+}
+
+</script>
+
+</body>
+
+</html>
