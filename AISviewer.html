@@ -6,7 +6,7 @@
 
 <meta charset="utf-8">
 
-<title>AIS表示（改善版）</title>
+<title>AIS表示</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -50,8 +50,6 @@ let ships = {};
 
 let socket;
 
-/* ===== 初期化 ===== */
-
 window.onload = () => {
 
   setTimeout(initMap, 100);
@@ -60,7 +58,7 @@ window.onload = () => {
 
 function initMap() {
 
-  map = L.map('map').setView([35.6, 139.7], 8);
+  map = L.map('map').setView([35.6, 139.7], 10);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
@@ -70,15 +68,9 @@ function initMap() {
 
   setTimeout(() => map.invalidateSize(), 300);
 
-  // テストマーカー（表示確認用）
-
-  L.marker([35.6, 139.7]).addTo(map).bindPopup("テスト");
-
   getMyLocation();
 
 }
-
-/* ===== 現在地 ===== */
 
 function getMyLocation() {
 
@@ -88,9 +80,7 @@ function getMyLocation() {
 
     const lng = pos.coords.longitude;
 
-    console.log("現在地:", lat, lng);
-
-    map.setView([lat, lng], 9);
+    map.setView([lat, lng], 10);
 
     startAIS(lat, lng);
 
@@ -102,19 +92,13 @@ function getMyLocation() {
 
 }
 
-/* ===== AIS開始 ===== */
-
 function startAIS(lat, lng) {
 
-  // 広めに設定（まずは見えること優先）
-
-  const delta = 1.0;
+  const delta = 0.3;
 
   socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
 
   socket.onopen = () => {
-
-    console.log("AIS接続OK");
 
     socket.send(JSON.stringify({
 
@@ -134,19 +118,11 @@ function startAIS(lat, lng) {
 
   socket.onmessage = (msg) => {
 
-    console.log("受信:", msg.data);
+    const data = JSON.parse(msg.data);
 
-    const msgObj = JSON.parse(msg.data);
+    if (!data.Message || !data.Message.PositionReport) return;
 
-    if (!msgObj.Message) return;
-
-    let report =
-
-      msgObj.Message.PositionReport ||
-
-      msgObj.Message.StandardClassBPositionReport;
-
-    if (!report) return;
+    const report = data.Message.PositionReport;
 
     const mmsi = report.UserID;
 
@@ -158,19 +134,9 @@ function startAIS(lat, lng) {
 
   };
 
-  socket.onerror = (err) => {
-
-    console.error("WebSocketエラー:", err);
-
-  };
-
 }
 
-/* ===== 船表示 ===== */
-
 function updateShip(mmsi, lat, lng) {
-
-  if (!lat || !lng) return;
 
   if (ships[mmsi]) {
 
