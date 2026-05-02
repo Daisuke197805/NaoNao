@@ -118,22 +118,31 @@ function startAIS(lat, lng) {
 
   socket.onmessage = (msg) => {
 
-    const data = JSON.parse(msg.data);
+  const data = JSON.parse(msg.data);
 
-    if (!data.Message || !data.Message.PositionReport) return;
+  if (!data.Message) return;
 
-    const report = data.Message.PositionReport;
+  // ★ここが重要（複数対応）
 
-    const mmsi = report.UserID;
+  let report =
 
-    const lat = report.Latitude;
+    data.Message.PositionReport ||
 
-    const lng = report.Longitude;
+    data.Message.StandardClassBPositionReport;
 
-    updateShip(mmsi, lat, lng);
+  if (!report) return;
 
-  };
+  const mmsi = report.UserID;
 
+  const lat = report.Latitude;
+
+  const lng = report.Longitude;
+
+  if (!lat || !lng) return;
+
+  updateShip(mmsi, lat, lng);
+
+};
 }
 
 function updateShip(mmsi, lat, lng) {
