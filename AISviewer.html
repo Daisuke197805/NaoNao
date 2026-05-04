@@ -152,6 +152,8 @@ function startAIS(lat, lng) {
 
   socket.onopen = () => {
 
+    log("WebSocket接続OK");
+
     socket.send(JSON.stringify({
 
       APIKey: API_KEY,
@@ -168,35 +170,46 @@ function startAIS(lat, lng) {
 
   };
 
+  socket.onerror = (e) => {
+
+    log("WebSocketエラー");
+
+  };
+
+  socket.onclose = () => {
+
+    log("WebSocket切断");
+
+  };
+
   socket.onmessage = (msg) => {
 
-  const data = JSON.parse(msg.data);
+    log("データ受信");
 
-  log(JSON.stringify(data));
+    const data = JSON.parse(msg.data);
 
-  if (!data.Message) return;
+    if (!data.Message) return;
 
-  // ★ここが重要（複数対応）
+    let report =
 
-  let report =
+      data.Message.PositionReport ||
 
-    data.Message.PositionReport ||
+      data.Message.StandardClassBPositionReport;
 
-    data.Message.StandardClassBPositionReport;
+    if (!report) return;
 
-  if (!report) return;
+    const mmsi = report.UserID;
 
-  const mmsi = report.UserID;
+    const lat = report.Latitude;
 
-  const lat = report.Latitude;
+    const lng = report.Longitude;
 
-  const lng = report.Longitude;
+    if (lat == null || lng == null) return;
 
-  if (lat == null || lng == null) return;
+    updateShip(mmsi, lat, lng);
 
-  updateShip(mmsi, lat, lng);
+  };
 
-};
 }
 
 function updateShip(mmsi, lat, lng) {
