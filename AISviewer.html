@@ -96,12 +96,9 @@ function log(msg) {
   el.innerHTML += msg + "<br>";
 
 }
+
 function initMap() {
-  alert("init入った");
-  
-  const el = document.getElementById("log");
-  alert(el ? "logある" : "logない");
-  
+
   map = L.map('map').setView([35.6, 139.7], 10);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -110,9 +107,13 @@ function initMap() {
 
   }).addTo(map);
 
-  setTimeout(() => map.invalidateSize(), 300);
+  // ★これ追加
 
-  getMyLocation();
+  log("initMap完了");
+
+  // 位置情報使わず直接AIS
+
+  startAIS(35.6, 139.7);
 
 }
 
