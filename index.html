@@ -1,369 +1,296 @@
 <!doctype html>
-
 <html lang="ja">
-
 <head>
-
-<meta charset="utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-
-<title>naonaoポータル</title>
-
-<style>
-
-:root{
-
-  --bg:#f6f7fb;
-
-  --card:#ffffff;
-
-  --text:#111827;
-
-  --brand:#1976d2;
-
-  --border:#e5e7eb;
-
-}
-
-*{ box-sizing:border-box; }
-
-body{
-
-  margin:0;
-
-  font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-
-  background:var(--bg);
-
-  color:var(--text);
-
-}
-
-/* ===== ハンバーガー（右上） ===== */
-
-#menuBtn{
-
-  position:fixed;
-
-  top:max(12px, env(safe-area-inset-top));
-
-  right:12px;
-
-  z-index:2000;
-
-  font-size:24px;
-
-  background:#fff;
-
-  border:none;
-
-  border-radius:10px;
-
-  padding:6px 10px;
-
-  box-shadow:0 2px 8px rgba(0,0,0,.2);
-
-}
-
-/* ===== メニュー（右から出る） ===== */
-
-#menu{
-
-  position:fixed;
-
-  top:0;
-
-  right:-260px;
-
-  width:260px;
-
-  height:100%;
-
-  background:#333;
-
-  padding-top:60px;
-
-  transition:.3s;
-
-  z-index:1500;
-
-}
-
-#menu.open{
-
-  right:0;
-
-}
-
-#menu a{
-
-  display:block;
-
-  color:#fff;
-
-  padding:15px;
-
-  text-decoration:none;
-
-}
-
-#menu a.active{
-
-  color:#aaa;
-
-  pointer-events:none;
-
-}
-
-/* ===== 半透明背景 ===== */
-
-#overlay{
-
-  position:fixed;
-
-  top:0;
-
-  left:0;
-
-  width:100%;
-
-  height:100%;
-
-  background:rgba(0,0,0,0.4);
-
-  opacity:0;
-
-  visibility:hidden;
-
-  transition:.3s;
-
-  z-index:1400;
-
-}
-
-#overlay.show{
-
-  opacity:1;
-
-  visibility:visible;
-
-}
-
-/* ===== ヘッダー ===== */
-
-header{
-
-  position:sticky;
-
-  top:0;
-
-  background:linear-gradient(90deg,#1565c0,#1976d2);
-
-  color:#fff;
-
-  padding:12px 16px;
-
-}
-
-.title{
-
-  font-weight:800;
-
-}
-
-/* ===== コンテンツ ===== */
-
-main{
-
-  max-width:980px;
-
-  margin:0 auto;
-
-  padding:12px;
-
-}
-
-.card{
-
-  background:#fff;
-
-  border:1px solid var(--border);
-
-  border-radius:12px;
-
-  padding:12px;
-
-}
-
-select, button{
-
-  padding:10px;
-
-  margin:5px 0;
-
-  width:100%;
-
-}
-
-iframe{
-
-  width:100%;
-
-  aspect-ratio:1/1;
-
-  border:0;
-
-}
-
-</style>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>naonaoポータル</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --brand:#1976d2;
+      --brand2:#155fa8;
+      --border:#e5e7eb;
+      --shadow:0 2px 14px rgba(0,0,0,.08);
+      --radius:16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    header{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:linear-gradient(90deg, #1565c0, #1976d2);
+      color:#fff;
+      padding:12px 16px;
+      box-shadow:0 2px 10px rgba(0,0,0,.12);
+    }
+    header .row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      max-width:980px;
+      margin:0 auto;
+    }
+    header .title{
+      font-weight:800;
+      letter-spacing:.02em;
+      text-transform:none;
+    }
+    header .links{
+      margin-left:auto;
+      display:flex;
+      gap:12px;
+      font-size:14px;
+    }
+    header a{
+      color:#fff;
+      text-decoration:none;
+      background:rgba(255,255,255,.25);
+      padding:6px 14px;
+      border-radius:10px;
+      font-weight:700;
+      font-size:14px;
+    }
+    header a:hover{
+      background:rgba(255,255,255,.4);
+    }
+
+    main{
+      max-width:980px;
+      margin:0 auto;
+      padding:12px;
+      display:grid;
+      gap:12px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:12px;
+    }
+
+    .controls{
+      display:grid;
+      gap:10px;
+    }
+    .row1{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .row2{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    select, button{
+      font-size:16px;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      color:var(--text);
+      outline:none;
+    }
+    select:focus, button:focus{
+      border-color:#90caf9;
+      box-shadow:0 0 0 4px rgba(144,202,249,.35);
+    }
+
+    #place{
+      width:100%;
+    }
+    .row1{ width:100%; }
+    .row2 select{
+      flex:1 1 140px;
+      min-width:140px;
+    }
+
+    .btn-primary{
+      background:var(--brand);
+      border-color:transparent;
+      color:#fff;
+      font-weight:800;
+      flex:1 1 160px;
+      min-width:160px;
+    }
+    .btn-primary:hover{
+      background:var(--brand2);
+    }
+
+    .frameWrap{
+      padding:0;
+      overflow:hidden;
+    }
+    .square{
+      aspect-ratio: 1 / 1;
+      width:100%;
+      border:0;
+      display:block;
+      background:#fff;
+      border-radius: calc(var(--radius) - 2px);
+    }
+
+    .notice{
+      margin-top:10px;
+      font-size:13px;
+      color:#b71c1c;
+      display:none;
+      line-height:1.4;
+    }
+  </style>
 </head>
 
 <body>
-
-<!-- ボタン -->
-
-<button id="menuBtn">☰</button>
-
-<!-- オーバーレイ -->
-
-<div id="overlay"></div>
-
-<!-- メニュー -->
-
-<nav id="menu">
-
-  <a href="index.html">トップ</a>
-
-  <a href="event.html">レース&イベント</a>
-
-  <a href="Startin.html">スタートライン</a>
-
-  <a href="RaceCompare.html">レーティング比較</a>
-
-  <a href="AisViewer.html">AIS</a>
-
-</nav>
-
-<header>
-
-  <div class="title">naonaoポータル</div>
-
-</header>
-
-<main>
-
-  <div class="card">
-
-    <select id="place">
-
-      <option value="urayasu">浦安</option>
-
-      <option value="ybm">横浜</option>
-
-    </select>
-
-    <select id="overlaySelect">
-
-      <option value="wind">風</option>
-
-      <option value="rain">雨</option>
-
-    </select>
-
-    <button id="openBtn">Windyで開く</button>
-
-  </div>
-
-  <div class="card">
-
-    <iframe id="windyFrame"></iframe>
-
-  </div>
-
-</main>
-
-<script>
-
-// ===== メニュー開閉 =====
-
-const btn = document.getElementById("menuBtn");
-
-const menu = document.getElementById("menu");
-
-const overlay = document.getElementById("overlay");
-
-btn.onclick = () => {
-
-  menu.classList.toggle("open");
-
-  overlay.classList.toggle("show");
-
-};
-
-// 外側クリックで閉じる
-
-overlay.onclick = () => {
-
-  menu.classList.remove("open");
-
-  overlay.classList.remove("show");
-
-};
-
-// ===== 現在ページ無効化 =====
-
-const links = document.querySelectorAll("#menu a");
-
-const current = location.pathname.split("/").pop() || "index.html";
-
-links.forEach(link => {
-
-  if (link.getAttribute("href") === current) {
-
-    link.classList.add("active");
-
-    link.removeAttribute("href");
-
-  }
-
-});
-
-// ===== Windy =====
-
-const PLACES = {
-
-  urayasu:{lat:35.62,lon:139.89},
-
-  ybm:{lat:35.38,lon:139.64}
-
-};
-
-function update(){
-
-  const p = PLACES[place.value];
-
-  windyFrame.src = `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&zoom=10&overlay=${overlaySelect.value}`;
-
-}
-
-place.onchange = overlaySelect.onchange = update;
-
-update();
-
-// 外部開く
-
-openBtn.onclick = () => {
-
-  const p = PLACES[place.value];
-
-  location.href = `https://www.windy.com/?lat=${p.lat}&lon=${p.lon}`;
-
-};
-
-</script>
-
+  
+  <header>
+    <div class="row">
+      <div class="title">naonaoポータル</div>
+<div class="links">
+  <a href="./RateCompare.html">レーティング比較</a>
+  <a href="./event.html">予定</a>
+</div>    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="controls">
+        <div class="row1">
+          <select id="place">
+            <option value="urayasu">浦安マリーナ</option>
+            <option value="ybm">横浜ベイサイドマリーナ</option>
+             <option value="kenzaki">剣崎</option>
+          </select>
+        </div>
+
+        <div class="row2">
+          <select id="overlay">
+            <option value="wind" selected>風</option>
+            <option value="waves">波</option>
+            <option value="rain">雨</option>
+            <option value="temp">気温</option>
+            <option value="gust">ガスト（突風）</option>
+          </select>
+
+          <select id="zoom">
+            <option value="8">広め</option>
+            <option value="9">標準</option>
+            <option value="11" selected>近く</option>
+          </select>
+
+          <button class="btn-primary" id="openBtn">Windyで開く</button>
+        </div>
+
+        <div id="notice" class="notice">
+          Windyの埋め込みがブロックされている可能性があります。<br>
+          「Windyで開く」を押して、アプリ（またはブラウザ）で開けるか確認してください。
+        </div>
+      </div>
+    </section>
+
+    <section class="card frameWrap">
+      <iframe id="windyFrame" class="square" allowfullscreen loading="lazy"></iframe>
+    </section>
+  </main>
+
+  <script>
+  
+  
+    const PLACES = {
+      urayasu: { name: "浦安マリーナ（千葉県）", lat: 35.62896904, lon: 139.8975477 },
+      ybm:     { name: "横浜ベイサイドマリーナ（神奈川県）", lat: 35.38028,   lon: 139.64778   },
+      kenzaki: { name: "剣崎（神奈川県）", lat: 35.1417, lon: 139.6706 }
+    };
+
+    function buildEmbedUrl(lat, lon, zoom, overlay){
+      const params = new URLSearchParams({
+        lat: String(lat),
+        lon: String(lon),
+        zoom: String(zoom),
+        level: "surface",
+        overlay: overlay,
+        type: "map",
+        location: "coordinates",
+        metricWind: "default",
+        metricTemp: "default",
+        radarRange: "-1"
+      });
+      return `https://embed.windy.com/embed2.html?${params.toString()}`;
+    }
+
+    function buildWebUrl(lat, lon, zoom, overlay){
+      const params = new URLSearchParams({
+        lat: String(lat),
+        lon: String(lon),
+        zoom: String(zoom),
+        overlay: overlay,
+        level: "surface"
+      });
+      return `https://www.windy.com/?${params.toString()}`;
+    }
+
+    function updateFrame(){
+      const placeKey = document.getElementById("place").value;
+      const overlay  = document.getElementById("overlay").value;
+      const zoom     = document.getElementById("zoom").value;
+
+      const p = PLACES[placeKey];
+      const embedUrl = buildEmbedUrl(p.lat, p.lon, zoom, overlay);
+      const webUrl   = buildWebUrl(p.lat, p.lon, zoom, overlay);
+
+      const frame = document.getElementById("windyFrame");
+      const notice = document.getElementById("notice");
+
+      notice.style.display = "none";
+      frame.src = embedUrl;
+
+      document.getElementById("openBtn").dataset.weburl = webUrl;
+      document.getElementById("openBtn").dataset.embedurl = embedUrl;
+    }
+
+    let loadTimer = null;
+    function startLoadTimer(){
+      clearTimeout(loadTimer);
+      loadTimer = setTimeout(() => {
+        document.getElementById("notice").style.display = "block";
+      }, 4500);
+    }
+
+    document.getElementById("windyFrame").addEventListener("load", () => {
+      document.getElementById("notice").style.display = "none";
+      clearTimeout(loadTimer);
+    });
+
+    document.getElementById("place").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
+    document.getElementById("overlay").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
+    document.getElementById("zoom").addEventListener("change", () => { updateFrame(); startLoadTimer(); });
+
+    document.getElementById("openBtn").addEventListener("click", () => {
+      const webUrl = document.getElementById("openBtn").dataset.weburl;
+      window.location.href = webUrl;
+
+      setTimeout(() => {
+        try {
+          window.open(webUrl, "_blank", "noopener");
+        } catch (e) {}
+      }, 1200);
+    });
+
+    updateFrame();
+    startLoadTimer();
+  </script>
+    <a href="./StartIn.html">スタートライン計測</a>
 </body>
-
 </html>
