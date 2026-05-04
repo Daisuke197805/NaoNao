@@ -38,6 +38,8 @@ html, body {
 
 }
 
+/* 上部距離表示 */
+
 #topbar {
 
   position: fixed;
@@ -68,7 +70,7 @@ html, body {
 
 }
 
-/* 右上ボタン */
+/* 右上ボタン（縦並び） */
 
 #topRight {
 
@@ -80,19 +82,35 @@ html, body {
 
   z-index: 1000;
 
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+
 }
 
-#topRight button {
+.topBtn {
 
-  margin-left: 5px;
+  background: rgba(0,0,0,0.7);
 
-  padding: 8px;
+  color: white;
+
+  padding: 8px 10px;
 
   border-radius: 8px;
 
   border: none;
 
+  text-decoration: none;
+
+  text-align: center;
+
+  font-size: 14px;
+
 }
+
+/* 下部ボタン */
 
 .controls {
 
@@ -146,13 +164,15 @@ html, body {
 
 </div>
 
-<!-- 右上 -->
+<!-- 右上（縦ボタン） -->
 
 <div id="topRight">
 
-  <button onclick="stop()">停止</button>
+  <a href="https://daisuke197805.github.io/NaoNao/" class="topBtn">戻る</a>
 
-  <button onclick="resetAll()">リセット</button>
+  <button class="topBtn" onclick="resetAll()">リセット</button>
+
+  <button class="topBtn" onclick="stop()">停止</button>
 
 </div>
 
@@ -192,7 +212,7 @@ const shipIcon = L.icon({
 
 });
 
-/* ===== 初期化（現在地） ===== */
+/* 初期化（現在地） */
 
 window.onload = () => {
 
@@ -214,7 +234,7 @@ window.onload = () => {
 
 };
 
-/* ===== 位置取得 ===== */
+/* 位置取得 */
 
 function getLocation(callback) {
 
@@ -236,7 +256,7 @@ function getLocation(callback) {
 
 }
 
-/* ===== A ===== */
+/* A */
 
 function setA() {
 
@@ -254,7 +274,7 @@ function setA() {
 
 }
 
-/* ===== B ===== */
+/* B */
 
 function setB() {
 
@@ -272,7 +292,7 @@ function setB() {
 
 }
 
-/* ===== AB線 ===== */
+/* AB線 */
 
 function drawABLine() {
 
@@ -294,7 +314,7 @@ function drawABLine() {
 
 }
 
-/* ===== 座標変換 ===== */
+/* 座標変換 */
 
 function toXY(p) {
 
@@ -324,7 +344,7 @@ function toLatLng(p) {
 
 }
 
-/* ===== C開始 ===== */
+/* C開始 */
 
 function start() {
 
@@ -400,7 +420,7 @@ function start() {
 
 }
 
-/* ===== 停止 ===== */
+/* 停止 */
 
 function stop() {
 
@@ -410,7 +430,7 @@ function stop() {
 
 }
 
-/* ===== リセット ===== */
+/* リセット */
 
 function resetAll() {
 
