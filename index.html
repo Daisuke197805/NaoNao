@@ -4,263 +4,231 @@
 
 <head>
 
-  <meta charset="utf-8" />
+<meta charset="utf-8" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <title>naonaoポータル</title>
+<title>naonaoポータル</title>
 
-  <style>
+<style>
 
-    :root{
+:root{
 
-      --bg:#f6f7fb;
+  --bg:#f6f7fb;
 
-      --card:#ffffff;
+  --card:#ffffff;
 
-      --text:#111827;
+  --text:#111827;
 
-      --muted:#6b7280;
+  --brand:#1976d2;
 
-      --brand:#1976d2;
+  --border:#e5e7eb;
 
-      --brand2:#155fa8;
+}
 
-      --border:#e5e7eb;
+*{ box-sizing:border-box; }
 
-      --shadow:0 2px 14px rgba(0,0,0,.08);
+body{
 
-      --radius:16px;
+  margin:0;
 
-    }
+  font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
 
-    *{ box-sizing:border-box; }
+  background:var(--bg);
 
-    body{
+  color:var(--text);
 
-      margin:0;
+}
 
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+/* ===== ハンバーガー（右上） ===== */
 
-      background:var(--bg);
+#menuBtn{
 
-      color:var(--text);
+  position:fixed;
 
-    }
+  top:12px;
 
-    /* ===== ハンバーガー ===== */
+  right:12px;
 
-    #menuBtn{
+  z-index:1001;
 
-      position:fixed;
+  font-size:24px;
 
-      top:12px;
+  background:#fff;
 
-      left:12px;
+  border:none;
 
-      z-index:1000;
+  border-radius:10px;
 
-      font-size:24px;
+  padding:6px 10px;
 
-      background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
 
-      border:none;
+}
 
-      border-radius:10px;
+/* ===== メニュー（右から出る） ===== */
 
-      padding:6px 10px;
+#menu{
 
-      box-shadow:0 2px 8px rgba(0,0,0,.2);
+  position:fixed;
 
-    }
+  top:0;
 
-    #menu{
+  right:-260px;
 
-      position:fixed;
+  width:260px;
 
-      top:0;
+  height:100%;
 
-      left:-260px;
+  background:#333;
 
-      width:260px;
+  padding-top:60px;
 
-      height:100%;
+  transition:.3s;
 
-      background:#333;
+  z-index:1000;
 
-      padding-top:60px;
+}
 
-      transition:.3s;
+#menu.open{
 
-      z-index:999;
+  right:0;
 
-    }
+}
 
-    #menu a{
+#menu a{
 
-      display:block;
+  display:block;
 
-      color:#fff;
+  color:#fff;
 
-      padding:15px;
+  padding:15px;
 
-      text-decoration:none;
+  text-decoration:none;
 
-    }
+}
 
-    #menu a.active{
+#menu a.active{
 
-      color:#aaa;
+  color:#aaa;
 
-      pointer-events:none;
+  pointer-events:none;
 
-    }
+}
 
-    #menu.open{
+/* ===== 半透明背景 ===== */
 
-      left:0;
+#overlay{
 
-    }
+  position:fixed;
 
-    header{
+  top:0;
 
-      position:sticky;
+  left:0;
 
-      top:0;
+  width:100%;
 
-      z-index:10;
+  height:100%;
 
-      background:linear-gradient(90deg, #1565c0, #1976d2);
+  background:rgba(0,0,0,0.4);
 
-      color:#fff;
+  opacity:0;
 
-      padding:12px 16px;
+  visibility:hidden;
 
-      box-shadow:0 2px 10px rgba(0,0,0,.12);
+  transition:.3s;
 
-    }
+  z-index:999;
 
-    header .row{
+}
 
-      display:flex;
+#overlay.show{
 
-      align-items:center;
+  opacity:1;
 
-      gap:12px;
+  visibility:visible;
 
-      max-width:980px;
+}
 
-      margin:0 auto;
+/* ===== ヘッダー ===== */
 
-    }
+header{
 
-    header .title{
+  position:sticky;
 
-      font-weight:800;
+  top:0;
 
-    }
+  background:linear-gradient(90deg,#1565c0,#1976d2);
 
-    main{
+  color:#fff;
 
-      max-width:980px;
+  padding:12px 16px;
 
-      margin:0 auto;
+}
 
-      padding:12px;
+.title{
 
-      display:grid;
+  font-weight:800;
 
-      gap:12px;
+}
 
-    }
+/* ===== コンテンツ ===== */
 
-    .card{
+main{
 
-      background:var(--card);
+  max-width:980px;
 
-      border:1px solid var(--border);
+  margin:0 auto;
 
-      border-radius:var(--radius);
+  padding:12px;
 
-      box-shadow:var(--shadow);
+}
 
-      padding:12px;
+.card{
 
-    }
+  background:#fff;
 
-    .controls{ display:grid; gap:10px; }
+  border:1px solid var(--border);
 
-    .row1, .row2{
+  border-radius:12px;
 
-      display:flex;
+  padding:12px;
 
-      gap:10px;
+}
 
-      align-items:center;
+select, button{
 
-      flex-wrap:wrap;
+  padding:10px;
 
-    }
+  margin:5px 0;
 
-    select, button{
+  width:100%;
 
-      font-size:16px;
+}
 
-      padding:10px 12px;
+iframe{
 
-      border:1px solid var(--border);
+  width:100%;
 
-      border-radius:12px;
+  aspect-ratio:1/1;
 
-      background:#fff;
+  border:0;
 
-    }
+}
 
-    .btn-primary{
-
-      background:var(--brand);
-
-      color:#fff;
-
-      font-weight:800;
-
-    }
-
-    .frameWrap{ padding:0; overflow:hidden; }
-
-    .square{
-
-      aspect-ratio:1/1;
-
-      width:100%;
-
-      border:0;
-
-      display:block;
-
-    }
-
-    .notice{
-
-      margin-top:10px;
-
-      font-size:13px;
-
-      color:#b71c1c;
-
-      display:none;
-
-    }
-
-  </style>
+</style>
 
 </head>
 
 <body>
 
-<!-- ハンバーガー -->
+<!-- ボタン -->
 
 <button id="menuBtn">☰</button>
+
+<!-- オーバーレイ -->
+
+<div id="overlay"></div>
 
 <!-- メニュー -->
 
@@ -280,83 +248,39 @@
 
 <header>
 
-  <div class="row">
-
-    <div class="title">naonaoポータル</div>
-
-  </div>
+  <div class="title">naonaoポータル</div>
 
 </header>
 
 <main>
 
-  <!-- ここは元コードそのまま -->
+  <div class="card">
 
-  <!-- （省略せずそのまま維持してます） -->
+    <select id="place">
 
-  <section class="card">
+      <option value="urayasu">浦安</option>
 
-    <div class="controls">
+      <option value="ybm">横浜</option>
 
-      <div class="row1">
+    </select>
 
-        <select id="place">
+    <select id="overlaySelect">
 
-          <option value="urayasu">浦安マリーナ</option>
+      <option value="wind">風</option>
 
-          <option value="ybm">横浜ベイサイドマリーナ</option>
+      <option value="rain">雨</option>
 
-          <option value="kenzaki">剣崎</option>
+    </select>
 
-        </select>
+    <button id="openBtn">Windyで開く</button>
 
-      </div>
+  </div>
 
-      <div class="row2">
+  <div class="card">
 
-        <select id="overlay">
+    <iframe id="windyFrame"></iframe>
 
-          <option value="wind" selected>風</option>
-
-          <option value="waves">波</option>
-
-          <option value="rain">雨</option>
-
-          <option value="temp">気温</option>
-
-          <option value="gust">ガスト</option>
-
-        </select>
-
-        <select id="zoom">
-
-          <option value="8">広め</option>
-
-          <option value="9">標準</option>
-
-          <option value="11" selected>近く</option>
-
-        </select>
-
-        <button class="btn-primary" id="openBtn">Windyで開く</button>
-
-      </div>
-
-      <div id="notice" class="notice">
-
-        Windyの埋め込みがブロックされている可能性があります。
-
-      </div>
-
-    </div>
-
-  </section>
-
-  <section class="card frameWrap">
-
-    <iframe id="windyFrame" class="square"></iframe>
-
-  </section>
+  </div>
 
 </main>
 
@@ -364,9 +288,27 @@
 
 // ===== メニュー開閉 =====
 
-document.getElementById("menuBtn").onclick = function () {
+const btn = document.getElementById("menuBtn");
 
-  document.getElementById("menu").classList.toggle("open");
+const menu = document.getElementById("menu");
+
+const overlay = document.getElementById("overlay");
+
+btn.onclick = () => {
+
+  menu.classList.toggle("open");
+
+  overlay.classList.toggle("show");
+
+};
+
+// 外側クリックで閉じる
+
+overlay.onclick = () => {
+
+  menu.classList.remove("open");
+
+  overlay.classList.remove("show");
 
 };
 
@@ -388,35 +330,37 @@ links.forEach(link => {
 
 });
 
-// ===== 既存JSそのまま =====
+// ===== Windy =====
 
 const PLACES = {
 
-  urayasu: { lat: 35.62896904, lon: 139.8975477 },
+  urayasu:{lat:35.62,lon:139.89},
 
-  ybm: { lat: 35.38028, lon: 139.64778 },
-
-  kenzaki: { lat: 35.1417, lon: 139.6706 }
+  ybm:{lat:35.38,lon:139.64}
 
 };
 
-function buildEmbedUrl(lat, lon, zoom, overlay){
-
-  return `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&zoom=${zoom}&overlay=${overlay}`;
-
-}
-
-function updateFrame(){
+function update(){
 
   const p = PLACES[place.value];
 
-  windyFrame.src = buildEmbedUrl(p.lat, p.lon, zoom.value, overlay.value);
+  windyFrame.src = `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&zoom=10&overlay=${overlaySelect.value}`;
 
 }
 
-place.onchange = overlay.onchange = zoom.onchange = updateFrame;
+place.onchange = overlaySelect.onchange = update;
 
-updateFrame();
+update();
+
+// 外部開く
+
+openBtn.onclick = () => {
+
+  const p = PLACES[place.value];
+
+  location.href = `https://www.windy.com/?lat=${p.lat}&lon=${p.lon}`;
+
+};
 
 </script>
 
