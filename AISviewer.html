@@ -152,7 +152,9 @@ function startAIS(lat, lng) {
 
   socket.onopen = () => {
 
-    log("WebSocket接続OK");
+    //log("WebSocket接続OK");
+    log(JSON.stringify(data));
+    
 
     socket.send(JSON.stringify({
 
