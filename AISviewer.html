@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+か!DOCTYPE html>
 
 <html lang="ja">
 
@@ -78,11 +78,11 @@ let socket;
 
 window.onload = () => {
 
+  alert("読み込みOK");
+
   const el = document.getElementById("log");
 
   if (el) el.innerHTML = "ログ表示テスト<br>";
-
-  alert("読み込みOK");
 
   setTimeout(initMap, 100);
 
@@ -190,7 +190,7 @@ function startAIS(lat, lng) {
 
   const lng = report.Longitude;
 
-  if (!lat || !lng) return;
+  if (lat == null || lng == null) return;
 
   updateShip(mmsi, lat, lng);
 
