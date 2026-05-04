@@ -1,385 +1,663 @@
 <!doctype html>
-
 <html lang="ja">
-
 <head>
-
   <meta charset="utf-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <title>レース&イベント</title>
-
   <style>
-
     :root{
-
       --bg:#f6f7fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
-
       --brand:#1976d2; --brand2:#155fa8; --danger:#c62828; --danger2:#b71c1c;
-
       --accent:#f57c00; --accent2:#ef6c00;
-
       --shadow:0 2px 14px rgba(0,0,0,.08); --radius:14px;
-
     }
-
     *{ box-sizing:border-box; }
-
-    body{
-
-      margin:0;
-
-      padding:0;
-
-      font-family:system-ui, -apple-system, "Segoe UI", sans-serif;
-
-      background:var(--bg);
-
-      color:var(--text);
-
-    }
-
-    /* ===== 追加：ハンバーガー ===== */
-
-    #menuBtn{
-
-      position:fixed;
-
-      top:max(12px, env(safe-area-inset-top));
-
-      right:12px;
-
-      z-index:2000;
-
-      font-size:22px;
-
-      background:rgba(255,255,255,.85);
-
-      border:none;
-
-      border-radius:10px;
-
-      padding:6px 10px;
-
-      box-shadow:0 2px 8px rgba(0,0,0,.2);
-
-    }
-
-    #menu{
-
-      position:fixed;
-
-      top:0;
-
-      right:-260px;
-
-      width:260px;
-
-      height:100%;
-
-      background:#333;
-
-      padding-top:60px;
-
-      transition:.3s;
-
-      z-index:1500;
-
-    }
-
-    #menu.open{ right:0; }
-
-    #menu a{
-
-      display:block;
-
-      color:#fff;
-
-      padding:15px;
-
-      text-decoration:none;
-
-    }
-
-    #menu a.active{
-
-      color:#aaa;
-
-      pointer-events:none;
-
-    }
-
-    #overlayMenu{
-
-      position:fixed;
-
-      inset:0;
-
-      background:rgba(0,0,0,.4);
-
-      opacity:0;
-
-      visibility:hidden;
-
-      transition:.3s;
-
-      z-index:1400;
-
-    }
-
-    #overlayMenu.show{
-
-      opacity:1;
-
-      visibility:visible;
-
-    }
+    body{ margin:0; padding:0; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
 
     /* ===== ヘッダー ===== */
-
     header{
-
       position:sticky;
-
       top:0;
-
       z-index:10;
-
       background:linear-gradient(90deg, #fb8c00, #ffa726);
-
       color:#fff;
-
       padding:12px 16px;
-
       box-shadow:0 2px 10px rgba(0,0,0,.12);
-
     }
-
     header .row{
-
       display:flex;
-
       align-items:center;
-
       gap:12px;
-
       max-width:980px;
-
       margin:0 auto;
-
     }
-
     header .title{
-
       font-weight:800;
-
       letter-spacing:.02em;
-
     }
+    header .links{
+      margin-left:auto;
+      display:flex;
+      gap:12px;
+      font-size:14px;
+    }
+    header a{
+      color:#fff;
+      text-decoration:none;
+      background:rgba(255,255,255,.25);
+      padding:6px 14px;
+      border-radius:10px;
+      font-weight:700;
+      font-size:14px;
+    }
+    header a:hover{ background:rgba(255,255,255,.4); }
 
-    /* ===== メイン（ここから元のまま）===== */
-
+    /* ===== メイン ===== */
     main{
-
       max-width:980px;
-
       margin:0 auto;
-
       padding:12px;
-
     }
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-
     .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:12px; margin:12px 0; }
-
     .btn{ font-size:15px; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#fff; cursor:pointer; }
-
     .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; }
-
     .btn.primary:hover{ background:var(--accent2); border-color:var(--accent2); }
-
     .btn.danger{ background:var(--danger); border-color:var(--danger); color:#fff; font-weight:700; }
-
     .btn.danger:hover{ background:var(--danger2); border-color:var(--danger2); }
-
     .btn:active{ transform:translateY(1px); }
 
     input{ font-size:15px; padding:10px 10px; border-radius:12px; border:1px solid var(--border); background:#fff; }
-
     input:focus{ outline:none; border-color:#ffcc80; box-shadow:0 0 0 4px rgba(255,167,38,.25); }
 
     .pill{ display:inline-block; padding:3px 10px; border-radius:999px; background:#eef3ff; border:1px solid #dbe7ff; color:#1a3e8a; font-size:12px; }
-
     .muted{ color:var(--muted); font-size:13px; }
-
     .title{ font-weight:800; }
-
     .sep{ height:1px; background:var(--border); margin:10px 0; }
 
+    /* ===== ツールバー（更新ボタン＋チェックボックス）===== */
     .toolbar{
-
       display:flex;
-
       gap:12px;
-
       align-items:center;
-
       flex-wrap:wrap;
-
     }
-
     .toolbar label{
-
       display:flex;
-
       align-items:center;
-
       gap:6px;
-
       font-size:13px;
-
       color:var(--muted);
-
       cursor:pointer;
-
+      user-select:none;
+      -webkit-user-select:none;
     }
-
     .toolbar input[type="checkbox"]{
-
       width:18px;
-
       height:18px;
-
       accent-color:var(--accent);
-
+      cursor:pointer;
     }
 
+    /* ===== 日付 ===== */
+    .event-date{ font-size:17px; font-weight:700; color:var(--text); }
+
+    /* ===== 参加フォーム ===== */
+    .join-row{ display:flex; gap:8px; align-items:center; flex-wrap:nowrap; }
+    .join-row input{ flex:1 1 160px; min-width:0; }
+    .join-row .btn{ flex:0 0 auto; white-space:nowrap; }
+    .note-row{ margin-top:8px; }
+    .note-row input{ width:100%; }
+
+    /* ===== 取消フォーム ===== */
+    .cancel-row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:nowrap;
+      margin-top:8px;
+    }
+    .cancel-row input{ flex:1 1 160px; min-width:0; }
+    .cancel-row .btn{ flex:0 0 auto; white-space:nowrap; }
+    .cancel-toggle{
+      font-size:12px;
+      color:var(--muted);
+      cursor:pointer;
+      margin-top:8px;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    .cancel-toggle:hover{ color:var(--danger); }
+    .cancel-form{ display:none; margin-top:6px; }
+    .cancel-form.open{ display:block; }
+
+    /* ===== 参加者 ===== */
+    .participants{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+    .participants .name{
+      background:#f3f4f6; border:1px solid #e5e7eb; padding:4px 10px;
+      border-radius:999px; font-size:12px; cursor:pointer;
+      user-select:none; -webkit-user-select:none; transition:background .15s;
+    }
+    .participants .name.has-note{ border-bottom:2px solid var(--accent); }
+    .participants .name:active{ background:#e5e7eb; }
+
+    /* ===== ポップアップ（備考表示）===== */
+    .popup-overlay{
+      display:none; position:fixed; inset:0; z-index:100;
+      background:rgba(0,0,0,.35); justify-content:center; align-items:center; padding:24px;
+    }
+    .popup-overlay.active{ display:flex; }
+    .popup-box{
+      background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,.18);
+      padding:20px; max-width:340px; width:100%; text-align:left; animation:popIn .15s ease-out;
+    }
+    @keyframes popIn{ from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
+    .popup-box .popup-name{ font-weight:800; font-size:16px; margin-bottom:8px; }
+    .popup-box .popup-note{ font-size:14px; color:var(--text); line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+    .popup-box .popup-close{
+      display:block; margin-top:14px; text-align:center; font-size:14px;
+      color:var(--accent); font-weight:700; cursor:pointer; padding:8px;
+      border-radius:10px; border:1px solid var(--accent); background:#fff;
+    }
+    .popup-box .popup-close:active{ background:#fff3e0; }
+
+    /* ===== ローディングオーバーレイ ===== */
+    .loading-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:200;
+      background:rgba(255,255,255,.7);
+      justify-content:center;
+      align-items:center;
+      flex-direction:column;
+      gap:12px;
+    }
+    .loading-overlay.active{ display:flex; }
+    .spinner{
+      width:36px; height:36px;
+      border:4px solid var(--border);
+      border-top-color:var(--accent);
+      border-radius:50%;
+      animation:spin .7s linear infinite;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading-overlay .loading-text{
+      font-size:14px;
+      color:var(--muted);
+      font-weight:700;
+    }
+
+    pre{ white-space:pre-wrap; word-break:break-word; margin:0; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; }
+    details summary{ cursor:pointer; color:var(--muted); font-size:13px; }
   </style>
-
 </head>
-
 <body>
 
-<!-- ハンバーガー -->
+  <!-- ===== ヘッダー ===== -->
+  <header>
+    <div class="row">
+      <div class="title">レース＆イベント</div>
+      <div class="links">
+        <a href="./index.html">← 戻る</a>
+      </div>
+    </div>
+  </header>
 
-<button id="menuBtn">☰</button>
-
-<div id="overlayMenu"></div>
-
-<nav id="menu">
-
-  <a href="index.html">トップ</a>
-
-  <a href="event.html">レース&イベント</a>
-
-  <a href="StartIn.html">スタートライン</a>
-
-  <a href="RateCompare.html">レーティング比較</a>
-
-  <a href="AISviewer.html">AIS</a>
-
-</nav>
-
-<!-- ===== ヘッダー（ボタン削除済み）===== -->
-
-<header>
-
-  <div class="row">
-
-    <div class="title">レース＆イベント</div>
-
-  </div>
-
-</header>
-
-<main>
-
-  <!-- ここから下は完全に元のまま -->
-
-  <div class="toolbar">
-
-    <button class="btn primary" onclick="reloadAll()">更新</button>
-
-    <label>
-
-      <input type="checkbox" id="hidePast" checked onchange="applyFilter()">
-
-      過去のイベントを非表示
-
-    </label>
-
-  </div>
-
-  <div class="card">
-
-    <div class="row" style="justify-content:space-between;">
-
-      <div class="title">状態</div>
-
-      <span class="pill" id="statusPill">待機中</span>
-
+  <main>
+    <!-- ===== ツールバー（更新＋過去非表示チェック）===== -->
+    <div class="toolbar">
+      <button class="btn primary" onclick="reloadAll()">更新</button>
+      <label>
+        <input type="checkbox" id="hidePast" checked onchange="applyFilter()">
+        過去のイベントを非表示
+      </label>
     </div>
 
-    <div class="sep"></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div class="title">状態</div>
+        <span class="pill" id="statusPill">待機中</span>
+      </div>
+      <div class="sep"></div>
+      <div class="muted" id="statusText">ページ読込完了：更新ボタンを押してください</div>
 
-    <div class="muted" id="statusText">ページ読込完了：更新ボタンを押してください</div>
+      <details style="margin-top:10px;">
+        <summary>デバッグログ（必要なときだけ開く）</summary>
+        <div class="sep"></div>
+        <pre id="debug">(ログ)</pre>
+      </details>
+    </div>
 
+    <div id="list"></div>
+  </main>
+
+  <!-- ===== ポップアップ（備考表示）===== -->
+  <div class="popup-overlay" id="popupOverlay" onclick="closePopup()">
+    <div class="popup-box" onclick="event.stopPropagation()">
+      <div class="popup-name" id="popupName"></div>
+      <div class="popup-note" id="popupNote"></div>
+      <div class="popup-close" onclick="closePopup()">閉じる</div>
+    </div>
   </div>
 
-  <div id="list"></div>
+  <!-- ===== ローディングオーバーレイ ===== -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">データ更新中…</div>
+  </div>
 
-</main>
+  <script>
+    // =========================
+    // 固定：GAS WebアプリURL
+    // =========================
+    const API_URL = "https://script.google.com/macros/s/AKfycbzaLPhysJ3_e18Hk25-dumu7324yqDwE7KWgqegPYd9j-6d5eiZsoP5Tze2KcnKkKOcEw/exec";
 
-<script>
+    const list = document.getElementById("list");
+    const statusPill = document.getElementById("statusPill");
+    const statusText = document.getElementById("statusText");
+    const debug = document.getElementById("debug");
+    const loadingOverlay = document.getElementById("loadingOverlay");
 
-// ===== メニュー制御（追加のみ）=====
+    // 最後に取得したデータを保持（フィルタ切替用）
+    let cachedEvents = [];
+    let cachedParticipants = [];
 
-const menuBtn = document.getElementById("menuBtn");
+    function setStatus(label, text){
+      statusPill.textContent = label;
+      statusText.textContent = text;
+    }
+    function logDebug(msg){
+      const t = new Date().toISOString();
+      debug.textContent = `${t}  ${msg}\n` + debug.textContent;
+    }
 
-const menu = document.getElementById("menu");
+    // =========================
+    // ローディング制御
+    // =========================
+    function showLoading(){
+      loadingOverlay.classList.add("active");
+    }
+    function hideLoading(){
+      loadingOverlay.classList.remove("active");
+    }
 
-const overlayMenu = document.getElementById("overlayMenu");
+    // =========================
+    // 6桁 event_id 正規化
+    // =========================
+    function pad6(value){
+      const s = String(value ?? "").trim();
+      if (/^\d+$/.test(s)) return s.padStart(6, "0");
+      return s;
+    }
 
-menuBtn.onclick = () => {
+    // =========================
+    // 表示整形
+    // =========================
+    const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
-  menu.classList.toggle("open");
+    function formatDateJST(value){
+      if (!value) return "";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const w = WEEKDAYS[d.getDay()];
+      return `${y}/${m}/${day}（${w}）`;
+    }
+    function formatTimeHHMM(value){
+      if (!value) return "";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      return `${hh}:${mm}`;
+    }
 
-  overlayMenu.classList.toggle("show");
+    // 日付比較用：event_date を JST の日付だけ（時刻を切り捨て）で比較
+    function toDateOnlyMs(value){
+      if (!value) return 0;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return 0;
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    }
+    function todayMs(){
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    }
 
-};
+    function escapeHtml(str){
+      return String(str ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[c]));
+    }
 
-overlayMenu.onclick = () => {
+    // =========================
+    // ポップアップ（備考表示）
+    // =========================
+    const popupOverlay = document.getElementById("popupOverlay");
+    const popupName = document.getElementById("popupName");
+    const popupNote = document.getElementById("popupNote");
 
-  menu.classList.remove("open");
+    function showPopup(name, note){
+      popupName.textContent = name;
+      popupNote.textContent = note || "（備考なし）";
+      popupOverlay.classList.add("active");
+    }
+    function closePopup(){
+      popupOverlay.classList.remove("active");
+    }
+    window.showPopup = showPopup;
+    window.closePopup = closePopup;
 
-  overlayMenu.classList.remove("show");
+    // =========================
+    // CORS回避：フォームPOST
+    // =========================
+    async function postForm(paramsObj){
+      const body = new URLSearchParams(paramsObj);
+      logDebug("POST " + JSON.stringify(paramsObj));
 
-};
+      const res = await fetch(API_URL, { method:"POST", body });
 
-// 現在ページ無効化
+      if (!res.ok){
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText.slice(0, 200)}`);
+      }
 
-const links = document.querySelectorAll("#menu a");
+      const text = await res.text();
 
-const current = location.pathname.split("/").pop() || "index.html";
+      let json;
+      try{
+        json = JSON.parse(text);
+      }catch{
+        throw new Error("JSON解析失敗（先頭200文字）: " + text.slice(0, 200));
+      }
+      return json;
+    }
 
-links.forEach(link=>{
+    // =========================
+    // API呼び出し
+    // =========================
+    async function apiGetEvents(){
+      return await postForm({ type: "getEvents" });
+    }
+    async function apiGetParticipants(){
+      return await postForm({ type: "getParticipants" });
+    }
+    async function apiJoinEvent(eventId, name, note){
+      return await postForm({
+        type: "joinEvent",
+        event_id: pad6(eventId),
+        participant_name: name,
+        participant_note: note || ""
+      });
+    }
+    async function apiCancelEvent(eventId, name){
+      return await postForm({
+        type: "cancelEvent",
+        event_id: pad6(eventId),
+        participant_name: name
+      });
+    }
 
-  if(link.getAttribute("href")===current){
+    // =========================
+    // 画面構築
+    // =========================
+    function render(events, participants){
+      const byEvent = new Map();
+      for (const p of participants){
+        const eid = pad6(p.event_id);
+        if (!byEvent.has(eid)) byEvent.set(eid, []);
+        byEvent.get(eid).push(p);
+      }
 
-    link.classList.add("active");
+      // 過去イベント非表示フィルタ
+      const hidePast = document.getElementById("hidePast").checked;
+      const today = todayMs();
 
-    link.removeAttribute("href");
+      let filtered = events;
+      if (hidePast){
+        filtered = events.filter(ev => toDateOnlyMs(ev.event_date) >= today);
+      }
 
-  }
+      list.innerHTML = "";
+      if (!filtered.length){
+        const msg = hidePast
+          ? "表示するイベントがありません（過去のイベントは非表示中）"
+          : "イベントが0件です（tbl_event を確認してください）";
+        list.innerHTML = `<div class="card">${msg}</div>`;
+        return;
+      }
 
-});
+      for (const ev of filtered){
+        const eid = pad6(ev.event_id);
+        const dateStr = formatDateJST(ev.event_date);
+        const timeStr = formatTimeHHMM(ev.event_start);
+        const mem = byEvent.get(eid) || [];
 
-// ===== 既存JSはこの下にそのまま =====
+        const card = document.createElement("div");
+        card.className = "card";
 
-</script>
+        // 参加者ピル
+        const pillsHtml = mem.map(p => {
+          const name = escapeHtml(p.participant_name ?? "");
+          const hasNote = (p.participant_note ?? "").trim() !== "";
+          const cls = hasNote ? "name has-note" : "name";
+          const nameForJs = (p.participant_name ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+          const noteForJs = (p.participant_note ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+          return `<span class="${cls}" onclick="showPopup('${nameForJs}','${noteForJs}')">${name}</span>`;
+        }).join("");
 
+        card.innerHTML = `
+          <div class="row" style="justify-content:space-between;">
+            <div>
+              <span class="title">${escapeHtml(ev.event_name ?? "")}</span>
+            </div>
+          </div>
+
+          <div class="event-date" style="margin-top:6px;">
+            ${escapeHtml(dateStr)} ${escapeHtml(timeStr)}
+          </div>
+
+          <div class="muted" style="margin-top:6px;">
+            メモ：${escapeHtml(ev.event_memo ?? "")}
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="join-row">
+            <input id="name_${eid}" placeholder="名前">
+            <button class="btn primary" onclick="handleJoin('${eid}')">参加</button>
+          </div>
+
+          <div class="note-row">
+            <input id="note_${eid}" placeholder="備考（任意）">
+          </div>
+
+          <div class="muted" style="margin-top:10px;">参加者：${mem.length} 名</div>
+          <div class="participants">
+            ${pillsHtml}
+          </div>
+
+          <div class="cancel-toggle" onclick="toggleCancel('${eid}')">▸ 参加を取り消す場合はこちら</div>
+          <div class="cancel-form" id="cancelForm_${eid}">
+            <div class="cancel-row">
+              <input id="cancelName_${eid}" placeholder="取り消す名前を入力">
+              <button class="btn danger" onclick="handleCancel('${eid}')">取消</button>
+            </div>
+          </div>
+        `;
+
+        list.appendChild(card);
+      }
+    }
+
+    // =========================
+    // フィルタ切替（再取得なし・キャッシュから再描画）
+    // =========================
+    function applyFilter(){
+      render(cachedEvents, cachedParticipants);
+    }
+    window.applyFilter = applyFilter;
+
+    // =========================
+    // 取消フォームの開閉
+    // =========================
+    function toggleCancel(eid){
+      const form = document.getElementById("cancelForm_" + eid);
+      form.classList.toggle("open");
+    }
+    window.toggleCancel = toggleCancel;
+
+    // =========================
+    // メイン：再取得
+    // =========================
+    async function reloadAll(){
+      try{
+        showLoading();
+        setStatus("取得中", "イベント・参加者を取得しています...");
+        logDebug("reloadAll start");
+
+        const [evRes, ptRes] = await Promise.all([apiGetEvents(), apiGetParticipants()]);
+
+        if (evRes.status !== "ok") throw new Error("getEvents失敗: " + (evRes.message || ""));
+        if (ptRes.status !== "ok") throw new Error("getParticipants失敗: " + (ptRes.message || ""));
+
+        const events = (evRes.events || []).map(e => ({ ...e, event_id: pad6(e.event_id) }));
+        const participants = (ptRes.participants || []).map(p => ({ ...p, event_id: pad6(p.event_id) }));
+
+        // ✅ 日付が近い順（昇順）でソート
+        events.sort((a, b) => {
+          const da = new Date(a.event_date);
+          const db = new Date(b.event_date);
+          return da - db;
+        });
+
+        // キャッシュに保存（フィルタ切替用）
+        cachedEvents = events;
+        cachedParticipants = participants;
+
+        setStatus("OK", `イベント ${events.length} 件`);
+        render(events, participants);
+
+        logDebug("reloadAll ok");
+      }catch(err){
+        setStatus("エラー", "取得に失敗しました。デバッグログを確認してください。");
+        logDebug("ERROR: " + (err?.message || String(err)));
+        alert("取得に失敗しました：" + (err?.message || String(err)));
+      }finally{
+        hideLoading();
+      }
+    }
+
+    // =========================
+    // 参加処理
+    // =========================
+    async function handleJoin(eventId){
+      try{
+        showLoading();
+        const eid = pad6(eventId);
+        const nameEl = document.getElementById("name_" + eid);
+        const noteEl = document.getElementById("note_" + eid);
+
+        const name = (nameEl.value || "").trim();
+        const note = (noteEl.value || "").trim();
+
+        if (!name){
+          hideLoading();
+          alert("名前を入力してください");
+          return;
+        }
+
+        setStatus("送信中", `参加登録を送信しています... event_id=${eid}`);
+        logDebug(`joinEvent start event_id=${eid} name=${name}`);
+
+        const res = await apiJoinEvent(eid, name, note);
+
+        if (res.status === "ok"){
+          alert("参加登録しました！");
+          nameEl.value = "";
+          noteEl.value = "";
+          await reloadAll();
+          return;
+        }
+
+        if (res.status === "exists"){
+          alert("すでに参加登録しています（同名の参加登録が存在します）。");
+          await reloadAll();
+          return;
+        }
+
+        throw new Error(res.message || "参加表明に失敗しました");
+      }catch(err){
+        setStatus("エラー", "参加登録に失敗しました。デバッグログを確認してください。");
+        logDebug("joinEvent ERROR: " + (err?.message || String(err)));
+        alert("参加登録に失敗しました：" + (err?.message || String(err)));
+      }finally{
+        hideLoading();
+      }
+    }
+
+    // =========================
+    // 取消処理
+    // =========================
+    async function handleCancel(eventId){
+      try{
+        const eid = pad6(eventId);
+        const cancelNameEl = document.getElementById("cancelName_" + eid);
+        const name = (cancelNameEl.value || "").trim();
+
+        if (!name){
+          alert("取り消す名前を入力してください");
+          return;
+        }
+
+        if (!confirm(`「${name}」さんの参加を取り消しますか？`)){
+          return;
+        }
+
+        showLoading();
+        setStatus("送信中", `参加取消を送信しています... event_id=${eid}`);
+        logDebug(`cancelEvent start event_id=${eid} name=${name}`);
+
+        const res = await apiCancelEvent(eid, name);
+
+        if (res.status === "ok"){
+          alert("参加を取り消しました。");
+          cancelNameEl.value = "";
+          await reloadAll();
+          return;
+        }
+
+        if (res.status === "not_found"){
+          alert("該当する参加登録が見つかりませんでした。\n名前が正確に一致しているか確認してください。");
+          return;
+        }
+
+        throw new Error(res.message || "参加取消に失敗しました");
+      }catch(err){
+        setStatus("エラー", "参加取消に失敗しました。デバッグログを確認してください。");
+        logDebug("cancelEvent ERROR: " + (err?.message || String(err)));
+        alert("参加取消に失敗しました：" + (err?.message || String(err)));
+      }finally{
+        hideLoading();
+      }
+    }
+
+    // グローバル公開（onclick用）
+    window.reloadAll = reloadAll;
+    window.handleJoin = handleJoin;
+    window.handleCancel = handleCancel;
+
+    // 初期：自動で一度読み込み
+    setStatus("待機中", "自動取得を開始します...");
+    reloadAll();
+  </script>
 </body>
-
 </html>
