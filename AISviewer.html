@@ -8,8 +8,6 @@
 
 <title>AIS表示</title>
 
-
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
@@ -39,9 +37,8 @@ html, body {
 </head>
 
 <body>
-  <div id="log"
 
- style="
+<div id="log" style="
 
   position:absolute;
 
@@ -61,13 +58,12 @@ html, body {
 
   width:100%;
 
- ">
+"></div>
 
-</div>
-<div id="map"></div> 
+<div id="map"></div>
 
 <script>
-alert("JSスタート");
+
 const API_KEY = "ec11fdc799701ab614b7e7e59020172c693f77ed";
 
 let map;
@@ -78,15 +74,14 @@ let socket;
 
 window.onload = () => {
 
-  alert("読み込みOK");
-
   const el = document.getElementById("log");
 
-  if (el) el.innerHTML = "ログ表示テスト<br>";
+  if (el) el.innerHTML = "ログ開始<br>";
 
-  setTimeout(initMap, 100);
+  initMap();
 
 };
+
 function log(msg) {
 
   const el = document.getElementById("log");
@@ -99,7 +94,7 @@ function log(msg) {
 
 function initMap() {
 
-  map = L.map('map').setView([35.6, 139.7], 10);
+  map = L.map('map').setView([35.3, 139.8], 10);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
@@ -107,54 +102,21 @@ function initMap() {
 
   }).addTo(map);
 
-  // ★これ追加
-
   log("initMap完了");
 
-  // 位置情報使わず直接
-
-startAIS(35.3, 139.8);
+  startAIS(35.3, 139.8);
 
 }
-
-function getMyLocation() {
-
-  navigator.geolocation.getCurrentPosition(pos => {
-
-    const lat = pos.coords.latitude;
-
-    const lng = pos.coords.longitude;
-
-    map.setView([lat, lng], 10);
-
-    startAIS(lat, lng);
-
-  }, err => {
-
-    alert("位置情報エラー: " + err.message);
-
-  });
-
-}
-window.onload = () => {
-
-  alert("読み込みOK");
-
-  setTimeout(initMap, 100);
-
-};
 
 function startAIS(lat, lng) {
 
-  const delta = 3.0;
+  const delta = 2.0;
 
   socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
 
   socket.onopen = () => {
 
-    //log("WebSocket接続OK");
-    log(JSON.stringify(data));
-    
+    log("WebSocket接続OK");
 
     socket.send(JSON.stringify({
 
@@ -172,73 +134,48 @@ function startAIS(lat, lng) {
 
   };
 
-  socket.onerror = (e) => {
+  socket.onerror = () => {
 
     log("WebSocketエラー");
 
   };
 
-socket.onmessage = (msg) => {
+  socket.onmessage = (msg) => {
 
-  log("データ受信");
+    // ★ここに入れてます（重要）
 
-  const data = JSON.parse(msg.data);
+    const data = JSON.parse(msg.data);
 
-  // ★ここを修正
+    log(JSON.stringify(data));
 
-  const message = data.Message;
+    const message = data.Message;
 
-  if (!message) {
+    if (!message) return;
 
-    log("Messageなし");
+    const report =
 
-    return;
+      message.PositionReport ||
 
-  }
+      message.StandardClassBPositionReport ||
 
-  const report =
+      message.LongRangeAisBroadcastMessage;
 
-  message.PositionReport ||
+    if (!report) return;
 
-  message.StandardClassBPositionReport ||
+    const mmsi = report.UserID;
 
-  message.LongRangeAisBroadcastMessage;
-    
+    const lat = report.Latitude;
 
-if (message.PositionReport) log("A");
+    const lng = report.Longitude;
 
-if (message.StandardClassBPositionReport) log("B");
+    if (lat == null || lng == null) return;
 
+    log("船データOK");
 
-  if (!report) {
+    updateShip(mmsi, lat, lng);
 
-    log("位置データなし");
+  };
 
-    return;
-
-  }
-
-  const mmsi = report.UserID;
-
-  const lat = report.Latitude;
-
-  const lng = report.Longitude;
-
-  // ★ここも修正済み
-
-  if (lat == null || lng == null) {
-
-    log("座標なし");
-
-    return;
-
-  }
-
-  log("船データOK");
-
-  updateShip(mmsi, lat, lng);
-
-};
 }
 
 function updateShip(mmsi, lat, lng) {
