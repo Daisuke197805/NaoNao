@@ -55,6 +55,12 @@ let socket;
 
 window.onload = () => {
 
+  const el = document.getElementById("log");
+
+  if (el) el.innerHTML = "ログ表示テスト<br>";
+
+  alert("読み込みOK");
+
   setTimeout(initMap, 100);
 
 };
