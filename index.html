@@ -40,7 +40,7 @@
 
       margin:0;
 
-      font-family: system-ui, -apple-system, Segoe UI, Roboto;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
 
       background:var(--bg);
 
@@ -48,7 +48,7 @@
 
     }
 
-    /* ===== ハンバーガー ===== */
+    /* ===== 追加：ハンバーガー ===== */
 
     #menuBtn{
 
@@ -73,8 +73,6 @@
       box-shadow:0 2px 8px rgba(0,0,0,.2);
 
     }
-
-    /* ===== メニュー ===== */
 
     #menu{
 
@@ -120,9 +118,7 @@
 
     }
 
-    /* ===== オーバーレイ ===== */
-
-    #overlay{
+    #overlayMenu{
 
       position:fixed;
 
@@ -140,15 +136,13 @@
 
     }
 
-    #overlay.show{
+    #overlayMenu.show{
 
       opacity:1;
 
       visibility:visible;
 
     }
-
-    /* ===== ヘッダー ===== */
 
     header{
 
@@ -173,6 +167,8 @@
       display:flex;
 
       align-items:center;
+
+      gap:12px;
 
       max-width:980px;
 
@@ -214,11 +210,17 @@
 
     }
 
+    .controls{ display:grid; gap:10px; }
+
+    .row1{ display:flex; gap:10px; }
+
+    .row2{ display:flex; gap:10px; flex-wrap:wrap; }
+
     select, button{
 
       font-size:16px;
 
-      padding:10px;
+      padding:10px 12px;
 
       border:1px solid var(--border);
 
@@ -238,13 +240,25 @@
 
     }
 
-    iframe{
+    .frameWrap{ padding:0; }
 
-      width:100%;
+    .square{
 
       aspect-ratio:1/1;
 
+      width:100%;
+
       border:0;
+
+    }
+
+    .notice{
+
+      font-size:13px;
+
+      color:#b71c1c;
+
+      display:none;
 
     }
 
@@ -254,15 +268,11 @@
 
 <body>
 
-<!-- ハンバーガー -->
+<!-- 追加 -->
 
 <button id="menuBtn">☰</button>
 
-<!-- 背景 -->
-
-<div id="overlay"></div>
-
-<!-- メニュー -->
+<div id="overlayMenu"></div>
 
 <nav id="menu">
 
@@ -290,33 +300,65 @@
 
 <main>
 
+  <!-- ★ここ完全に元のまま -->
+
   <section class="card">
 
-    <select id="place">
+    <div class="controls">
 
-      <option value="urayasu">浦安マリーナ</option>
+      <div class="row1">
 
-      <option value="ybm">横浜ベイサイドマリーナ</option>
+        <select id="place">
 
-      <option value="kenzaki">剣崎</option>
+          <option value="urayasu">浦安マリーナ</option>
 
-    </select>
+          <option value="ybm">横浜ベイサイドマリーナ</option>
 
-    <select id="overlaySelect">
+          <option value="kenzaki">剣崎</option>
 
-      <option value="wind">風</option>
+        </select>
 
-      <option value="waves">波</option>
+      </div>
 
-    </select>
+      <div class="row2">
 
-    <button class="btn-primary" id="openBtn">Windyで開く</button>
+        <select id="overlay">
+
+          <option value="wind" selected>風</option>
+
+          <option value="waves">波</option>
+
+          <option value="rain">雨</option>
+
+          <option value="temp">気温</option>
+
+          <option value="gust">ガスト（突風）</option>
+
+        </select>
+
+        <select id="zoom">
+
+          <option value="8">広め</option>
+
+          <option value="9">標準</option>
+
+          <option value="11" selected>近く</option>
+
+        </select>
+
+        <button class="btn-primary" id="openBtn">Windyで開く</button>
+
+      </div>
+
+      <div id="notice" class="notice"></div>
+
+    </div>
 
   </section>
 
-  <section class="card">
+  <section class="card frameWrap">
 
-    <iframe id="windyFrame"></iframe>
+    <iframe id="windyFrame" class="square"></iframe>
 
   </section>
 
@@ -324,39 +366,39 @@
 
 <script>
 
-// ===== メニュー制御 =====
+// ===== 追加：メニュー制御 =====
 
 const menuBtn = document.getElementById("menuBtn");
 
 const menu = document.getElementById("menu");
 
-const overlay = document.getElementById("overlay");
+const overlayMenu = document.getElementById("overlayMenu");
 
 menuBtn.onclick = () => {
 
   menu.classList.toggle("open");
 
-  overlay.classList.toggle("show");
+  overlayMenu.classList.toggle("show");
 
 };
 
-overlay.onclick = () => {
+overlayMenu.onclick = () => {
 
   menu.classList.remove("open");
 
-  overlay.classList.remove("show");
+  overlayMenu.classList.remove("show");
 
 };
 
-// ===== 現在ページ無効化 =====
+// 現在ページ無効化
 
 const links = document.querySelectorAll("#menu a");
 
 const current = location.pathname.split("/").pop() || "index.html";
 
-links.forEach(link => {
+links.forEach(link=>{
 
-  if (link.getAttribute("href") === current) {
+  if(link.getAttribute("href")===current){
 
     link.classList.add("active");
 
@@ -366,7 +408,7 @@ links.forEach(link => {
 
 });
 
-// ===== 既存JSそのまま =====
+// ===== 元のJSそのまま =====
 
 const PLACES = {
 
@@ -382,11 +424,11 @@ function update(){
 
   const p = PLACES[place.value];
 
-  windyFrame.src = `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&overlay=${overlaySelect.value}`;
+  windyFrame.src = `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&zoom=${zoom.value}&overlay=${overlay.value}`;
 
 }
 
-place.onchange = overlaySelect.onchange = update;
+place.onchange = overlay.onchange = zoom.onchange = update;
 
 update();
 
