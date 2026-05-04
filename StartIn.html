@@ -38,6 +38,104 @@ html, body {
 
 }
 
+/* ===== ハンバーガー ===== */
+
+#menuBtn{
+
+  position: fixed;
+
+  top: max(10px, env(safe-area-inset-top));
+
+  right: 10px;
+
+  z-index: 2000;
+
+  font-size: 22px;
+
+  background: rgba(255,255,255,0.9);
+
+  border: none;
+
+  border-radius: 10px;
+
+  padding: 6px 10px;
+
+}
+
+/* ===== メニュー ===== */
+
+#menu{
+
+  position: fixed;
+
+  top: 0;
+
+  right: -260px;
+
+  width: 260px;
+
+  height: 100%;
+
+  background: #333;
+
+  padding-top: 60px;
+
+  transition: .3s;
+
+  z-index: 1500;
+
+}
+
+#menu.open{ right:0; }
+
+#menu a{
+
+  display:block;
+
+  color:#fff;
+
+  padding:15px;
+
+  text-decoration:none;
+
+}
+
+#menu a.active{
+
+  color:#aaa;
+
+  pointer-events:none;
+
+}
+
+/* ===== オーバーレイ ===== */
+
+#overlay{
+
+  position:fixed;
+
+  inset:0;
+
+  background:rgba(0,0,0,.4);
+
+  opacity:0;
+
+  visibility:hidden;
+
+  transition:.3s;
+
+  z-index:1400;
+
+}
+
+#overlay.show{
+
+  opacity:1;
+
+  visibility:visible;
+
+}
+
 /* 上部距離表示 */
 
 #topbar {
@@ -70,13 +168,13 @@ html, body {
 
 }
 
-/* 右上ボタン（縦並び） */
+/* 右上ボタン（少し下げる） */
 
 #topRight {
 
   position: fixed;
 
-  top: 10px;
+  top: 60px; /* ←ここだけ調整 */
 
   right: 10px;
 
@@ -156,6 +254,30 @@ html, body {
 
 <body>
 
+<!-- ハンバーガー -->
+
+<button id="menuBtn">☰</button>
+
+<!-- オーバーレイ -->
+
+<div id="overlay"></div>
+
+<!-- メニュー -->
+
+<nav id="menu">
+
+  <a href="index.html">トップ</a>
+
+  <a href="event.html">レース&イベント</a>
+
+  <a href="StartIn.html">スタートライン</a>
+
+  <a href="RateCompare.html">レーティング比較</a>
+
+  <a href="AISviewer.html">AIS</a>
+
+</nav>
+
 <div id="map"></div>
 
 <div id="topbar">
@@ -164,7 +286,7 @@ html, body {
 
 </div>
 
-<!-- 右上（縦ボタン） -->
+<!-- 右上 -->
 
 <div id="topRight">
 
@@ -188,6 +310,48 @@ html, body {
 
 <script>
 
+/* ===== メニュー制御 ===== */
+
+const menuBtn = document.getElementById("menuBtn");
+
+const menu = document.getElementById("menu");
+
+const overlay = document.getElementById("overlay");
+
+menuBtn.onclick = () => {
+
+  menu.classList.toggle("open");
+
+  overlay.classList.toggle("show");
+
+};
+
+overlay.onclick = () => {
+
+  menu.classList.remove("open");
+
+  overlay.classList.remove("show");
+
+};
+
+/* 現在ページ無効化 */
+
+const links = document.querySelectorAll("#menu a");
+
+const current = location.pathname.split("/").pop() || "index.html";
+
+links.forEach(link => {
+
+  if (link.getAttribute("href") === current) {
+
+    link.classList.add("active");
+
+    link.removeAttribute("href");
+
+  }
+
+});
+
 let map;
 
 let posA = null;
@@ -200,8 +364,6 @@ let lineAB, linePerp;
 
 let intervalId = null;
 
-/* 船アイコン */
-
 const shipIcon = L.icon({
 
   iconUrl: "https://cdn-icons-png.flaticon.com/512/68/68843.png",
@@ -211,8 +373,6 @@ const shipIcon = L.icon({
   iconAnchor: [15, 15]
 
 });
-
-/* 初期化（現在地） */
 
 window.onload = () => {
 
@@ -234,19 +394,11 @@ window.onload = () => {
 
 };
 
-/* 位置取得 */
-
 function getLocation(callback) {
 
   navigator.geolocation.getCurrentPosition(
 
-    pos => callback({
-
-      lat: pos.coords.latitude,
-
-      lng: pos.coords.longitude
-
-    }),
+    pos => callback({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
 
     err => alert(err.message),
 
@@ -255,8 +407,6 @@ function getLocation(callback) {
   );
 
 }
-
-/* A */
 
 function setA() {
 
@@ -274,8 +424,6 @@ function setA() {
 
 }
 
-/* B */
-
 function setB() {
 
   getLocation(p => {
@@ -291,8 +439,6 @@ function setB() {
   });
 
 }
-
-/* AB線 */
 
 function drawABLine() {
 
@@ -313,8 +459,6 @@ function drawABLine() {
   lineAB = L.polyline([p1, p2], { color: 'blue' }).addTo(map);
 
 }
-
-/* 座標変換 */
 
 function toXY(p) {
 
@@ -343,8 +487,6 @@ function toLatLng(p) {
   };
 
 }
-
-/* C開始 */
 
 function start() {
 
@@ -378,8 +520,6 @@ function start() {
 
       let footLatLng = toLatLng(foot);
 
-      /* 距離 */
-
       let dx = C.x - foot.x;
 
       let dy = C.y - foot.y;
@@ -390,25 +530,15 @@ function start() {
 
         "距離: " + Math.round(distance) + " m";
 
-      /* Cマーカー */
-
       if (markerC) map.removeLayer(markerC);
 
       markerC = L.marker([posC.lat, posC.lng], { icon: shipIcon }).addTo(map);
-
-      /* 垂線 */
 
       if (linePerp) map.removeLayer(linePerp);
 
       linePerp = L.polyline(
 
-        [
-
-          [posC.lat, posC.lng],
-
-          [footLatLng.lat, footLatLng.lng]
-
-        ],
+        [[posC.lat, posC.lng],[footLatLng.lat, footLatLng.lng]],
 
         { color: 'red' }
 
@@ -420,8 +550,6 @@ function start() {
 
 }
 
-/* 停止 */
-
 function stop() {
 
   clearInterval(intervalId);
@@ -429,8 +557,6 @@ function stop() {
   intervalId = null;
 
 }
-
-/* リセット */
 
 function resetAll() {
 
