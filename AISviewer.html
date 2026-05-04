@@ -117,9 +117,10 @@ function startAIS(lat, lng) {
   };
 
   socket.onmessage = (msg) => {
-    console.log(data);
 
   const data = JSON.parse(msg.data);
+
+  console.log(data);
 
   if (!data.Message) return;
 
