@@ -111,9 +111,9 @@ function initMap() {
 
   log("initMap完了");
 
-  // 位置情報使わず直接AIS
+  // 位置情報使わず直接
 
-  startAIS(35.6, 139.7);
+startAIS(35.3, 139.8);
 
 }
 
@@ -146,7 +146,7 @@ window.onload = () => {
 
 function startAIS(lat, lng) {
 
-  const delta = 1.0;
+  const delta = 3.0;
 
   socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
 
@@ -196,9 +196,12 @@ socket.onmessage = (msg) => {
 
   const report =
 
-    message.PositionReport ||
+  message.PositionReport ||
 
-    message.StandardClassBPositionReport;
+  message.StandardClassBPositionReport ||
+
+  message.LongRangeAisBroadcastMessage;
+    
 
   if (!report) {
 
