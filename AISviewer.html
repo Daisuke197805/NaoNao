@@ -8,6 +8,8 @@
 
 <title>AIS表示</title>
 
+<div id="log" style="position:absolute; top:0; left:0; background:white; font-size:12px; max-height:200px; overflow:auto;"></div>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
@@ -55,7 +57,13 @@ window.onload = () => {
   setTimeout(initMap, 100);
 
 };
+function log(msg) {
 
+  const el = document.getElementById("log");
+
+  el.innerHTML += msg + "<br>";
+
+}
 function initMap() {
 
   map = L.map('map').setView([35.6, 139.7], 10);
@@ -120,7 +128,7 @@ function startAIS(lat, lng) {
 
   const data = JSON.parse(msg.data);
 
-  console.log(data);
+  log(JSON.stringify(data));
 
   if (!data.Message) return;
 
