@@ -203,6 +203,11 @@ socket.onmessage = (msg) => {
   message.LongRangeAisBroadcastMessage;
     
 
+if (message.PositionReport) log("A");
+
+if (message.StandardClassBPositionReport) log("B");
+
+
   if (!report) {
 
     log("位置データなし");
