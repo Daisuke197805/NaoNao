@@ -48,6 +48,12 @@ button {
 
 }
 
+.icon-btn {
+
+  font-size: 18px;
+
+}
+
 </style>
 
 </head>
@@ -60,9 +66,11 @@ button {
 
   <div class="value">方位: <span id="heading">0</span>°</div>
 
-  <button onclick="start()">スタート</button>
+  <button onclick="start()">▶️</button>
 
-  <button onclick="stop()">ストップ</button>
+  <button onclick="stop()">⏹️</button>
+
+  <button class="icon-btn" onclick="toggleMode()" id="modeBtn">🧭</button>
 
 </div>
 
@@ -73,6 +81,10 @@ button {
 let watchId = null;
 
 let positions = [];
+
+let firstFix = false;
+
+let mode = "north"; // north / heading
 
 const map = L.map('map').setView([35, 139], 15);
 
@@ -122,6 +134,18 @@ function stop() {
 
 }
 
+// --- モード切替 ---
+
+function toggleMode() {
+
+  mode = (mode === "north") ? "heading" : "north";
+
+  document.getElementById("modeBtn").textContent =
+
+    (mode === "north") ? "🧭" : "▶️";
+
+}
+
 // --- 位置更新 ---
 
 function updatePosition(pos) {
@@ -134,11 +158,19 @@ function updatePosition(pos) {
 
   positions.push({lat, lng, time});
 
-  // ★ 10秒分保持（1秒更新前提）
-
   if (positions.length > 10) positions.shift();
 
-  // --- 地図更新 ---
+  // 初回だけ現在地へ
+
+  if (!firstFix) {
+
+    map.setView([lat, lng], 16);
+
+    firstFix = true;
+
+  }
+
+  // マーカー
 
   if (!marker) {
 
@@ -152,8 +184,6 @@ function updatePosition(pos) {
 
   polyline.addLatLng([lat, lng]);
 
-  map.setView([lat, lng]);
-
   // --- 計算 ---
 
   if (positions.length >= 2) {
@@ -162,15 +192,13 @@ function updatePosition(pos) {
 
     const last = positions[positions.length - 1];
 
-    const dist = getDistance(first, last); // km
+    const dist = getDistance(first, last);
 
-    const timeDiff = (last.time - first.time) / 1000; // 秒
+    const timeDiff = (last.time - first.time) / 1000;
 
     if (timeDiff > 0) {
 
-      const speedKmh = (dist / timeDiff) * 3600;
-
-      const speedKt = speedKmh / 1.852;
+      const speedKt = ((dist / timeDiff) * 3600) / 1.852;
 
       document.getElementById("speed").textContent = speedKt.toFixed(2);
 
@@ -178,13 +206,31 @@ function updatePosition(pos) {
 
       document.getElementById("heading").textContent = heading.toFixed(0);
 
+      // --- 表示モード ---
+
+      if (mode === "north") {
+
+        map.setView([lat, lng]);
+
+        document.getElementById("map").style.transform = "rotate(0deg)";
+
+      } else {
+
+        map.setView([lat, lng]);
+
+        document.getElementById("map").style.transform =
+
+          "rotate(" + (-heading) + "deg)";
+
+      }
+
     }
 
   }
 
 }
 
-// --- 距離（km）---
+// --- 距離 ---
 
 function getDistance(p1, p2) {
 
@@ -208,7 +254,7 @@ function getDistance(p1, p2) {
 
 }
 
-// --- 方位（度）---
+// --- 方位 ---
 
 function getBearing(p1, p2) {
 
