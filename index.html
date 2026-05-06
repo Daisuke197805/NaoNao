@@ -1,447 +1,114 @@
 <!doctype html>
-
 <html lang="ja">
-
 <head>
-
   <meta charset="utf-8" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <title>naonaoポータル</title>
-
-  <style>
-
-    :root{
-
-      --bg:#f6f7fb;
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />f6f7fb;  <meta name="viewport" content="width=device-width, initial-scale=1" />
       --card:#ffffff;
-
       --text:#111827;
-
       --muted:#6b7280;
-
       --brand:#1976d2;
-
       --brand2:#155fa8;
-
       --border:#e5e7eb;
-
       --shadow:0 2px 14px rgba(0,0,0,.08);
-
       --radius:16px;
-
     }
-
     *{ box-sizing:border-box; }
-
     body{
-
       margin:0;
-
       font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-
       background:var(--bg);
-
       color:var(--text);
-
     }
 
-    /* ===== 追加：ハンバーガー ===== */
-
-    #menuBtn{
-
-      position:fixed;
-
-      top:max(12px, env(safe-area-inset-top));
-
-      right:12px;
-
-      z-index:2000;
-
-      font-size:22px;
-
+    /* ===== ハンバーガー ===== */
+    .hamburger{
+      width:28px;
+      height:22px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      cursor:pointer;
+    }
+    .hamburger span{
+      height:3px;
       background:#fff;
-
-      border:none;
-
-      border-radius:10px;
-
-      padding:6px 10px;
-
-      box-shadow:0 2px 8px rgba(0,0,0,.2);
-
-    }
-
-    #menu{
-
-      position:fixed;
-
-      top:0;
-
-      right:-260px;
-
-      width:260px;
-
-      height:100%;
-
-      background:#333;
-
-      padding-top:60px;
-
-      transition:.3s;
-
-      z-index:1500;
-
-    }
-
-    #menu.open{ right:0; }
-
-    #menu a{
-
+      border-radius:2px;
       display:block;
-
-      color:#fff;
-
-      padding:15px;
-
-      text-decoration:none;
-
     }
 
-    #menu a.active{
-
-      color:#aaa;
-
-      pointer-events:none;
-
-    }
-
-    #overlayMenu{
-
+    /* ===== メニュー ===== */
+    #menu{
       position:fixed;
-
-      inset:0;
-
-      background:rgba(0,0,0,.4);
-
-      opacity:0;
-
-      visibility:hidden;
-
-      transition:.3s;
-
-      z-index:1400;
-
+      top:0;
+      left:-260px;
+      width:240px;
+      height:100%;
+      background:#fff;
+      box-shadow:2px 0 10px rgba(0,0,0,.15);
+      padding:60px 16px;
+      transition:left .25s;
+      z-index:20;
+    }
+    #menu a{
+      display:block;
+      padding:12px;
+      margin-bottom:8px;
+      text-decoration:none;
+      color:#111;
+      font-weight:700;
+      border-radius:8px;
+    }
+    #menu a:hover{
+      background:#e3f2fd;
+    }
+    #menu a.active{
+      color:#aaa;
+      pointer-events:none;
+    }
+    #menu.open{
+      left:0;
     }
 
-    #overlayMenu.show{
-
-      opacity:1;
-
-      visibility:visible;
-
+    /* 背景オーバーレイ */
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.3);
+      display:none;
+      z-index:15;
+    }
+    .overlay.show{
+      display:block;
     }
 
     header{
-
       position:sticky;
-
       top:0;
-
       z-index:10;
-
       background:linear-gradient(90deg, #1565c0, #1976d2);
-
       color:#fff;
-
       padding:12px 16px;
-
       box-shadow:0 2px 10px rgba(0,0,0,.12);
-
     }
-
     header .row{
-
       display:flex;
-
       align-items:center;
-
       gap:12px;
-
       max-width:980px;
-
       margin:0 auto;
-
     }
-
     header .title{
-
       font-weight:800;
-
     }
-
     main{
-
       max-width:980px;
-
       margin:0 auto;
-
       padding:12px;
-
       display:grid;
-
       gap:12px;
-
     }
-
     .card{
 
-      background:var(--card);
-
-      border:1px solid var(--border);
-
-      border-radius:var(--radius);
-
-      box-shadow:var(--shadow);
-
-      padding:12px;
-
-    }
-
-    .controls{ display:grid; gap:10px; }
-
-    .row1{ display:flex; gap:10px; }
-
-    .row2{ display:flex; gap:10px; flex-wrap:wrap; }
-
-    select, button{
-
-      font-size:16px;
-
-      padding:10px 12px;
-
-      border:1px solid var(--border);
-
-      border-radius:12px;
-
-      background:#fff;
-
-    }
-
-    .btn-primary{
-
-      background:var(--brand);
-
-      color:#fff;
-
-      font-weight:800;
-
-    }
-
-    .frameWrap{ padding:0; }
-
-    .square{
-
-      aspect-ratio:1/1;
-
-      width:100%;
-
-      border:0;
-
-    }
-
-    .notice{
-
-      font-size:13px;
-
-      color:#b71c1c;
-
-      display:none;
-
-    }
-
-  </style>
-
-</head>
-
-<body>
-
-<!-- 追加 -->
-
-<button id="menuBtn">☰</button>
-
-<div id="overlayMenu"></div>
-
-<nav id="menu">
-
-  <a href="index.html">トップ</a>
-
-  <a href="event.html">レース&イベント</a>
-
-  <a href="StartIn.html">スタートライン</a>
-
-  <a href="RateCompare.html">レーティング比較</a>
-
-  <a href="AisViewer.html">AIS</a>
-
-</nav>
-
-<header>
-
-  <div class="row">
-
-    <div class="title">naonaoポータル</div>
-
-  </div>
-
-</header>
-
-<main>
-
-  <!-- ★ここ完全に元のまま -->
-
-  <section class="card">
-
-    <div class="controls">
-
-      <div class="row1">
-
-        <select id="place">
-
-          <option value="urayasu">浦安マリーナ</option>
-
-          <option value="ybm">横浜ベイサイドマリーナ</option>
-
-          <option value="kenzaki">剣崎</option>
-
-        </select>
-
-      </div>
-
-      <div class="row2">
-
-        <select id="overlay">
-
-          <option value="wind" selected>風</option>
-
-          <option value="waves">波</option>
-
-          <option value="rain">雨</option>
-
-          <option value="temp">気温</option>
-
-          <option value="gust">ガスト（突風）</option>
-
-        </select>
-
-        <select id="zoom">
-
-          <option value="8">広め</option>
-
-          <option value="9">標準</option>
-
-          <option value="11" selected>近く</option>
-
-        </select>
-
-        <button class="btn-primary" id="openBtn">Windyで開く</button>
-
-      </div>
-
-      <div id="notice" class="notice"></div>
-
-    </div>
-
-  </section>
-
-  <section class="card frameWrap">
-
-    <iframe id="windyFrame" class="square"></iframe>
-
-  </section>
-
-</main>
-
-<script>
-
-// ===== 追加：メニュー制御 =====
-
-const menuBtn = document.getElementById("menuBtn");
-
-const menu = document.getElementById("menu");
-
-const overlayMenu = document.getElementById("overlayMenu");
-
-menuBtn.onclick = () => {
-
-  menu.classList.toggle("open");
-
-  overlayMenu.classList.toggle("show");
-
-};
-
-overlayMenu.onclick = () => {
-
-  menu.classList.remove("open");
-
-  overlayMenu.classList.remove("show");
-
-};
-
-// 現在ページ無効化
-
-const links = document.querySelectorAll("#menu a");
-
-const current = location.pathname.split("/").pop() || "index.html";
-
-links.forEach(link=>{
-
-  if(link.getAttribute("href")===current){
-
-    link.classList.add("active");
-
-    link.removeAttribute("href");
-
-  }
-
-});
-
-// ===== 元のJSそのまま =====
-
-const PLACES = {
-
-  urayasu:{lat:35.62,lon:139.89},
-
-  ybm:{lat:35.38,lon:139.64},
-
-  kenzaki:{lat:35.14,lon:139.67}
-
-};
-
-function update(){
-
-  const p = PLACES[place.value];
-
-  windyFrame.src = `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&zoom=${zoom.value}&overlay=${overlay.value}`;
-
-}
-
-place.onchange = overlay.onchange = zoom.onchange = update;
-
-update();
-
-openBtn.onclick = () => {
-
-  const p = PLACES[place.value];
-
-  location.href = `https://www.windy.com/?lat=${p.lat}&lon=${p.lon}`;
-
-};
-
-</script>
-
-</body>
-
-</html>
+  <title>naonaoポータル</title>
+  <style>
+    :root{
