@@ -121,6 +121,7 @@
     }
     .controls{ display:grid; gap:10px; }
     .row1{ display:flex; gap:10px; }
+    .row1 select{ width:100%; border:2px solid var(--brand); font-weight:700; }
     .row2{ display:flex; gap:10px; flex-wrap:wrap; }
     select, button{
       font-size:16px;
@@ -176,8 +177,11 @@
       <div class="row1">
         <select id="place">
           <option value="urayasu">浦安マリーナ</option>
+          <option value="kazenotou">風の塔</option>
           <option value="ybm">横浜ベイサイドマリーナ</option>
           <option value="kenzaki">剣崎</option>
+          <option value="ginowan">宜野湾マリーナ</option>
+          <option value="zamami">座間味港</option>
         </select>
       </div>
       <div class="row2">
@@ -193,7 +197,7 @@
           <option value="9">標準</option>
           <option value="11" selected>近く</option>
         </select>
-        <button class="btn-primary" id="openBtn">Windyで開く</button>
+        <button class="btn-primary" id="openBtn">Windy</button>
       </div>
       <div id="notice" class="notice"></div>
     </div>
@@ -227,16 +231,19 @@ links.forEach(link=>{
 // ===== 元のJSそのまま =====
 const PLACES = {
   urayasu:{lat:35.62,lon:139.89},
+  kazenotou:{lat:35.4914,lon:139.8347},
   ybm:{lat:35.38,lon:139.64},
-  kenzaki:{lat:35.14,lon:139.67}
+  kenzaki:{lat:35.14,lon:139.67},
+  ginowan:{lat:26.2771,lon:127.7299},
+  zamami:{lat:26.2254,lon:127.3015}
 };
 
 function update(){
   const p = PLACES[place.value];
-  windyFrame.src = `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&zoom=${zoom.value}&overlay=${overlay.value}`;
+  windyFrame.src = `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&zoom=${zoom.value}&overlay=${document.getElementById("overlay").value}`;
 }
 
-place.onchange = overlay.onchange = zoom.onchange = update;
+place.onchange = document.getElementById("overlay").onchange = zoom.onchange = update;
 update();
 
 openBtn.onclick = () => {
