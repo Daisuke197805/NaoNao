@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>スライド</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
+      --purple:#7b1fa2; --purple2:#9c27b0;
+      --shadow:0 2px 14px rgba(0,0,0,.08); --radius:14px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; padding:0;
+      font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      background:var(--bg); color:var(--text);
+    }
+    .hamburger{ width:28px; height:22px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; }
+    .hamburger span{ height:3px; background:#fff; border-radius:2px; display:block; }
+    #menu{ position:fixed; top:0; left:-260px; width:240px; height:100%; background:#fff; box-shadow:2px 0 10px rgba(0,0,0,.15); padding:60px 16px; transition:left .25s; z-index:20; }
+    #menu a{ display:block; padding:12px; margin-bottom:8px; text-decoration:none; color:#111; font-weight:700; border-radius:8px; }
+    #menu a:hover{ background:#f3e5f5; }
+    #menu a.active{ color:#aaa; pointer-events:none; }
+    #menu.open{ left:0; }
+    .menuOverlay{ position:fixed; inset:0; background:rgba(0,0,0,.3); display:none; z-index:15; }
+    .menuOverlay.show{ display:block; }
+    header{ position:sticky; top:0; z-index:10; background:linear-gradient(90deg, #7b1fa2, #9c27b0); color:#fff; padding:12px 16px; box-shadow:0 2px 10px rgba(0,0,0,.12); }
+    header .row{ display:flex; align-items:center; gap:12px; max-width:980px; margin:0 auto; }
+    header .title{ font-weight:800; letter-spacing:.02em; }
+    main{ max-width:600px; margin:0 auto; padding:12px; }
+    .carousel{ position:relative; overflow:hidden; border-radius:var(--radius); box-shadow:var(--shadow); background:#000; }
+    .carousel-track{ display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .carousel-track::-webkit-scrollbar{ display:none; }
+    .carousel-slide{ flex:0 0 100%; scroll-snap-align:start; }
+    .carousel-slide img{ width:100%; display:block; object-fit:contain; max-height:70vh; background:#000; }
+    .dots{ display:flex; justify-content:center; gap:8px; padding:12px 0; }
+    .dot{ width:10px; height:10px; border-radius:50%; background:#ccc; border:none; padding:0; cursor:pointer; transition:background .2s; }
+    .dot.active{ background:var(--purple); }
+    .slide-counter{ text-align:center; font-size:13px; color:var(--muted); margin-bottom:8px; }
+    .info-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-top:12px; min-height:80px; }
+    .info-title{ font-size:18px; font-weight:800; margin-bottom:8px; color:var(--text); }
+    .info-desc{ font-size:14px; line-height:1.7; color:var(--text); white-space:pre-wrap; word-break:break-word; }
+    .loading-overlay{ display:none; position:fixed; inset:0; z-index:200; background:rgba(255,255,255,.7); justify-content:center; align-items:center; flex-direction:column; gap:12px; }
+    .loading-overlay.active{ display:flex; }
+    .spinner{ width:36px; height:36px; border:4px solid var(--border); border-top-color:var(--purple); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading-overlay .loading-text{ font-size:14px; color:var(--muted); font-weight:700; }
+    .message{ text-align:center; color:var(--muted); padding:40px 16px; font-size:15px; }
+  </style>
+</head>
+<body>
+
+<div id="menu">
+  <a href="index.html">トップ</a>
+  <a href="event.html">レース&amp;イベント</a>
+  <a href="StartIn.html">スタートライン</a>
+  <a href="RateCompare.html">レーティング比較</a>
+  <a href="AISviewer.html">AIS</a>
+  <a href="slide.html">スライド</a>
+</div>
+<div class="menuOverlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+<header>
+  <div class="row">
+    <div class="hamburger" onclick="toggleMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="title">スライド</div>
+  </div>
+</header>
+
+<main>
+  <div id="content"></div>
+</main>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">スライドを読み込み中…</div>
+</div>
+
+<script>
+function toggleMenu(){
+  document.getElementById("menu").classList.toggle("open");
+  document.getElementById("menuOverlay").classList.toggle("show");
+}
+function closeMenu(){
+  document.getElementById("menu").classList.remove("open");
+  document.getElementById("menuOverlay").classList.remove("show");
+}
+
+(function(){
+  var menuLinks = document.querySelectorAll("#menu a");
+  var currentPage = location.pathname.split("/").pop() || "index.html";
+  menuLinks.forEach(function(link){
+    if(link.getAttribute("href") === currentPage){
+      link.classList.add("active");
+      link.removeAttribute("href");
+    }
+  });
+})();
+
+var API_URL = "https://script.google.com/macros/s/AKfycbzaLPhysJ3_e18Hk25-dumu7324yqDwE7KWgqegPYd9j-6d5eiZsoP5Tze2KcnKkKOcEw/exec";
+var contentEl = document.getElementById("content");
+var loadingOverlay = document.getElementById("loadingOverlay");
+
+function showLoading(){ loadingOverlay.classList.add("active"); }
+function hideLoading(){ loadingOverlay.classList.remove("active"); }
+
+async function apiGetSlides(){
+  var body = new URLSearchParams({ type: "getSlides" });
+  var res = await fetch(API_URL, { method:"POST", body: body });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  var text = await res.text();
+  return JSON.parse(text);
+}
+
+function escapeAttr(str){
+  return String(str || "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function buildCarousel(slides){
+  var validSlides = slides.filter(function(s){ return s.image_url; });
+  if (!validSlides.length){
+    contentEl.innerHTML = '<div class="message">表示するスライドがありません</div>';
+    return;
+  }
+  var trackHtml = "";
+  for (var i = 0; i < validSlides.length; i++){
+    var s = validSlides[i];
+    trackHtml += '<div class="carousel-slide"><img src="' + escapeAttr(s.image_url) + '" alt="' + escapeAttr(s.title || ("slide " + (i+1))) + '" loading="lazy"></div>';
+  }
+  var dotsHtml = "";
+  for (var j = 0; j < validSlides.length; j++){
+    dotsHtml += '<button class="dot' + (j === 0 ? " active" : "") + '" data-index="' + j + '"></button>';
+  }
+  var firstTitle = escapeAttr(validSlides[0].title || "");
+  var firstDesc  = escapeAttr(validSlides[0].description || "");
+  contentEl.innerHTML =
+    '<div class="carousel">' +
+      '<div class="carousel-track" id="track">' + trackHtml + '</div>' +
+    '</div>' +
+    '<div class="dots" id="dots">' + dotsHtml + '</div>' +
+    '<div class="slide-counter" id="counter">1 / ' + validSlides.length + '</div>' +
+    '<div class="info-card">' +
+      '<div class="info-title" id="infoTitle">' + firstTitle + '</div>' +
+      '<div class="info-desc" id="infoDesc">' + firstDesc + '</div>' +
+    '</div>';
+  var track     = document.getElementById("track");
+  var dots      = document.querySelectorAll(".dot");
+  var counter   = document.getElementById("counter");
+  var infoTitle = document.getElementById("infoTitle");
+  var infoDesc  = document.getElementById("infoDesc");
+  var currentIndex = 0;
+  function updateInfo(index){
+    if (index === currentIndex) return;
+    currentIndex = index;
+    dots.forEach(function(d, i){
+      if (i === index) { d.classList.add("active"); }
+      else { d.classList.remove("active"); }
+    });
+    counter.textContent = (index + 1) + " / " + validSlides.length;
+    infoTitle.textContent = validSlides[index].title || "";
+    infoDesc.textContent  = validSlides[index].description || "";
+  }
+  var scrollTimer;
+  track.addEventListener("scroll", function(){
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(function(){
+      var slideWidth = track.offsetWidth;
+      var newIndex = Math.round(track.scrollLeft / slideWidth);
+      if (newIndex >= 0 && newIndex < validSlides.length){
+        updateInfo(newIndex);
+      }
+    }, 50);
+  });
+  dots.forEach(function(dot){
+    dot.addEventListener("click", function(){
+      var index = Number(this.dataset.index);
+      var slideWidth = track.offsetWidth;
+      track.scrollTo({ left: slideWidth * index, behavior: "smooth" });
+    });
+  });
+}
+
+async function init(){
+  try{
+    showLoading();
+    var res = await apiGetSlides();
+    if (res.status !== "ok") throw new Error(res.message || "取得失敗");
+    buildCarousel(res.slides || []);
+  }catch(err){
+    contentEl.innerHTML = '<div class="message">読み込みに失敗しました：' + (err.message || err) + '</div>';
+  }finally{
+    hideLoading();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
