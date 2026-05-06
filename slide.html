@@ -124,7 +124,7 @@ function escapeAttr(str){
 function buildCarousel(slides){
   var validSlides = slides.filter(function(s){ return s.image_url; });
   if (!validSlides.length){
-    contentEl.innerHTML = '<div class="message">\u8868\u793a\u3059\u308b\u30b9\u30e9\u30a4\u30c9\u304c\u3042\u308a\u307e\u305b\u3093</div>';
+    contentEl.innerHTML = '<div class="message">表示するスライドがありません</div>';
     return;
   }
   var trackHtml = "";
@@ -189,17 +189,16 @@ async function init(){
   try{
     showLoading();
     var res = await apiGetSlides();
-    if (res.status !== "ok") throw new Error(res.message || "\u53d6\u5f97\u5931\u6557");
+    if (res.status !== "ok") throw new Error(res.message || "取得失敗");
     buildCarousel(res.slides || []);
   }catch(err){
-    contentEl.innerHTML = '<div class="message">\u8aad\u307f\u8fbc\u307f\u306b\u5931\u6557\u3057\u307e\u3057\u305f\uff1a' + (err.message || err) + '</div>';
+    contentEl.innerHTML = '<div class="message">読み込みに失敗しました：' + (err.message || err) + '</div>';
   }finally{
     hideLoading();
   }
 }
 
 init();
-
 </script>
 </body>
 </html>
