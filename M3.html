@@ -42,15 +42,13 @@ body { margin:0; font-family: sans-serif; }
 
 button {
 
-  font-size: 18px;
+  font-size: 16px;
 
   margin-right: 10px;
 
   padding: 8px 12px;
 
 }
-
-/* 船アイコン */
 
 .boat-icon {
 
@@ -72,9 +70,9 @@ button {
 
   <div class="value">方位: <span id="heading">0</span>°</div>
 
-  <button onclick="start()">▶️</button>
+  <button onclick="start()">スタート</button>
 
-  <button onclick="stop()">⏹️</button>
+  <button onclick="stop()">ストップ</button>
 
   <button onclick="toggleMode()" id="modeBtn">🧭</button>
 
@@ -106,7 +104,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 }).addTo(map);
 
-// --- 船アイコン ---
+// 船アイコン
 
 const boatIcon = L.divIcon({
 
@@ -124,7 +122,7 @@ let marker = null;
 
 let polyline = L.polyline([], {color: 'blue'}).addTo(map);
 
-// --- スタート ---
+// スタート
 
 function start() {
 
@@ -142,7 +140,7 @@ function start() {
 
 }
 
-// --- ストップ ---
+// ストップ
 
 function stop() {
 
@@ -156,7 +154,7 @@ function stop() {
 
 }
 
-// --- モード切替 ---
+// モード切替
 
 function toggleMode() {
 
@@ -174,7 +172,7 @@ function toggleMode() {
 
 }
 
-// --- 更新 ---
+// 更新
 
 function updatePosition(pos) {
 
@@ -228,7 +226,7 @@ function updatePosition(pos) {
 
       document.getElementById("heading").textContent = heading.toFixed(0);
 
-      // 船アイコン回転
+      // 船の向き
 
       document.getElementById("boat").style.transform =
 
@@ -250,7 +248,7 @@ function updatePosition(pos) {
 
 }
 
-// --- 距離 ---
+// 距離
 
 function getDistance(p1, p2) {
 
@@ -274,7 +272,7 @@ function getDistance(p1, p2) {
 
 }
 
-// --- 方位 ---
+// 方位
 
 function getBearing(p1, p2) {
 
