@@ -230,6 +230,11 @@ button {
 
 }
 
+.blue {
+  background: blue;
+  color: white;
+}
+
 </style>
 
 </head>
@@ -339,27 +344,20 @@ const callTimes = [
 let spokenSet = new Set();
 
 function updateDisplay() {
-
   let min = Math.floor(remaining / 60);
-
   let sec = remaining % 60;
-
   document.getElementById("time").innerText =
-
     min + ":" + sec.toString().padStart(2, "0");
 
-  document.body.classList.remove("yellow", "red");
+  document.body.classList.remove("yellow", "red", "blue");
 
-  if (remaining <= 10) {
-
+  if (remaining === 0) {
+    document.body.classList.add("blue");
+  } else if (remaining <= 10) {
     document.body.classList.add("red");
-
   } else if (remaining <= 60) {
-
     document.body.classList.add("yellow");
-
   }
-
 }
 
 function speak(text) {
