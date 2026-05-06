@@ -26,13 +26,141 @@ body {
 
 }
 
-#top {
+/* ===== ハンバーガー ===== */
+
+header {
+
+  position: fixed;
+
+  top: 0;
+
+  width: 100%;
 
   padding: 10px;
 
+  z-index: 10;
+
 }
 
-/* ★巨大化 */
+.headerRow {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+}
+
+.hamburger {
+
+  width: 28px;
+
+  height: 22px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+
+  cursor: pointer;
+
+}
+
+.hamburger span {
+
+  height: 3px;
+
+  background: white;
+
+  border-radius: 2px;
+
+}
+
+/* ===== メニュー ===== */
+
+#menu {
+
+  position: fixed;
+
+  top: 0;
+
+  left: -260px;
+
+  width: 240px;
+
+  height: 100%;
+
+  background: #111;
+
+  padding: 60px 16px;
+
+  transition: left .25s;
+
+  z-index: 20;
+
+}
+
+#menu a {
+
+  display: block;
+
+  padding: 12px;
+
+  margin-bottom: 8px;
+
+  text-decoration: none;
+
+  color: white;
+
+  font-weight: bold;
+
+  border-radius: 8px;
+
+}
+
+#menu a:hover {
+
+  background: #333;
+
+}
+
+#menu.open {
+
+  left: 0;
+
+}
+
+/* オーバーレイ */
+
+.menuOverlay {
+
+  position: fixed;
+
+  inset: 0;
+
+  background: rgba(0,0,0,.5);
+
+  display: none;
+
+  z-index: 15;
+
+}
+
+.menuOverlay.show {
+
+  display: block;
+
+}
+
+/* ===== タイマー ===== */
+
+#top {
+
+  margin-top: 60px;
+
+}
 
 #time {
 
@@ -54,8 +182,6 @@ body {
 
 }
 
-/* 通常ボタン */
-
 button {
 
   font-size: 5vw;
@@ -69,8 +195,6 @@ button {
   border-radius: 10px;
 
 }
-
-/* ★スタートだけ強調 */
 
 #startBtn {
 
@@ -108,6 +232,40 @@ button {
 
 <body>
 
+<!-- メニュー -->
+
+<div id="menu">
+
+  <a href="index.html">トップ</a>
+
+  <a href="event.html">レース&amp;イベント</a>
+
+  <a href="StartIn.html">スタートライン</a>
+
+  <a href="RateCompare.html">レーティング比較</a>
+
+  <a href="AISviewer.html">AIS</a>
+
+</div>
+
+<div class="menuOverlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+<!-- ヘッダー -->
+
+<header>
+
+  <div class="headerRow">
+
+    <div class="hamburger" onclick="toggleMenu()">
+
+      <span></span><span></span><span></span>
+
+    </div>
+
+  </div>
+
+</header>
+
 <div id="top">
 
   <button onclick="resetTimer()">リセット</button>
@@ -131,6 +289,26 @@ button {
 </div>
 
 <script>
+
+// ===== メニュー制御 =====
+
+function toggleMenu(){
+
+  document.getElementById("menu").classList.toggle("open");
+
+  document.getElementById("menuOverlay").classList.toggle("show");
+
+}
+
+function closeMenu(){
+
+  document.getElementById("menu").classList.remove("open");
+
+  document.getElementById("menuOverlay").classList.remove("show");
+
+}
+
+// ===== タイマー =====
 
 let totalTime = 300;
 
@@ -216,11 +394,11 @@ function formatTimeSpeech(sec) {
 
   let s = sec % 60;
 
-  if (m > 0 && s > 0) return `${m}分${s}秒`;
+  if (m > 0 && s > 0) return `${m}分${s}秒前`;
 
-  if (m > 0) return `${m}分`;
+  if (m > 0) return `${m}分前`;
 
-  return `${s}秒`;
+  return `${s}秒前`;
 
 }
 
