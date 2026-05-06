@@ -6,13 +6,15 @@
 
 <meta charset="utf-8">
 
-<title>ヨット航行表示</title>
+<title>ヨット航行表示（完成版）</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
 
 <style>
 
@@ -32,7 +34,7 @@ body { margin:0; font-family: sans-serif; }
 
 .value {
 
-  font-size: 24px;
+  font-size: 22px;
 
   margin: 5px 0;
 
@@ -40,7 +42,7 @@ body { margin:0; font-family: sans-serif; }
 
 button {
 
-  font-size: 16px;
+  font-size: 18px;
 
   margin-right: 10px;
 
@@ -48,9 +50,13 @@ button {
 
 }
 
-.icon-btn {
+/* 船アイコン */
 
-  font-size: 18px;
+.boat-icon {
+
+  font-size: 24px;
+
+  transform-origin: center;
 
 }
 
@@ -70,7 +76,7 @@ button {
 
   <button onclick="stop()">⏹️</button>
 
-  <button class="icon-btn" onclick="toggleMode()" id="modeBtn">🧭</button>
+  <button onclick="toggleMode()" id="modeBtn">🧭</button>
 
 </div>
 
@@ -84,15 +90,35 @@ let positions = [];
 
 let firstFix = false;
 
-let mode = "north"; // north / heading
+let mode = "north";
 
-const map = L.map('map').setView([35, 139], 15);
+const map = L.map('map', {
+
+  rotate: true,
+
+  touchRotate: true
+
+}).setView([35,139], 15);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
   maxZoom: 18
 
 }).addTo(map);
+
+// --- 船アイコン ---
+
+const boatIcon = L.divIcon({
+
+  className: '',
+
+  html: '<div id="boat" class="boat-icon">⛵</div>',
+
+  iconSize: [30,30],
+
+  iconAnchor: [15,15]
+
+});
 
 let marker = null;
 
@@ -104,11 +130,7 @@ function start() {
 
   if (watchId !== null) return;
 
-  watchId = navigator.geolocation.watchPosition(updatePosition, err => {
-
-    console.error(err);
-
-  }, {
+  watchId = navigator.geolocation.watchPosition(updatePosition, console.error, {
 
     enableHighAccuracy: true,
 
@@ -144,9 +166,15 @@ function toggleMode() {
 
     (mode === "north") ? "🧭" : "▶️";
 
+  if (mode === "north") {
+
+    map.setBearing(0);
+
+  }
+
 }
 
-// --- 位置更新 ---
+// --- 更新 ---
 
 function updatePosition(pos) {
 
@@ -160,8 +188,6 @@ function updatePosition(pos) {
 
   if (positions.length > 10) positions.shift();
 
-  // 初回だけ現在地へ
-
   if (!firstFix) {
 
     map.setView([lat, lng], 16);
@@ -170,11 +196,9 @@ function updatePosition(pos) {
 
   }
 
-  // マーカー
-
   if (!marker) {
 
-    marker = L.marker([lat, lng]).addTo(map);
+    marker = L.marker([lat, lng], {icon: boatIcon}).addTo(map);
 
   } else {
 
@@ -183,8 +207,6 @@ function updatePosition(pos) {
   }
 
   polyline.addLatLng([lat, lng]);
-
-  // --- 計算 ---
 
   if (positions.length >= 2) {
 
@@ -206,23 +228,21 @@ function updatePosition(pos) {
 
       document.getElementById("heading").textContent = heading.toFixed(0);
 
-      // --- 表示モード ---
+      // 船アイコン回転
 
-      if (mode === "north") {
+      document.getElementById("boat").style.transform =
 
-        map.setView([lat, lng]);
+        "rotate(" + heading + "deg)";
 
-        document.getElementById("map").style.transform = "rotate(0deg)";
+      // 地図モード
 
-      } else {
+      if (mode === "heading") {
 
-        map.setView([lat, lng]);
-
-        document.getElementById("map").style.transform =
-
-          "rotate(" + (-heading) + "deg)";
+        map.setBearing(heading);
 
       }
+
+      map.setView([lat, lng]);
 
     }
 
