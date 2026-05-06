@@ -94,11 +94,13 @@ header {
 
   background: #111;
 
-  padding: 60px 16px;
+  padding: 60px 12px; /* ←左右余白を少しだけに */
 
   transition: left .25s;
 
   z-index: 20;
+
+  text-align: left; /* ←明示的に左寄せ */
 
 }
 
@@ -106,7 +108,7 @@ header {
 
   display: block;
 
-  padding: 12px;
+  padding: 12px 8px; /* ←左余白を揃える */
 
   margin-bottom: 8px;
 
@@ -117,6 +119,8 @@ header {
   font-weight: bold;
 
   border-radius: 8px;
+
+  text-align: left; /* ←確実に左詰め */
 
 }
 
