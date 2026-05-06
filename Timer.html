@@ -32,11 +32,15 @@ body {
 
 }
 
+/* ★巨大化 */
+
 #time {
 
-  font-size: 20vw;
+  font-size: 28vw;
 
-  margin-top: 10vh;
+  margin-top: 5vh;
+
+  font-weight: bold;
 
 }
 
@@ -50,9 +54,11 @@ body {
 
 }
 
+/* 通常ボタン */
+
 button {
 
-  font-size: 6vw;
+  font-size: 5vw;
 
   margin: 5px;
 
@@ -61,6 +67,22 @@ button {
   border: none;
 
   border-radius: 10px;
+
+}
+
+/* ★スタートだけ強調 */
+
+#startBtn {
+
+  font-size: 8vw;
+
+  padding: 20px 40px;
+
+  background: limegreen;
+
+  color: black;
+
+  font-weight: bold;
 
 }
 
@@ -120,8 +142,6 @@ let endTime = null;
 
 let running = false;
 
-/* 音声関連 */
-
 let audioUnlocked = false;
 
 const callTimes = [
@@ -137,8 +157,6 @@ const callTimes = [
 ];
 
 let spokenSet = new Set();
-
-/* 表示 */
 
 function updateDisplay() {
 
@@ -164,8 +182,6 @@ function updateDisplay() {
 
 }
 
-/* 音声 */
-
 function speak(text) {
 
   if (!('speechSynthesis' in window)) return;
@@ -179,8 +195,6 @@ function speak(text) {
   speechSynthesis.speak(msg);
 
 }
-
-/* 音声アンロック */
 
 function unlockAudio() {
 
@@ -196,8 +210,6 @@ function unlockAudio() {
 
 }
 
-/* 読み上げ整形 */
-
 function formatTimeSpeech(sec) {
 
   let m = Math.floor(sec / 60);
@@ -211,8 +223,6 @@ function formatTimeSpeech(sec) {
   return `${s}秒前`;
 
 }
-
-/* スタート */
 
 function startTimer() {
 
@@ -231,8 +241,6 @@ function startTimer() {
     remaining = Math.max(diff, 0);
 
     updateDisplay();
-
-    // 指定秒のみ・1回だけ音声
 
     if (callTimes.includes(remaining) && !spokenSet.has(remaining)) {
 
@@ -258,8 +266,6 @@ function startTimer() {
 
 }
 
-/* ストップ */
-
 function stopTimer() {
 
   clearInterval(timer);
@@ -267,8 +273,6 @@ function stopTimer() {
   running = false;
 
 }
-
-/* リセット */
 
 function resetTimer() {
 
@@ -284,8 +288,6 @@ function resetTimer() {
 
 }
 
-/* ±1秒 */
-
 function adjust(sec) {
 
   remaining += sec;
@@ -295,8 +297,6 @@ function adjust(sec) {
   updateDisplay();
 
 }
-
-/* スタートボタン（長押し＋クリック対応） */
 
 let startBtn = document.getElementById("startBtn");
 
@@ -319,8 +319,6 @@ startBtn.addEventListener("click", () => {
   startTimer();
 
 });
-
-/* 初期表示 */
 
 updateDisplay();
 
