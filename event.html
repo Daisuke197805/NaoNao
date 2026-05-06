@@ -445,13 +445,10 @@
     }
 
     // =========================
-    // API呼び出し
+    // API呼び出し（★ getAll に統合）
     // =========================
-    async function apiGetEvents(){
-      return await postForm({ type: "getEvents" });
-    }
-    async function apiGetParticipants(){
-      return await postForm({ type: "getParticipants" });
+    async function apiGetAll(){
+      return await postForm({ type: "getAll" });
     }
     async function apiJoinEvent(eventId, name, note){
       return await postForm({
@@ -468,6 +465,27 @@
         participant_name: name,
         participant_note: note || ""
       });
+    }
+
+    // =========================
+    // 共通：レスポンスからキャッシュ更新＋描画
+    // =========================
+    function applyData(res){
+      const events = (res.events || []).map(e => ({ ...e, event_id: pad6(e.event_id) }));
+      const participants = (res.participants || []).map(p => ({ ...p, event_id: pad6(p.event_id) }));
+
+      // 日付が近い順（昇順）でソート
+      events.sort((a, b) => {
+        const da = new Date(a.event_date);
+        const db = new Date(b.event_date);
+        return da - db;
+      });
+
+      cachedEvents = events;
+      cachedParticipants = participants;
+
+      setStatus("OK", `イベント ${events.length} 件`);
+      render(events, participants);
     }
 
     // =========================
@@ -582,7 +600,7 @@
     window.applyFilter = applyFilter;
 
     // =========================
-    // メイン：再取得
+    // メイン：再取得（★ 1回のAPIで完了）
     // =========================
     async function reloadAll(){
       try{
@@ -590,27 +608,11 @@
         setStatus("取得中", "イベント・参加者を取得しています...");
         logDebug("reloadAll start");
 
-        const [evRes, ptRes] = await Promise.all([apiGetEvents(), apiGetParticipants()]);
+        const res = await apiGetAll();
 
-        if (evRes.status !== "ok") throw new Error("getEvents失敗: " + (evRes.message || ""));
-        if (ptRes.status !== "ok") throw new Error("getParticipants失敗: " + (ptRes.message || ""));
+        if (res.status !== "ok") throw new Error("getAll失敗: " + (res.message || ""));
 
-        const events = (evRes.events || []).map(e => ({ ...e, event_id: pad6(e.event_id) }));
-        const participants = (ptRes.participants || []).map(p => ({ ...p, event_id: pad6(p.event_id) }));
-
-        // 日付が近い順（昇順）でソート
-        events.sort((a, b) => {
-          const da = new Date(a.event_date);
-          const db = new Date(b.event_date);
-          return da - db;
-        });
-
-        cachedEvents = events;
-        cachedParticipants = participants;
-
-        setStatus("OK", `イベント ${events.length} 件`);
-        render(events, participants);
-
+        applyData(res);
         logDebug("reloadAll ok");
       }catch(err){
         setStatus("エラー", "取得に失敗しました。デバッグログを確認してください。");
@@ -622,7 +624,7 @@
     }
 
     // =========================
-    // 参加処理
+    // 参加処理（★ レスポンスに最新データ同梱→再取得不要）
     // =========================
     async function handleJoin(eventId){
       try{
@@ -649,7 +651,8 @@
           alert("参加登録しました！");
           nameEl.value = "";
           noteEl.value = "";
-          await reloadAll();
+          applyData(res);
+          logDebug("joinEvent ok (new)");
           return;
         }
 
@@ -657,13 +660,13 @@
           alert("参加に変更しました！");
           nameEl.value = "";
           noteEl.value = "";
-          await reloadAll();
+          applyData(res);
+          logDebug("joinEvent ok (updated)");
           return;
         }
 
         if (res.status === "exists"){
           alert("すでに参加登録されています。");
-          await reloadAll();
           return;
         }
 
@@ -678,7 +681,7 @@
     }
 
     // =========================
-    // 不参加処理
+    // 不参加処理（★ レスポンスに最新データ同梱→再取得不要）
     // =========================
     async function handleDecline(eventId){
       try{
@@ -705,7 +708,8 @@
           alert("不参加を登録しました。");
           nameEl.value = "";
           noteEl.value = "";
-          await reloadAll();
+          applyData(res);
+          logDebug("declineEvent ok (new)");
           return;
         }
 
@@ -713,13 +717,13 @@
           alert("不参加に変更しました。");
           nameEl.value = "";
           noteEl.value = "";
-          await reloadAll();
+          applyData(res);
+          logDebug("declineEvent ok (updated)");
           return;
         }
 
         if (res.status === "exists"){
           alert("すでに不参加として登録されています。");
-          await reloadAll();
           return;
         }
 
