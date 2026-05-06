@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>マニュアル</title>
+  <title>スライド</title>
   <style>
     :root{
       --bg:#f6f7fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
@@ -54,11 +54,11 @@
 
 <div id="menu">
   <a href="index.html">トップ</a>
-  <a href="event.html">レース&amp;イベント</a>
+  <a href="event.html">レース&イベント</a>
   <a href="StartIn.html">スタートライン</a>
   <a href="RateCompare.html">レーティング比較</a>
   <a href="AISviewer.html">AIS</a>
-  <a href="slide.html">マニュアル</a>
+  <a href="slide.html">スライド</a>
 </div>
 <div class="menuOverlay" id="menuOverlay" onclick="closeMenu()"></div>
 
@@ -69,7 +69,7 @@
       <span></span>
       <span></span>
     </div>
-    <div class="title">ã¹ã©ã¤ã</div>
+    <div class="title">スライド</div>
   </div>
 </header>
 
@@ -79,7 +79,7 @@
 
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
-  <div class="loading-text">ã¹ã©ã¤ããèª­ã¿è¾¼ã¿ä¸­â¦</div>
+  <div class="loading-text">スライドを読み込み中…</div>
 </div>
 
 <script>
@@ -125,7 +125,7 @@ function escapeAttr(str){
 function buildCarousel(slides){
   var validSlides = slides.filter(function(s){ return s.image_url; });
   if (!validSlides.length){
-    contentEl.innerHTML = '<div class="message">è¡¨ç¤ºããã¹ã©ã¤ããããã¾ãã</div>';
+    contentEl.innerHTML = '<div class="message">表示するスライドがありません</div>';
     return;
   }
   var trackHtml = "";
@@ -190,10 +190,10 @@ async function init(){
   try{
     showLoading();
     var res = await apiGetSlides();
-    if (res.status !== "ok") throw new Error(res.message || "åå¾å¤±æ");
+    if (res.status !== "ok") throw new Error(res.message || "取得失敗");
     buildCarousel(res.slides || []);
   }catch(err){
-    contentEl.innerHTML = '<div class="message">èª­ã¿è¾¼ã¿ã«å¤±æãã¾ããï¼' + (err.message || err) + '</div>';
+    contentEl.innerHTML = '<div class="message">読み込みに失敗しました：' + (err.message || err) + '</div>';
   }finally{
     hideLoading();
   }
