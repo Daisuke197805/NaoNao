@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>レースカウントダウン</title>
+
+<style>
+
+body {
+
+  margin: 0;
+
+  font-family: sans-serif;
+
+  background: black;
+
+  color: white;
+
+  text-align: center;
+
+}
+
+/* 上部 */
+
+#top {
+
+  padding: 10px;
+
+}
+
+/* タイマー表示 */
+
+#time {
+
+  font-size: 20vw;
+
+  margin-top: 10vh;
+
+}
+
+/* ボタンエリア */
+
+#controls {
+
+  position: fixed;
+
+  bottom: 20px;
+
+  width: 100%;
+
+}
+
+/* ボタン */
+
+button {
+
+  font-size: 6vw;
+
+  margin: 5px;
+
+  padding: 10px 20px;
+
+  border: none;
+
+  border-radius: 10px;
+
+}
+
+/* 色変化 */
+
+.yellow {
+
+  background: yellow;
+
+  color: black;
+
+}
+
+.red {
+
+  background: red;
+
+  color: white;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="top">
+
+  <button onclick="resetTimer()">リセット</button>
+
+</div>
+
+<div id="time">5:00</div>
+
+<div id="controls">
+
+  <button onclick="adjust(1)">+1</button>
+
+  <button id="startBtn">スタート</button>
+
+  <button onclick="adjust(-1)">-1</button>
+
+  <br>
+
+  <button onclick="stopTimer()">ストップ</button>
+
+</div>
+
+<script>
+
+let totalTime = 300; // 秒
+
+let remaining = 300;
+
+let timer = null;
+
+let endTime = null;
+
+let running = false;
+
+/* 表示更新 */
+
+function updateDisplay() {
+
+  let min = Math.floor(remaining / 60);
+
+  let sec = remaining % 60;
+
+  document.getElementById("time").innerText =
+
+    min + ":" + sec.toString().padStart(2, "0");
+
+  // 色変化
+
+  document.body.classList.remove("yellow", "red");
+
+  if (remaining <= 10) {
+
+    document.body.classList.add("red");
+
+  } else if (remaining <= 60) {
+
+    document.body.classList.add("yellow");
+
+  }
+
+}
+
+/* 音声 */
+
+function speak(text) {
+
+  if (!('speechSynthesis' in window)) return;
+
+  const msg = new SpeechSynthesisUtterance(text);
+
+  msg.lang = 'ja-JP';
+
+  speechSynthesis.speak(msg);
+
+}
+
+/* カウントダウン */
+
+function startTimer() {
+
+  if (running) return;
+
+  running = true;
+
+  endTime = Date.now() + remaining * 1000;
+
+  timer = setInterval(() => {
+
+    let diff = Math.round((endTime - Date.now()) / 1000);
+
+    remaining = Math.max(diff, 0);
+
+    updateDisplay();
+
+    // 音声（10秒カウント）
+
+    if (remaining <= 10 && remaining > 0) {
+
+      speak(remaining.toString());
+
+    }
+
+    // スタート
+
+    if (remaining === 0) {
+
+      speak("スタート");
+
+      clearInterval(timer);
+
+      running = false;
+
+    }
+
+  }, 200);
+
+}
+
+/* ストップ */
+
+function stopTimer() {
+
+  clearInterval(timer);
+
+  running = false;
+
+}
+
+/* リセット */
+
+function resetTimer() {
+
+  clearInterval(timer);
+
+  remaining = totalTime;
+
+  running = false;
+
+  updateDisplay();
+
+}
+
+/* 微調整 */
+
+function adjust(sec) {
+
+  remaining += sec;
+
+  if (remaining < 0) remaining = 0;
+
+  updateDisplay();
+
+}
+
+/* 長押しスタート */
+
+let startBtn = document.getElementById("startBtn");
+
+let pressTimer;
+
+startBtn.addEventListener("touchstart", () => {
+
+  pressTimer = setTimeout(startTimer, 500);
+
+});
+
+startBtn.addEventListener("touchend", () => {
+
+  clearTimeout(pressTimer);
+
+});
+
+/* 初期表示 */
+
+updateDisplay();
+
+</script>
+
+</body>
+
+</html>
