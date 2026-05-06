@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="ja">
 <head>
@@ -13,6 +14,67 @@
     }
     *{ box-sizing:border-box; }
     body{ margin:0; padding:0; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+
+    /* ===== ハンバーガー ===== */
+    .hamburger{
+      width:28px;
+      height:22px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      cursor:pointer;
+    }
+    .hamburger span{
+      height:3px;
+      background:#fff;
+      border-radius:2px;
+      display:block;
+    }
+
+    /* ===== メニュー ===== */
+    #menu{
+      position:fixed;
+      top:0;
+      left:-260px;
+      width:240px;
+      height:100%;
+      background:#fff;
+      box-shadow:2px 0 10px rgba(0,0,0,.15);
+      padding:60px 16px;
+      transition:left .25s;
+      z-index:20;
+    }
+    #menu a{
+      display:block;
+      padding:12px;
+      margin-bottom:8px;
+      text-decoration:none;
+      color:#111;
+      font-weight:700;
+      border-radius:8px;
+    }
+    #menu a:hover{
+      background:#fff3e0;
+    }
+    #menu a.active{
+      color:#aaa;
+      pointer-events:none;
+    }
+    #menu.open{
+      left:0;
+    }
+
+    /* 背景オーバーレイ */
+    .menuOverlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.3);
+      display:none;
+      z-index:15;
+    }
+    .menuOverlay.show{
+      display:block;
+    }
 
     /* ===== ヘッダー ===== */
     header{
@@ -35,22 +97,6 @@
       font-weight:800;
       letter-spacing:.02em;
     }
-    header .links{
-      margin-left:auto;
-      display:flex;
-      gap:12px;
-      font-size:14px;
-    }
-    header a{
-      color:#fff;
-      text-decoration:none;
-      background:rgba(255,255,255,.25);
-      padding:6px 14px;
-      border-radius:10px;
-      font-weight:700;
-      font-size:14px;
-    }
-    header a:hover{ background:rgba(255,255,255,.4); }
 
     /* ===== メイン ===== */
     main{
@@ -195,13 +241,25 @@
 </head>
 <body>
 
+<!-- ===== ハンバーガーメニュー ===== -->
+<div id="menu">
+  <a href="index.html">トップ</a>
+  <a href="event.html">レース&amp;イベント</a>
+  <a href="StartIn.html">スタートライン</a>
+  <a href="RateCompare.html">レーティング比較</a>
+  <a href="AISviewer.html">AIS</a>
+</div>
+<div class="menuOverlay" id="menuOverlay" onclick="closeMenu()"></div>
+
   <!-- ===== ヘッダー ===== -->
   <header>
     <div class="row">
-      <div class="title">レース＆イベント</div>
-      <div class="links">
-        <a href="./index.html">← 戻る</a>
+      <div class="hamburger" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
       </div>
+      <div class="title">レース＆イベント</div>
     </div>
   </header>
 
@@ -249,6 +307,28 @@
   </div>
 
   <script>
+    // ===== メニュー制御 =====
+    function toggleMenu(){
+      document.getElementById("menu").classList.toggle("open");
+      document.getElementById("menuOverlay").classList.toggle("show");
+    }
+    function closeMenu(){
+      document.getElementById("menu").classList.remove("open");
+      document.getElementById("menuOverlay").classList.remove("show");
+    }
+
+    // 現在ページ無効化
+    (function(){
+      const menuLinks = document.querySelectorAll("#menu a");
+      const currentPage = location.pathname.split("/").pop() || "index.html";
+      menuLinks.forEach(link=>{
+        if(link.getAttribute("href")===currentPage){
+          link.classList.add("active");
+          link.removeAttribute("href");
+        }
+      });
+    })();
+
     // =========================
     // 固定：GAS WebアプリURL
     // =========================
