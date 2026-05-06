@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+
+<meta charset="utf-8">
+
+<title>ヨット航行表示</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+
+body { margin:0; font-family: sans-serif; }
+
+#map { height: 60vh; }
+
+.panel {
+
+  padding: 10px;
+
+  background: #111;
+
+  color: #fff;
+
+}
+
+.value {
+
+  font-size: 24px;
+
+  margin: 5px 0;
+
+}
+
+button {
+
+  font-size: 16px;
+
+  margin-right: 10px;
+
+  padding: 8px 12px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="panel">
+
+  <div class="value">速度: <span id="speed">0.00</span> kt</div>
+
+  <div class="value">方位: <span id="heading">0</span>°</div>
+
+  <button onclick="start()">スタート</button>
+
+  <button onclick="stop()">ストップ</button>
+
+</div>
+
+<div id="map"></div>
+
+<script>
+
+let watchId = null;
+
+let positions = [];
+
+const map = L.map('map').setView([35, 139], 15);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+  maxZoom: 18
+
+}).addTo(map);
+
+let marker = null;
+
+let polyline = L.polyline([], {color: 'blue'}).addTo(map);
+
+// --- スタート ---
+
+function start() {
+
+  if (watchId !== null) return;
+
+  watchId = navigator.geolocation.watchPosition(updatePosition, err => {
+
+    console.error(err);
+
+  }, {
+
+    enableHighAccuracy: true,
+
+    maximumAge: 0,
+
+    timeout: 10000
+
+  });
+
+}
+
+// --- ストップ ---
+
+function stop() {
+
+  if (watchId !== null) {
+
+    navigator.geolocation.clearWatch(watchId);
+
+    watchId = null;
+
+  }
+
+}
+
+// --- 位置更新 ---
+
+function updatePosition(pos) {
+
+  const lat = pos.coords.latitude;
+
+  const lng = pos.coords.longitude;
+
+  const time = Date.now();
+
+  positions.push({lat, lng, time});
+
+  // ★ 10秒分保持（1秒更新前提）
+
+  if (positions.length > 10) positions.shift();
+
+  // --- 地図更新 ---
+
+  if (!marker) {
+
+    marker = L.marker([lat, lng]).addTo(map);
+
+  } else {
+
+    marker.setLatLng([lat, lng]);
+
+  }
+
+  polyline.addLatLng([lat, lng]);
+
+  map.setView([lat, lng]);
+
+  // --- 計算 ---
+
+  if (positions.length >= 2) {
+
+    const first = positions[0];
+
+    const last = positions[positions.length - 1];
+
+    const dist = getDistance(first, last); // km
+
+    const timeDiff = (last.time - first.time) / 1000; // 秒
+
+    if (timeDiff > 0) {
+
+      const speedKmh = (dist / timeDiff) * 3600;
+
+      const speedKt = speedKmh / 1.852;
+
+      document.getElementById("speed").textContent = speedKt.toFixed(2);
+
+      const heading = getBearing(first, last);
+
+      document.getElementById("heading").textContent = heading.toFixed(0);
+
+    }
+
+  }
+
+}
+
+// --- 距離（km）---
+
+function getDistance(p1, p2) {
+
+  const R = 6371;
+
+  const dLat = (p2.lat - p1.lat) * Math.PI/180;
+
+  const dLng = (p2.lng - p1.lng) * Math.PI/180;
+
+  const a = Math.sin(dLat/2)**2 +
+
+    Math.cos(p1.lat*Math.PI/180) *
+
+    Math.cos(p2.lat*Math.PI/180) *
+
+    Math.sin(dLng/2)**2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  return R * c;
+
+}
+
+// --- 方位（度）---
+
+function getBearing(p1, p2) {
+
+  const lat1 = p1.lat * Math.PI/180;
+
+  const lat2 = p2.lat * Math.PI/180;
+
+  const dLng = (p2.lng - p1.lng) * Math.PI/180;
+
+  const y = Math.sin(dLng) * Math.cos(lat2);
+
+  const x = Math.cos(lat1)*Math.sin(lat2) -
+
+            Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
+
+  let brng = Math.atan2(y, x) * 180/Math.PI;
+
+  return (brng + 360) % 360;
+
+}
+
+</script>
+
+</body>
+
+</html>
