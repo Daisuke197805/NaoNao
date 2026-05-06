@@ -118,7 +118,7 @@ async function apiGetSlides(){
 }
 
 function escapeAttr(str){
-  return String(str || "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return String(str || "").replace(/&/g,&).replace(/"/g,"&quot;").replace(/</g,<).replace(/>/g,>);
 }
 
 function buildCarousel(slides){
