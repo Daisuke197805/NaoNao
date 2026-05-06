@@ -13,7 +13,7 @@
       --shadow:0 2px 14px rgba(0,0,0,.08); --radius:14px;
     }
     *{ box-sizing:border-box; }
-    body{ margin:0; padding:0; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+    body{ margin:0; padding:0; font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; background:var(--bg); color:var(--text); }
 
     /* ===== ハンバーガー ===== */
     .hamburger{
@@ -110,8 +110,8 @@
     .btn{ font-size:15px; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#fff; cursor:pointer; }
     .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; }
     .btn.primary:hover{ background:var(--accent2); border-color:var(--accent2); }
-    .btn.danger{ background:var(--danger); border-color:var(--danger); color:#fff; font-weight:700; }
-    .btn.danger:hover{ background:var(--danger2); border-color:var(--danger2); }
+    .btn.secondary{ background:#78909c; border-color:#78909c; color:#fff; font-weight:700; }
+    .btn.secondary:hover{ background:#607d8b; border-color:#607d8b; }
     .btn:active{ transform:translateY(1px); }
 
     input{ font-size:15px; padding:10px 10px; border-radius:12px; border:1px solid var(--border); background:#fff; }
@@ -122,7 +122,7 @@
     .title{ font-weight:800; }
     .sep{ height:1px; background:var(--border); margin:10px 0; }
 
-    /* ===== ツールバー（更新ボタン＋チェックボックス）===== */
+    /* ===== ツールバー ===== */
     .toolbar{
       display:flex;
       gap:12px;
@@ -156,29 +156,7 @@
     .note-row{ margin-top:8px; }
     .note-row input{ width:100%; }
 
-    /* ===== 取消フォーム ===== */
-    .cancel-row{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      flex-wrap:nowrap;
-      margin-top:8px;
-    }
-    .cancel-row input{ flex:1 1 160px; min-width:0; }
-    .cancel-row .btn{ flex:0 0 auto; white-space:nowrap; }
-    .cancel-toggle{
-      font-size:12px;
-      color:var(--muted);
-      cursor:pointer;
-      margin-top:8px;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-    .cancel-toggle:hover{ color:var(--danger); }
-    .cancel-form{ display:none; margin-top:6px; }
-    .cancel-form.open{ display:block; }
-
-    /* ===== 参加者 ===== */
+    /* ===== 参加者ピル ===== */
     .participants{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
     .participants .name{
       background:#f3f4f6; border:1px solid #e5e7eb; padding:4px 10px;
@@ -188,7 +166,18 @@
     .participants .name.has-note{ border-bottom:2px solid var(--accent); }
     .participants .name:active{ background:#e5e7eb; }
 
-    /* ===== ポップアップ（備考表示）===== */
+    /* ===== 不参加者ピル ===== */
+    .participants .name.declined{
+      background:#fef2f2;
+      border:1px solid #fca5a5;
+      color:#991b1b;
+    }
+    .participants .name.declined.has-note{
+      border-bottom:2px solid #f87171;
+    }
+    .participants .name.declined:active{ background:#fee2e2; }
+
+    /* ===== ポップアップ ===== */
     .popup-overlay{
       display:none; position:fixed; inset:0; z-index:100;
       background:rgba(0,0,0,.35); justify-content:center; align-items:center; padding:24px;
@@ -208,7 +197,7 @@
     }
     .popup-box .popup-close:active{ background:#fff3e0; }
 
-    /* ===== ローディングオーバーレイ ===== */
+    /* ===== ローディング ===== */
     .loading-overlay{
       display:none;
       position:fixed;
@@ -264,7 +253,7 @@
   </header>
 
   <main>
-    <!-- ===== ツールバー（更新＋過去非表示チェック）===== -->
+    <!-- ===== ツールバー ===== -->
     <div class="toolbar">
       <button class="btn primary" onclick="reloadAll()">更新</button>
       <label>
@@ -291,7 +280,7 @@
     <div id="list"></div>
   </main>
 
-  <!-- ===== ポップアップ（備考表示）===== -->
+  <!-- ===== ポップアップ ===== -->
   <div class="popup-overlay" id="popupOverlay" onclick="closePopup()">
     <div class="popup-box" onclick="event.stopPropagation()">
       <div class="popup-name" id="popupName"></div>
@@ -300,7 +289,7 @@
     </div>
   </div>
 
-  <!-- ===== ローディングオーバーレイ ===== -->
+  <!-- ===== ローディング ===== -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
     <div class="loading-text">データ更新中…</div>
@@ -340,7 +329,6 @@
     const debug = document.getElementById("debug");
     const loadingOverlay = document.getElementById("loadingOverlay");
 
-    // 最後に取得したデータを保持（フィルタ切替用）
     let cachedEvents = [];
     let cachedParticipants = [];
 
@@ -356,12 +344,8 @@
     // =========================
     // ローディング制御
     // =========================
-    function showLoading(){
-      loadingOverlay.classList.add("active");
-    }
-    function hideLoading(){
-      loadingOverlay.classList.remove("active");
-    }
+    function showLoading(){ loadingOverlay.classList.add("active"); }
+    function hideLoading(){ loadingOverlay.classList.remove("active"); }
 
     // =========================
     // 6桁 event_id 正規化
@@ -396,7 +380,6 @@
       return `${hh}:${mm}`;
     }
 
-    // 日付比較用：event_date を JST の日付だけ（時刻を切り捨て）で比較
     function toDateOnlyMs(value){
       if (!value) return 0;
       const d = new Date(value);
@@ -419,7 +402,7 @@
     }
 
     // =========================
-    // ポップアップ（備考表示）
+    // ポップアップ
     // =========================
     const popupOverlay = document.getElementById("popupOverlay");
     const popupName = document.getElementById("popupName");
@@ -478,11 +461,12 @@
         participant_note: note || ""
       });
     }
-    async function apiCancelEvent(eventId, name){
+    async function apiDeclineEvent(eventId, name, note){
       return await postForm({
-        type: "cancelEvent",
+        type: "declineEvent",
         event_id: pad6(eventId),
-        participant_name: name
+        participant_name: name,
+        participant_note: note || ""
       });
     }
 
@@ -519,20 +503,36 @@
         const eid = pad6(ev.event_id);
         const dateStr = formatDateJST(ev.event_date);
         const timeStr = formatTimeHHMM(ev.event_start);
-        const mem = byEvent.get(eid) || [];
+        const allMem = byEvent.get(eid) || [];
+
+        // 参加者と不参加者を分離
+        const activeMem = allMem.filter(p => p.status === "active");
+        const declinedMem = allMem.filter(p => p.status === "declined");
 
         const card = document.createElement("div");
         card.className = "card";
 
-        // 参加者ピル
-        const pillsHtml = mem.map(p => {
-          const name = escapeHtml(p.participant_name ?? "");
-          const hasNote = (p.participant_note ?? "").trim() !== "";
-          const cls = hasNote ? "name has-note" : "name";
-          const nameForJs = (p.participant_name ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-          const noteForJs = (p.participant_note ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-          return `<span class="${cls}" onclick="showPopup('${nameForJs}','${noteForJs}')">${name}</span>`;
-        }).join("");
+        // 参加者ピル生成
+        function buildPills(members, isDeclined){
+          return members.map(p => {
+            const name = escapeHtml(p.participant_name ?? "");
+            const hasNote = (p.participant_note ?? "").trim() !== "";
+            let cls = isDeclined ? "name declined" : "name";
+            if (hasNote) cls += " has-note";
+            const nameForJs = (p.participant_name ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+            const noteForJs = (p.participant_note ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+            return `<span class="${cls}" onclick="showPopup('${nameForJs}','${noteForJs}')">${name}</span>`;
+          }).join("");
+        }
+
+        const activePillsHtml = buildPills(activeMem, false);
+        const declinedPillsHtml = buildPills(declinedMem, true);
+
+        // 不参加ブロック（0名なら非表示）
+        const declinedBlock = declinedMem.length > 0
+          ? `<div class="muted" style="margin-top:10px;">不参加：${declinedMem.length} 名</div>
+             <div class="participants">${declinedPillsHtml}</div>`
+          : "";
 
         card.innerHTML = `
           <div class="row" style="justify-content:space-between;">
@@ -554,24 +554,19 @@
           <div class="join-row">
             <input id="name_${eid}" placeholder="名前">
             <button class="btn primary" onclick="handleJoin('${eid}')">参加</button>
+            <button class="btn secondary" onclick="handleDecline('${eid}')">不参加</button>
           </div>
 
           <div class="note-row">
             <input id="note_${eid}" placeholder="備考（任意）">
           </div>
 
-          <div class="muted" style="margin-top:10px;">参加者：${mem.length} 名</div>
+          <div class="muted" style="margin-top:10px;">参加者：${activeMem.length} 名</div>
           <div class="participants">
-            ${pillsHtml}
+            ${activePillsHtml}
           </div>
 
-          <div class="cancel-toggle" onclick="toggleCancel('${eid}')">▸ 参加を取り消す場合はこちら</div>
-          <div class="cancel-form" id="cancelForm_${eid}">
-            <div class="cancel-row">
-              <input id="cancelName_${eid}" placeholder="取り消す名前を入力">
-              <button class="btn danger" onclick="handleCancel('${eid}')">取消</button>
-            </div>
-          </div>
+          ${declinedBlock}
         `;
 
         list.appendChild(card);
@@ -579,21 +574,12 @@
     }
 
     // =========================
-    // フィルタ切替（再取得なし・キャッシュから再描画）
+    // フィルタ切替
     // =========================
     function applyFilter(){
       render(cachedEvents, cachedParticipants);
     }
     window.applyFilter = applyFilter;
-
-    // =========================
-    // 取消フォームの開閉
-    // =========================
-    function toggleCancel(eid){
-      const form = document.getElementById("cancelForm_" + eid);
-      form.classList.toggle("open");
-    }
-    window.toggleCancel = toggleCancel;
 
     // =========================
     // メイン：再取得
@@ -612,14 +598,13 @@
         const events = (evRes.events || []).map(e => ({ ...e, event_id: pad6(e.event_id) }));
         const participants = (ptRes.participants || []).map(p => ({ ...p, event_id: pad6(p.event_id) }));
 
-        // ✅ 日付が近い順（昇順）でソート
+        // 日付が近い順（昇順）でソート
         events.sort((a, b) => {
           const da = new Date(a.event_date);
           const db = new Date(b.event_date);
           return da - db;
         });
 
-        // キャッシュに保存（フィルタ切替用）
         cachedEvents = events;
         cachedParticipants = participants;
 
@@ -668,13 +653,21 @@
           return;
         }
 
-        if (res.status === "exists"){
-          alert("すでに参加登録しています（同名の参加登録が存在します）。");
+        if (res.status === "updated"){
+          alert("参加に変更しました！");
+          nameEl.value = "";
+          noteEl.value = "";
           await reloadAll();
           return;
         }
 
-        throw new Error(res.message || "参加表明に失敗しました");
+        if (res.status === "exists"){
+          alert("すでに参加登録されています。");
+          await reloadAll();
+          return;
+        }
+
+        throw new Error(res.message || "参加登録に失敗しました");
       }catch(err){
         setStatus("エラー", "参加登録に失敗しました。デバッグログを確認してください。");
         logDebug("joinEvent ERROR: " + (err?.message || String(err)));
@@ -685,46 +678,56 @@
     }
 
     // =========================
-    // 取消処理
+    // 不参加処理
     // =========================
-    async function handleCancel(eventId){
+    async function handleDecline(eventId){
       try{
+        showLoading();
         const eid = pad6(eventId);
-        const cancelNameEl = document.getElementById("cancelName_" + eid);
-        const name = (cancelNameEl.value || "").trim();
+        const nameEl = document.getElementById("name_" + eid);
+        const noteEl = document.getElementById("note_" + eid);
+
+        const name = (nameEl.value || "").trim();
+        const note = (noteEl.value || "").trim();
 
         if (!name){
-          alert("取り消す名前を入力してください");
+          hideLoading();
+          alert("名前を入力してください");
           return;
         }
 
-        if (!confirm(`「${name}」さんの参加を取り消しますか？`)){
-          return;
-        }
+        setStatus("送信中", `不参加登録を送信しています... event_id=${eid}`);
+        logDebug(`declineEvent start event_id=${eid} name=${name}`);
 
-        showLoading();
-        setStatus("送信中", `参加取消を送信しています... event_id=${eid}`);
-        logDebug(`cancelEvent start event_id=${eid} name=${name}`);
-
-        const res = await apiCancelEvent(eid, name);
+        const res = await apiDeclineEvent(eid, name, note);
 
         if (res.status === "ok"){
-          alert("参加を取り消しました。");
-          cancelNameEl.value = "";
+          alert("不参加を登録しました。");
+          nameEl.value = "";
+          noteEl.value = "";
           await reloadAll();
           return;
         }
 
-        if (res.status === "not_found"){
-          alert("該当する参加登録が見つかりませんでした。\n名前が正確に一致しているか確認してください。");
+        if (res.status === "updated"){
+          alert("不参加に変更しました。");
+          nameEl.value = "";
+          noteEl.value = "";
+          await reloadAll();
           return;
         }
 
-        throw new Error(res.message || "参加取消に失敗しました");
+        if (res.status === "exists"){
+          alert("すでに不参加として登録されています。");
+          await reloadAll();
+          return;
+        }
+
+        throw new Error(res.message || "不参加登録に失敗しました");
       }catch(err){
-        setStatus("エラー", "参加取消に失敗しました。デバッグログを確認してください。");
-        logDebug("cancelEvent ERROR: " + (err?.message || String(err)));
-        alert("参加取消に失敗しました：" + (err?.message || String(err)));
+        setStatus("エラー", "不参加登録に失敗しました。デバッグログを確認してください。");
+        logDebug("declineEvent ERROR: " + (err?.message || String(err)));
+        alert("不参加登録に失敗しました：" + (err?.message || String(err)));
       }finally{
         hideLoading();
       }
@@ -733,7 +736,7 @@
     // グローバル公開（onclick用）
     window.reloadAll = reloadAll;
     window.handleJoin = handleJoin;
-    window.handleCancel = handleCancel;
+    window.handleDecline = handleDecline;
 
     // 初期：自動で一度読み込み
     setStatus("待機中", "自動取得を開始します...");
