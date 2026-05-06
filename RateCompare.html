@@ -269,9 +269,15 @@
 
       border-radius:12px;
 
-      border:2px solid #ef9a9a;
+      border:2px solid #424242;
 
       text-align:center;
+
+    }
+
+    .input-red.input-empty{
+
+      border-color:#ef9a9a;
 
     }
 
@@ -425,18 +431,18 @@
       <div class="field">
         <div class="field-label">レーティング</div>
         <div class="field-values">
-          <input type="text" id="rating1" class="input-red input-rating" inputmode="decimal" placeholder="1.00">
+          <input type="text" id="rating1" class="input-red input-rating input-empty" inputmode="decimal" placeholder="1.00">
         </div>
       </div>
 
       <div class="field">
         <div class="field-label">レースタイム</div>
         <div class="field-values">
-          <input type="text" id="raceH" class="input-red input-time" inputmode="numeric" placeholder="0">
+          <input type="text" id="raceH" class="input-red input-time input-empty" inputmode="numeric" placeholder="0">
           <span class="time-sep">h</span>
-          <input type="text" id="raceM" class="input-red input-time" inputmode="numeric" placeholder="0">
+          <input type="text" id="raceM" class="input-red input-time input-empty" inputmode="numeric" placeholder="0">
           <span class="time-sep">m</span>
-          <input type="text" id="raceS" class="input-red input-time" inputmode="numeric" placeholder="0">
+          <input type="text" id="raceS" class="input-red input-time input-empty" inputmode="numeric" placeholder="0">
           <span class="time-sep">s</span>
         </div>
       </div>
@@ -456,7 +462,7 @@
       <div class="field">
         <div class="field-label">レーティング</div>
         <div class="field-values">
-          <input type="text" id="rating2" class="input-red input-rating" inputmode="decimal" placeholder="1.00">
+          <input type="text" id="rating2" class="input-red input-rating input-empty" inputmode="decimal" placeholder="1.00">
           <button class="btn-clear" onclick="clearRating2()">クリア</button>
         </div>
       </div>
@@ -571,6 +577,7 @@
     // =========================
     function clearRating2(){
       document.getElementById("rating2").value = "";
+      document.getElementById("rating2").classList.add("input-empty");
       document.getElementById("diffTime").textContent = "—";
       document.getElementById("diffTime").classList.remove("negative");
     }
@@ -578,6 +585,19 @@
     // グローバル公開
     window.calculate = calculate;
     window.clearRating2 = clearRating2;
+
+    // =========================
+    // 入力欄の枠色制御（空=赤、入力済=黒）
+    // =========================
+    document.querySelectorAll(".input-red").forEach(el => {
+      el.addEventListener("input", function(){
+        if(this.value.trim() === ""){
+          this.classList.add("input-empty");
+        } else {
+          this.classList.remove("input-empty");
+        }
+      });
+    });
   </script>
   <script>
 
