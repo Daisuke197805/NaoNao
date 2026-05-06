@@ -26,15 +26,11 @@ body {
 
 }
 
-/* 上部 */
-
 #top {
 
   padding: 10px;
 
 }
-
-/* タイマー表示 */
 
 #time {
 
@@ -43,8 +39,6 @@ body {
   margin-top: 10vh;
 
 }
-
-/* ボタンエリア */
 
 #controls {
 
@@ -55,8 +49,6 @@ body {
   width: 100%;
 
 }
-
-/* ボタン */
 
 button {
 
@@ -71,8 +63,6 @@ button {
   border-radius: 10px;
 
 }
-
-/* 色変化 */
 
 .yellow {
 
@@ -120,7 +110,7 @@ button {
 
 <script>
 
-let totalTime = 300; // 秒
+let totalTime = 300;
 
 let remaining = 300;
 
@@ -130,7 +120,7 @@ let endTime = null;
 
 let running = false;
 
-/* 表示更新 */
+/* 表示 */
 
 function updateDisplay() {
 
@@ -141,8 +131,6 @@ function updateDisplay() {
   document.getElementById("time").innerText =
 
     min + ":" + sec.toString().padStart(2, "0");
-
-  // 色変化
 
   document.body.classList.remove("yellow", "red");
 
@@ -168,11 +156,13 @@ function speak(text) {
 
   msg.lang = 'ja-JP';
 
+  speechSynthesis.cancel(); // ←重なり防止
+
   speechSynthesis.speak(msg);
 
 }
 
-/* カウントダウン */
+/* スタート */
 
 function startTimer() {
 
@@ -190,15 +180,11 @@ function startTimer() {
 
     updateDisplay();
 
-    // 音声（10秒カウント）
-
     if (remaining <= 10 && remaining > 0) {
 
       speak(remaining.toString());
 
     }
-
-    // スタート
 
     if (remaining === 0) {
 
@@ -238,7 +224,7 @@ function resetTimer() {
 
 }
 
-/* 微調整 */
+/* ±1秒 */
 
 function adjust(sec) {
 
@@ -250,11 +236,13 @@ function adjust(sec) {
 
 }
 
-/* 長押しスタート */
+/* ★ここが修正ポイント（長押し＋クリック対応） */
 
 let startBtn = document.getElementById("startBtn");
 
-let pressTimer;
+let pressTimer = null;
+
+/* タッチ（スマホ） */
 
 startBtn.addEventListener("touchstart", () => {
 
@@ -265,6 +253,14 @@ startBtn.addEventListener("touchstart", () => {
 startBtn.addEventListener("touchend", () => {
 
   clearTimeout(pressTimer);
+
+});
+
+/* クリック（保険） */
+
+startBtn.addEventListener("click", () => {
+
+  startTimer();
 
 });
 
