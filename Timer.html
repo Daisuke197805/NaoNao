@@ -120,6 +120,24 @@ let endTime = null;
 
 let running = false;
 
+/* 音声関連 */
+
+let audioUnlocked = false;
+
+const callTimes = [
+
+  270,240,210,180,150,120,
+
+  105,90,75,60,
+
+  50,40,30,20,15,10,
+
+  9,8,7,6,5,4,3,2,1
+
+];
+
+let spokenSet = new Set();
+
 /* 表示 */
 
 function updateDisplay() {
@@ -156,9 +174,41 @@ function speak(text) {
 
   msg.lang = 'ja-JP';
 
-  speechSynthesis.cancel(); // ←重なり防止
+  speechSynthesis.cancel();
 
   speechSynthesis.speak(msg);
+
+}
+
+/* 音声アンロック */
+
+function unlockAudio() {
+
+  if (audioUnlocked) return;
+
+  const msg = new SpeechSynthesisUtterance("");
+
+  msg.lang = 'ja-JP';
+
+  speechSynthesis.speak(msg);
+
+  audioUnlocked = true;
+
+}
+
+/* 読み上げ整形 */
+
+function formatTimeSpeech(sec) {
+
+  let m = Math.floor(sec / 60);
+
+  let s = sec % 60;
+
+  if (m > 0 && s > 0) return `${m}分${s}秒前`;
+
+  if (m > 0) return `${m}分前`;
+
+  return `${s}秒前`;
 
 }
 
@@ -167,6 +217,8 @@ function speak(text) {
 function startTimer() {
 
   if (running) return;
+
+  unlockAudio();
 
   running = true;
 
@@ -180,9 +232,13 @@ function startTimer() {
 
     updateDisplay();
 
-    if (remaining <= 10 && remaining > 0) {
+    // 指定秒のみ・1回だけ音声
 
-      speak(remaining.toString());
+    if (callTimes.includes(remaining) && !spokenSet.has(remaining)) {
+
+      speak(formatTimeSpeech(remaining));
+
+      spokenSet.add(remaining);
 
     }
 
@@ -193,6 +249,8 @@ function startTimer() {
       clearInterval(timer);
 
       running = false;
+
+      spokenSet.clear();
 
     }
 
@@ -220,6 +278,8 @@ function resetTimer() {
 
   running = false;
 
+  spokenSet.clear();
+
   updateDisplay();
 
 }
@@ -236,13 +296,11 @@ function adjust(sec) {
 
 }
 
-/* ★ここが修正ポイント（長押し＋クリック対応） */
+/* スタートボタン（長押し＋クリック対応） */
 
 let startBtn = document.getElementById("startBtn");
 
 let pressTimer = null;
-
-/* タッチ（スマホ） */
 
 startBtn.addEventListener("touchstart", () => {
 
@@ -255,8 +313,6 @@ startBtn.addEventListener("touchend", () => {
   clearTimeout(pressTimer);
 
 });
-
-/* クリック（保険） */
 
 startBtn.addEventListener("click", () => {
 
