@@ -1,507 +1,321 @@
 <!DOCTYPE html>
-
 <html lang="ja">
-
-<head>
-
-<meta charset="utf-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>レースカウントダウン</title>
-
-<style>
-
-body {
-
-  margin: 0;
-
-  font-family: sans-serif;
-
-  background: black;
-
-  color: white;
-
-  text-align: center;
-
-}
-
-/* ===== ハンバーガー ===== */
-
-header {
-
-  position: fixed;
-
-  top: 0;
-
-  width: 100%;
-
-  padding: 10px;
-
-  z-index: 10;
-
-}
-
-.headerRow {
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 12px;
-
-}
-
-.hamburger {
-
-  width: 28px;
-
-  height: 22px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  justify-content: space-between;
-
-  cursor: pointer;
-
-}
-
-.hamburger span {
-
-  height: 3px;
-
-  background: white;
-
-  border-radius: 2px;
-
-}
-
-/* ===== メニュー ===== */
-
-#menu {
-
-  position: fixed;
-
-  top: 0;
-
-  left: -260px;
-
-  width: 240px;
-
-  height: 100%;
-
-  background: #111;
-
-  padding: 60px 12px; /* ←左右余白を少しだけに */
-
-  transition: left .25s;
-
-  z-index: 20;
-
-  text-align: left; /* ←明示的に左寄せ */
-
-}
-
-#menu a {
-
-  display: block;
-
-  padding: 12px 8px; /* ←左余白を揃える */
-
-  margin-bottom: 8px;
-
-  text-decoration: none;
-
-  color: white;
-
-  font-weight: bold;
-
-  border-radius: 8px;
-
-  text-align: left; /* ←確実に左詰め */
-
-}
-
-#menu a:hover {
-
-  background: #333;
-
-}
-
-#menu.open {
-
-  left: 0;
-
-}
-
-/* オーバーレイ */
-
-.menuOverlay {
-
-  position: fixed;
-
-  inset: 0;
-
-  background: rgba(0,0,0,.5);
-
-  display: none;
-
-  z-index: 15;
-
-}
-
-.menuOverlay.show {
-
-  display: block;
-
-}
-
-/* ===== タイマー ===== */
-
-#top {
-
-  margin-top: 60px;
-
-}
-
-#time {
-
-  font-size: 28vw;
-
-  margin-top: 5vh;
-
-  font-weight: bold;
-
-}
-
-#controls {
-
-  position: fixed;
-
-  bottom: 20px;
-
-  width: 100%;
-
-}
-
-button {
-
-  font-size: 5vw;
-
-  margin: 5px;
-
-  padding: 10px 20px;
-
-  border: none;
-
-  border-radius: 10px;
-
-}
-
-#startBtn {
-
-  font-size: 8vw;
-
-  padding: 20px 40px;
-
-  background: limegreen;
-
-  color: black;
-
-  font-weight: bold;
-
-}
-
-.yellow {
-
-  background: yellow;
-
-  color: black;
-
-}
-
-.red {
-
-  background: red;
-
-  color: white;
-
-}
-
-.blue {
-  background: blue;
-  color: white;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<!-- メニュー -->
-
-<div id="menu">
-  <a href="index.html">トップ</a>
-  <a href="event.html">レース&amp;イベント</a>
-  <a href="StartIn.html">スタートライン</a>
-   <a href="Timer.html">スタートタイマー</a>
-  <a href="RateCompare.html">レーティング比較</a>
-   <a href="M3.html">航跡表示</a>
-  
-  <a href="AISviewer.html">AIS（テスト）</a>
-  <a href="M2.html">マニュアル</a>
-</div>
-
-<div class="menuOverlay" id="menuOverlay" onclick="closeMenu()"></div>
-
-<!-- ヘッダー -->
-
-<header>
-
-  <div class="headerRow">
-
-    <div class="hamburger" onclick="toggleMenu()">
-
-      <span></span><span></span><span></span>
-
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>レースカウントダウン</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+        background: black;
+        color: white;
+        text-align: center;
+      }
+
+      /* ===== ハンバーガー ===== */
+      header {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        padding: 10px;
+        z-index: 10;
+      }
+
+      .headerRow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .hamburger {
+        width: 28px;
+        height: 22px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+      }
+
+      .hamburger span {
+        height: 3px;
+        background: white;
+        border-radius: 2px;
+      }
+
+      /* ===== メニュー ===== */
+      #menu {
+        position: fixed;
+        top: 0;
+        left: -260px;
+        width: 240px;
+        height: 100%;
+        background: #111;
+        padding: 60px 12px; /* ←左右余白を少しだけに */
+        transition: left .25s;
+        z-index: 20;
+        text-align: left; /* ←明示的に左寄せ */
+      }
+
+      #menu a {
+        display: block;
+        padding: 12px 8px; /* ←左余白を揃える */
+        margin-bottom: 8px;
+        text-decoration: none;
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+        text-align: left; /* ←確実に左詰め */
+      }
+
+      #menu a:hover {
+        background: #333;
+      }
+
+      #menu.open {
+        left: 0;
+      }
+
+      /* オーバーレイ */
+      .menuOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.5);
+        display: none;
+        z-index: 15;
+      }
+
+      .menuOverlay.show {
+        display: block;
+      }
+
+      /* ===== タイマー ===== */
+      #top {
+        margin-top: 60px;
+      }
+
+      #time {
+        font-size: 28vw;
+        margin-top: 5vh;
+        font-weight: bold;
+      }
+
+      #controls {
+        position: fixed;
+        bottom: 20px;
+        width: 100%;
+      }
+
+      button {
+        font-size: 5vw;
+        margin: 5px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 10px;
+      }
+
+      #startBtn {
+        font-size: 8vw;
+        padding: 20px 40px;
+        background: limegreen;
+        color: black;
+        font-weight: bold;
+      }
+
+      .yellow {
+        background: yellow;
+        color: black;
+      }
+
+      .red {
+        background: red;
+        color: white;
+      }
+
+      .blue {
+        background: blue;
+        color: white;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- メニュー -->
+    <div id="menu">
+      <a href="index.html">トップ</a>
+      <a href="event.html">レース&amp;イベント</a>
+      <a href="StartIn.html">スタートライン</a>
+      <a href="Timer.html">スタートタイマー</a>
+      <a href="RateCompare.html">レーティング比較</a>
+      <a href="M3.html">航跡表示</a>
+      <a href="AISviewer.html">AIS（テスト）</a>
+      <a href="M2.html">マニュアル</a>
     </div>
 
-  </div>
-
-</header>
-
-<div id="top">
-
-  <button onclick="resetTimer()">リセット</button>
-
-</div>
-
-<div id="time">5:00</div>
-
-<div id="controls">
-
-  <button onclick="adjust(1)">+1</button>
-
-  <button id="startBtn">スタート</button>
-
-  <button onclick="adjust(-1)">-1</button>
-
-  <br>
-
-  <button onclick="stopTimer()">ストップ</button>
-
-</div>
-
-<script>
-
-// ===== メニュー制御 =====
-
-function toggleMenu(){
-
-  document.getElementById("menu").classList.toggle("open");
-
-  document.getElementById("menuOverlay").classList.toggle("show");
-
-}
-
-function closeMenu(){
-
-  document.getElementById("menu").classList.remove("open");
-
-  document.getElementById("menuOverlay").classList.remove("show");
-
-}
-
-// ===== タイマー =====
-
-let totalTime = 300;
-
-let remaining = 300;
-
-let timer = null;
-
-let endTime = null;
-
-let running = false;
-
-let audioUnlocked = false;
-
-const callTimes = [
-
-  300,270,240,210,180,150,120,
-
-  105,90,75,60,
-
-  50,40,30,20,15,10,
-
-  9,8,7,6,5,4,3,2,1
-
-];
-
-let spokenSet = new Set();
-
-function updateDisplay() {
-  let min = Math.floor(remaining / 60);
-  let sec = remaining % 60;
-  document.getElementById("time").innerText =
-    min + ":" + sec.toString().padStart(2, "0");
-
-  document.body.classList.remove("yellow", "red", "blue");
-
-  if (remaining === 0) {
-    document.body.classList.add("blue");
-  } else if (remaining <= 10) {
-    document.body.classList.add("red");
-  } else if (remaining <= 60) {
-    document.body.classList.add("yellow");
-  }
-}
-
-function speak(text) {
-
-  if (!('speechSynthesis' in window)) return;
-
-  const msg = new SpeechSynthesisUtterance(text);
-
-  msg.lang = 'ja-JP';
-
-  speechSynthesis.cancel();
-
-  speechSynthesis.speak(msg);
-
-}
-
-function unlockAudio() {
-
-  if (audioUnlocked) return;
-
-  const msg = new SpeechSynthesisUtterance("");
-
-  msg.lang = 'ja-JP';
-
-  speechSynthesis.speak(msg);
-
-  audioUnlocked = true;
-
-}
-
-function formatTimeSpeech(sec) {
-
-  let m = Math.floor(sec / 60);
-
-  let s = sec % 60;
-
-  if (m > 0 && s > 0) return `${m}分${s}秒`;
-
-  if (m > 0) return `${m}分`;
-
-  return `${s}`;
-
-}
-
-function startTimer() {
-
-  if (running) return;
-
-  unlockAudio();
-
-  running = true;
-
-  endTime = Date.now() + remaining * 1000;
-
-  timer = setInterval(() => {
-
-    let diff = Math.round((endTime - Date.now()) / 1000);
-
-    remaining = Math.max(diff, 0);
-
-    updateDisplay();
-
-    if (callTimes.includes(remaining) && !spokenSet.has(remaining)) {
-
-      speak(formatTimeSpeech(remaining));
-
-      spokenSet.add(remaining);
-
-    }
-
-    if (remaining === 0) {
-
-      speak("スタート");
-
-      clearInterval(timer);
-
-      running = false;
-
-      spokenSet.clear();
-
-    }
-
-  }, 200);
-
-}
-
-function stopTimer() {
-
-  clearInterval(timer);
-
-  running = false;
-
-}
-
-function resetTimer() {
-
-  clearInterval(timer);
-
-  remaining = totalTime;
-
-  running = false;
-
-  spokenSet.clear();
-
-  updateDisplay();
-
-}
-
-function adjust(sec) {
-
-  remaining += sec;
-
-  if (remaining < 0) remaining = 0;
-
-  updateDisplay();
-
-}
-
-let startBtn = document.getElementById("startBtn");
-
-let pressTimer = null;
-
-startBtn.addEventListener("touchstart", () => {
-
-  pressTimer = setTimeout(startTimer, 500);
-
-});
-
-startBtn.addEventListener("touchend", () => {
-
-  clearTimeout(pressTimer);
-
-});
-
-startBtn.addEventListener("click", () => {
-
-  startTimer();
-
-});
-
-updateDisplay();
-
-</script>
-
-</body>
-
+    <div class="menuOverlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+    <!-- ヘッダー -->
+    <header>
+      <div class="headerRow">
+        <div class="hamburger" onclick="toggleMenu()">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </header>
+
+    <div id="top">
+      <button onclick="resetTimer()">リセット</button>
+    </div>
+
+    <div id="time">5:00</div>
+
+    <div id="controls">
+      <button onclick="adjust(1)">+1</button>
+      <button id="startBtn">スタート</button>
+      <button onclick="adjust(-1)">-1</button>
+      <br>
+      <button onclick="stopTimer()">ストップ</button>
+    </div>
+
+    <script>
+      // ===== メニュー制御 =====
+      function toggleMenu(){
+        document.getElementById("menu").classList.toggle("open");
+        document.getElementById("menuOverlay").classList.toggle("show");
+      }
+
+      function closeMenu(){
+        document.getElementById("menu").classList.remove("open");
+        document.getElementById("menuOverlay").classList.remove("show");
+      }
+
+      // ===== タイマー =====
+      let totalTime = 300;
+      let remaining = 300;
+      let timer = null;
+      let endTime = null;
+      let running = false;
+      let audioUnlocked = false;
+
+      const callTimes = [
+        300,270,240,210,180,150,120,
+        105,90,75,60,
+        50,40,30,20,15,10,
+        9,8,7,6,5,4,3,2,1
+      ];
+
+      let spokenSet = new Set();
+
+      function updateDisplay() {
+        let min = Math.floor(remaining / 60);
+        let sec = remaining % 60;
+        document.getElementById("time").innerText =
+          min + ":" + sec.toString().padStart(2, "0");
+
+        document.body.classList.remove("yellow", "red", "blue");
+
+        if (remaining === 0) {
+          document.body.classList.add("blue");
+        } else if (remaining <= 10) {
+          document.body.classList.add("red");
+        } else if (remaining <= 60) {
+          document.body.classList.add("yellow");
+        }
+      }
+
+      function speak(text) {
+        if (!('speechSynthesis' in window)) return;
+
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'ja-JP';
+
+        speechSynthesis.cancel();
+        speechSynthesis.speak(msg);
+      }
+
+      function unlockAudio() {
+        if (audioUnlocked) return;
+
+        const msg = new SpeechSynthesisUtterance("");
+        msg.lang = 'ja-JP';
+
+        speechSynthesis.speak(msg);
+        audioUnlocked = true;
+      }
+
+      function formatTimeSpeech(sec) {
+        let m = Math.floor(sec / 60);
+        let s = sec % 60;
+
+        if (m > 0 && s > 0) return `${m}分${s}秒`;
+        if (m > 0) return `${m}分`;
+        return `${s}`;
+      }
+
+      function startTimer() {
+        if (running) return;
+
+        unlockAudio();
+        running = true;
+
+        endTime = Date.now() + remaining * 1000;
+
+        timer = setInterval(() => {
+          let diff = Math.round((endTime - Date.now()) / 1000);
+          remaining = Math.max(diff, 0);
+
+          updateDisplay();
+
+          if (callTimes.includes(remaining) && !spokenSet.has(remaining)) {
+            speak(formatTimeSpeech(remaining));
+            spokenSet.add(remaining);
+          }
+
+          if (remaining === 0) {
+            speak("スタート");
+            clearInterval(timer);
+            running = false;
+            spokenSet.clear();
+          }
+        }, 200);
+      }
+
+      function stopTimer() {
+        clearInterval(timer);
+        running = false;
+      }
+
+      function resetTimer() {
+        clearInterval(timer);
+        remaining = totalTime;
+        running = false;
+        spokenSet.clear();
+        updateDisplay();
+      }
+
+      function adjust(sec) {
+        remaining += sec;
+        if (remaining < 0) remaining = 0;
+        updateDisplay();
+      }
+
+      let startBtn = document.getElementById("startBtn");
+      let pressTimer = null;
+
+      startBtn.addEventListener("touchstart", () => {
+        pressTimer = setTimeout(startTimer, 500);
+      });
+
+      startBtn.addEventListener("touchend", () => {
+        clearTimeout(pressTimer);
+      });
+
+      startBtn.addEventListener("click", () => {
+        startTimer();
+      });
+
+      updateDisplay();
+    </script>
+  </body>
 </html>
