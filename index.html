@@ -233,6 +233,7 @@ links.forEach(link=>{
 });
 
 // ===== 元のJSそのまま =====
+
 const place = document.getElementById("place");
 const overlay = document.getElementById("overlay");
 const zoom = document.getElementById("zoom");
@@ -250,17 +251,20 @@ const PLACES = {
 
 function update(){
   const p = PLACES[place.value];
-  windyFrame.src = `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&zoom=${zoom.value}&overlay=${document.getElementById("overlay").value}`;
+
+  windyFrame.src =
+    `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&zoom=${zoom.value}&overlay=${overlay.value}`;
 }
 
 place.onchange = overlay.onchange = zoom.onchange = update;
 
+update();
+
 openBtn.onclick = () => {
   const p = PLACES[place.value];
-  const ov = document.getElementById("overlay").value;
 
   location.href =
-    `https://www.windy.com/?${ov},${p.lat},${p.lon},${zoom.value}`;
+    `https://www.windy.com/?${overlay.value},${p.lat},${p.lon},${zoom.value}`;
 };
 
 </script>
