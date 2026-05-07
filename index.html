@@ -248,12 +248,15 @@ function update(){
 }
 
 place.onchange = document.getElementById("overlay").onchange = zoom.onchange = update;
-update();
 
 openBtn.onclick = () => {
   const p = PLACES[place.value];
-  location.href = `https://www.windy.com/?lat=${p.lat}&lon=${p.lon}`;
+  const ov = document.getElementById("overlay").value;
+
+  location.href =
+    `https://www.windy.com/?${ov},${p.lat},${p.lon},${zoom.value}`;
 };
+
 </script>
 </body>
 </html>
