@@ -233,6 +233,12 @@ links.forEach(link=>{
 });
 
 // ===== 元のJSそのまま =====
+const place = document.getElementById("place");
+const overlay = document.getElementById("overlay");
+const zoom = document.getElementById("zoom");
+const windyFrame = document.getElementById("windyFrame");
+const openBtn = document.getElementById("openBtn");
+
 const PLACES = {
   urayasu:{lat:35.62,lon:139.89},
   kazenotou:{lat:35.4914,lon:139.8347},
@@ -247,7 +253,7 @@ function update(){
   windyFrame.src = `https://embed.windy.com/embed2.html?lat=${p.lat}&lon=${p.lon}&zoom=${zoom.value}&overlay=${document.getElementById("overlay").value}`;
 }
 
-place.onchange = document.getElementById("overlay").onchange = zoom.onchange = update;
+place.onchange = overlay.onchange = zoom.onchange = update;
 
 openBtn.onclick = () => {
   const p = PLACES[place.value];
