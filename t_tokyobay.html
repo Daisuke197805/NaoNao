@@ -426,29 +426,18 @@ socket.addEventListener("open", () => {
 
   log("AIS connected");
 
-  socket.send(JSON.stringify({
+socket.send(JSON.stringify({
 
-    APIKey: API_KEY,
+  APIKey: API_KEY,
 
-    BoundingBoxes: [
-
-      [
-
-        [35.0, 139.6],
-
-        [35.8, 140.1]
-
-      ]
-
-    ],
-
-    FilterMessageTypes: [
-
-      "PositionReport"
-
+  BoundingBoxes: [
+    [
+      [35.0, 139.6],
+      [35.8, 140.1]
     ]
+  ]
 
-  }));
+}));
 
   log("AIS購読送信");
 
