@@ -115,26 +115,22 @@ function startAIS(lat, lng) {
 
   socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
 
-  socket.onopen = () => {
+socket.onopen = () => {
 
-    log("WebSocket接続OK");
+  log("WebSocket接続OK");
 
-    socket.send(JSON.stringify({
-
-      APIKey: API_KEY,
-
-      BoundingBoxes: [[
-
-        [lat - delta, lng - delta],
-
-        [lat + delta, lng + delta]
-
-      ]]
-
-    }));
-
+  const sub = {
+    APIKey: API_KEY,
+    BoundingBoxes: [[
+      [lat - delta, lng - delta],
+      [lat + delta, lng + delta]
+    ]]
   };
 
+  log("送信:" + JSON.stringify(sub));
+
+  socket.send(JSON.stringify(sub));
+};
   socket.onerror = () => {
 
     log("WebSocketエラー");
