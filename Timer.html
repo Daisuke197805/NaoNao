@@ -15,7 +15,7 @@
     overflow:hidden;
   }
 
-  /* ===== メイン表示 ===== */
+  /* ===== 表示 ===== */
   #distance{
     font-size:70px;
     font-weight:bold;
@@ -39,50 +39,54 @@
     color:lime;
   }
 
-  /* ===== 下部エリア共通 ===== */
+  /* ===== 下部パネル ===== */
   .panel{
     position:fixed;
     bottom:10px;
     width:48%;
     padding:10px;
     box-sizing:border-box;
+
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    justify-content:space-between;
   }
 
-  /* ===== 左（ナビ） ===== */
   .nav{
     left:10px;
     background:rgba(0,255,0,0.12);
     border-radius:12px;
   }
 
-  /* ===== 右（タイマー） ===== */
   .timer{
     right:10px;
     background:rgba(255,150,150,0.15);
     border-radius:12px;
   }
 
+  /* ===== ボタン共通 ===== */
   button{
-    width:48%;
+    flex:0 0 48%;
     padding:12px;
-    margin:3px;
     font-size:14px;
     border:none;
     border-radius:10px;
+    box-sizing:border-box;
   }
 
   .big{
-    width:98%;
+    flex:0 0 100%;
     font-size:16px;
     font-weight:bold;
   }
 
-  /* ナビボタン */
+  /* ナビ */
   .b1,.b2{background:#333;color:white;}
   .startNav{background:#0066ff;color:white;}
   .resetNav{background:#444;color:white;}
 
-  /* タイマーボタン */
+  /* タイマー */
   .tStart{background:limegreen;color:black;font-weight:bold;}
   .tPlus,.tMinus{background:yellow;color:black;}
   .tStop{background:red;color:white;}
@@ -103,8 +107,8 @@
 <!-- ===== 左：ナビ ===== -->
 <div class="panel nav">
 
-  <button class="b1" onclick="setP1()">①</button>
   <button class="b2" onclick="setP2()">②</button>
+  <button class="b1" onclick="setP1()">①</button>
 
   <button class="big startNav" onclick="startNav()">開始</button>
   <button class="big resetNav" onclick="resetNav()">リセット</button>
@@ -242,12 +246,11 @@ async function updateNav(){
     median(speedBuf).toFixed(1)+" kt";
 
   if(buf.length===3){
-    const brg=
-      avgAngle(
-        buf.slice(0,2).map((p,i)=>
-          calcBearing(buf[i],buf[i+1])
-        )
-      );
+    const brg=avgAngle(
+      buf.slice(0,2).map((p,i)=>
+        calcBearing(buf[i],buf[i+1])
+      )
+    );
 
     bearingBuf.push(brg);
     if(bearingBuf.length>5)bearingBuf.shift();
