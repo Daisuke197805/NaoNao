@@ -16,38 +16,150 @@
 
 <style>
 
-html, body {
-  margin: 0;
-  height: 100%;
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --text:#111827;
+  --muted:#6b7280;
+  --brand:#1976d2;
+  --brand2:#155fa8;
+  --border:#e5e7eb;
+  --shadow:0 2px 14px rgba(0,0,0,.08);
+  --radius:16px;
 }
 
-#map {
-  width: 100%;
-  height: 100%;
+*{
+  box-sizing:border-box;
 }
 
-#log {
-  position: absolute;
-  top: 0;
-  left: 0;
-  background: rgba(255,255,255,0.9);
-  font-size: 12px;
-  max-height: 180px;
-  overflow: auto;
-  z-index: 9999;
-  width: 100%;
-  padding: 4px;
-  box-sizing: border-box;
-  font-family: monospace;
+html, body{
+  margin:0;
+  height:100%;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    "Hiragino Kaku Gothic ProN",
+    "Meiryo",
+    sans-serif;
+  background:var(--bg);
 }
 
-.ship-label {
-  font-size: 11px;
-  font-weight: bold;
-  color: blue;
-  background: rgba(255,255,255,0.8);
-  border: none;
-  box-shadow: none;
+/* ===== ヘッダー ===== */
+
+header{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:1000;
+  background:linear-gradient(90deg,#1565c0,#1976d2);
+  color:#fff;
+  padding:12px 16px;
+  box-shadow:0 2px 10px rgba(0,0,0,.12);
+}
+
+header .row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+header .title{
+  font-weight:800;
+  font-size:18px;
+}
+
+/* ===== ハンバーガー ===== */
+
+.hamburger{
+  width:28px;
+  height:22px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  cursor:pointer;
+}
+
+.hamburger span{
+  height:3px;
+  background:#fff;
+  border-radius:2px;
+  display:block;
+}
+
+/* ===== メニュー ===== */
+
+#menu{
+  position:fixed;
+  top:0;
+  left:-260px;
+  width:240px;
+  height:100%;
+  background:#fff;
+  box-shadow:2px 0 10px rgba(0,0,0,.15);
+  padding:60px 16px;
+  transition:left .25s;
+  z-index:2000;
+}
+
+#menu.open{
+  left:0;
+}
+
+#menu a{
+  display:block;
+  padding:12px;
+  margin-bottom:8px;
+  text-decoration:none;
+  color:#111;
+  font-weight:700;
+  border-radius:8px;
+}
+
+#menu a:hover{
+  background:#e3f2fd;
+}
+
+#menu a.active{
+  color:#aaa;
+  pointer-events:none;
+}
+
+/* ===== 背景オーバーレイ ===== */
+
+.menuOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.3);
+  display:none;
+  z-index:1500;
+}
+
+.menuOverlay.show{
+  display:block;
+}
+
+/* ===== 地図 ===== */
+
+#map{
+  position:absolute;
+  top:58px;
+  left:0;
+  right:0;
+  bottom:0;
+}
+
+/* ===== AISラベル ===== */
+
+.ship-label{
+  font-size:11px;
+  font-weight:bold;
+  color:blue;
+  background:rgba(255,255,255,0.85);
+  border:none;
+  box-shadow:none;
 }
 
 </style>
@@ -56,70 +168,158 @@ html, body {
 
 <body>
 
-<div id="log"></div>
+<!-- ===== メニュー ===== -->
+
+<div id="menu">
+
+  <a href="index.html">トップ</a>
+
+  <a href="event.html">レース&amp;イベント</a>
+
+  <a href="StartIn.html">スタートライン</a>
+
+  <a href="Timer.html">スタートタイマー</a>
+
+  <a href="RateCompare.html">レーティング比較</a>
+
+  <a href="M3.html">航跡表示</a>
+
+  <a href="AISviewer.html">AIS（テスト）</a>
+
+  <a href="M2.html">マニュアル</a>
+
+</div>
+
+<div
+  class="menuOverlay"
+  id="menuOverlay"
+  onclick="closeMenu()">
+</div>
+
+<!-- ===== ヘッダー ===== -->
+
+<header>
+
+  <div class="row">
+
+    <div
+      class="hamburger"
+      onclick="toggleMenu()">
+
+      <span></span>
+      <span></span>
+      <span></span>
+
+    </div>
+
+    <div class="title">
+      AIS Viewer
+    </div>
+
+  </div>
+
+</header>
+
+<!-- ===== 地図 ===== -->
 
 <div id="map"></div>
 
 <script>
 
-const API_KEY = "02bfdf3e9685ae762daf1b00a97b9ef6d52ad98a";
+// ===== メニュー制御 =====
+
+function toggleMenu(){
+
+  document
+    .getElementById("menu")
+    .classList
+    .toggle("open");
+
+  document
+    .getElementById("menuOverlay")
+    .classList
+    .toggle("show");
+}
+
+function closeMenu(){
+
+  document
+    .getElementById("menu")
+    .classList
+    .remove("open");
+
+  document
+    .getElementById("menuOverlay")
+    .classList
+    .remove("show");
+}
+
+// 現在ページ無効化
+
+const links =
+  document.querySelectorAll("#menu a");
+
+const current =
+  location.pathname.split("/").pop()
+  || "AISviewer.html";
+
+links.forEach(link=>{
+
+  if(link.getAttribute("href")===current){
+
+    link.classList.add("active");
+
+    link.removeAttribute("href");
+  }
+});
+
+// ===== AIS =====
+
+const API_KEY =
+  "02bfdf3e9685ae762daf1b00a97b9ef6d52ad98a";
 
 let map;
+
 let ships = {};
+
 let socket;
 
+// ===== 起動 =====
+
 window.onload = () => {
-
-  const el = document.getElementById("log");
-
-  if (el) {
-    el.innerHTML = "ログ開始<br>";
-  }
 
   initMap();
 };
 
-function log(msg) {
-
-  const el = document.getElementById("log");
-
-  if (!el) return;
-
-  console.log(msg);
-
-  el.innerHTML += msg + "<br>";
-
-  el.scrollTop = el.scrollHeight;
-}
+// ===== 地図 =====
 
 function initMap() {
 
-  map = L.map('map').setView([35.3, 139.8], 10);
+  map = L.map('map')
+    .setView([35.3, 139.8], 10);
 
   L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     {
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution:
+        '&copy; OpenStreetMap contributors'
     }
   ).addTo(map);
 
-  log("initMap完了");
-
-  // 範囲を少し狭めた
   startAIS(35.0, 139.8);
 }
 
+// ===== AIS開始 =====
+
 function startAIS(lat, lng) {
 
-  const delta = 2.0;
+  const delta = 0.3;
 
-  log("AIS開始");
-
-  socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
+  socket = new WebSocket(
+    "wss://stream.aisstream.io/v0/stream"
+  );
 
   socket.onopen = () => {
-
-    log("WebSocket接続OK");
 
     const sub = {
 
@@ -131,11 +331,7 @@ function startAIS(lat, lng) {
       ]]
     };
 
-    log("送信開始");
-
     socket.send(JSON.stringify(sub));
-
-    log("送信完了");
   };
 
   socket.onmessage = async (msg) => {
@@ -173,12 +369,13 @@ function startAIS(lat, lng) {
 
       const shipLng = report.Longitude;
 
-      if (shipLat == null || shipLng == null) return;
+      if (
+        shipLat == null ||
+        shipLng == null
+      ) return;
 
-      // 速度（ノット）
       const sog = report.Sog ?? 0;
 
-      // 進行方向
       const cog = report.Cog ?? 0;
 
       updateShip(
@@ -191,91 +388,96 @@ function startAIS(lat, lng) {
 
     } catch (err) {
 
-      log("JSON解析エラー");
-
       console.error(err);
     }
   };
-
-  socket.onerror = (e) => {
-
-    log("WebSocketエラー");
-
-    console.error(e);
-  };
-
-  socket.onclose = (e) => {
-
-    log("WebSocket切断");
-
-    log("code=" + e.code);
-
-    log("reason=" + e.reason);
-  };
 }
 
-function updateShip(mmsi, lat, lng, sog, cog) {
+// ===== 船更新 =====
+
+function updateShip(
+  mmsi,
+  lat,
+  lng,
+  sog,
+  cog
+) {
 
   const label =
-    sog.toFixed(1) + "kt" +
-    " / " +
-    Math.round(cog) + "°";
+    sog.toFixed(1)
+    + "kt / "
+    + Math.round(cog)
+    + "°";
 
-  // 既存船
+  // ===== 既存 =====
+
   if (ships[mmsi]) {
 
-    ships[mmsi].marker.setLatLng([lat, lng]);
+    ships[mmsi]
+      .marker
+      .setLatLng([lat, lng]);
 
-    ships[mmsi].marker.setTooltipContent(label);
+    ships[mmsi]
+      .marker
+      .setTooltipContent(label);
 
-    // 航跡追加
-    ships[mmsi].track.push([lat, lng]);
+    ships[mmsi]
+      .track
+      .push([lat, lng]);
 
-    // 長すぎ防止
-    if (ships[mmsi].track.length > 50) {
-      ships[mmsi].track.shift();
+    // 航跡長制限
+
+    if (
+      ships[mmsi]
+      .track
+      .length > 50
+    ) {
+
+      ships[mmsi]
+        .track
+        .shift();
     }
 
-    // 航跡更新
-    ships[mmsi].line.setLatLngs(
-      ships[mmsi].track
-    );
+    ships[mmsi]
+      .line
+      .setLatLngs(
+        ships[mmsi]
+        .track
+      );
 
   } else {
 
-    log("新規船追加 " + mmsi);
+    // ===== 新規 =====
 
-    // 船マーカー
-    const marker = L.circleMarker(
-      [lat, lng],
-      {
-        radius: 5,
-        color: 'blue',
-        fillColor: 'blue',
-        fillOpacity: 0.8
-      }
-    ).addTo(map);
+    const marker =
+      L.circleMarker(
+        [lat, lng],
+        {
+          radius:5,
+          color:'blue',
+          fillColor:'blue',
+          fillOpacity:0.8
+        }
+      ).addTo(map);
 
-    // 速度・COG表示
     marker.bindTooltip(
       label,
       {
-        permanent: true,
-        direction: "top",
-        className: "ship-label"
+        permanent:true,
+        direction:"top",
+        className:"ship-label"
       }
     );
 
-    // 航跡線
-    const line = L.polyline(
-      [[lat, lng]],
-      {
-        color: 'blue',
-        weight: 2
-      }
-    ).addTo(map);
+    const line =
+      L.polyline(
+        [[lat, lng]],
+        {
+          color:'blue',
+          weight:2
+        }
+      ).addTo(map);
 
-    // 保存
     ships[mmsi] = {
 
       marker: marker,
