@@ -60,7 +60,6 @@
     background:rgba(0,0,0,0.55);
     display:none;
     z-index:10000;
-    pointer-events:auto;
   }
 
   .panel{
@@ -86,11 +85,7 @@
     border-radius:10px;
   }
 
-  .big{flex:0 0 100%;font-size:16px;font-weight:bold;}
-
-  .b1,.b2{background:#333;color:white;}
-  .startNav{background:#0066ff;color:white;}
-  .resetNav{background:#444;color:white;}
+  .big{flex:0 0 100%;}
 </style>
 </head>
 
@@ -107,11 +102,10 @@
 
 <!-- ナビ -->
 <div class="panel nav">
-  <button class="b2" onclick="setP2()">②</button>
-  <button class="b1" onclick="setP1()">①</button>
-
-  <button class="big startNav" onclick="startNav()">開始</button>
-  <button class="big resetNav" onclick="resetNav()">リセット</button>
+  <button onclick="setP2()">②</button>
+  <button onclick="setP1()">①</button>
+  <button class="big" onclick="startNav()">開始</button>
+  <button class="big" onclick="resetNav()">リセット</button>
 </div>
 
 <!-- タイマー -->
@@ -133,16 +127,12 @@ let isLocked=false;
 
 function toggleLock(){
   isLocked=!isLocked;
-
-  document.getElementById("lockIcon").textContent=
-    isLocked?"🔒":"🔓";
-
-  document.getElementById("lockOverlay").style.display=
-    isLocked?"block":"none";
+  document.getElementById("lockIcon").textContent=isLocked?"🔒":"🔓";
+  document.getElementById("lockOverlay").style.display=isLocked?"block":"none";
 }
 
 //////////////////////////
-// ナビ復活（ここが本体）
+// ナビ（完全版復元）
 //////////////////////////
 
 let p1=null,p2=null;
@@ -153,7 +143,11 @@ let buf=[];
 function getPos(){
   return new Promise((res,rej)=>{
     navigator.geolocation.getCurrentPosition(
-      p=>res(p.coords),
+      p=>res({
+        lat:p.coords.latitude,
+        lon:p.coords.longitude,
+        t:Date.now()
+      }),
       e=>rej(e),
       {enableHighAccuracy:true}
     );
@@ -183,32 +177,53 @@ function dist(a,b){
   return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
 
+function speed(a,b){
+  const dt=(b.t-a.t)/1000;
+  if(dt<=0) return 0;
+  return (dist(a,b)/dt)*1.94384;
+}
+
+function bearing(a,b){
+  const toRad=d=>d*Math.PI/180;
+  const y=Math.sin(toRad(b.lon-a.lon))*Math.cos(toRad(b.lat));
+  const x=
+    Math.cos(toRad(a.lat))*Math.sin(toRad(b.lat))-
+    Math.sin(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.cos(toRad(b.lon-a.lon));
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+
 async function updateNav(){
 
   if(!p1||!p2) return;
 
   const pos=await getPos();
 
-  const now={
-    lat:pos.latitude,
-    lon:pos.longitude,
-    t:Date.now()
-  };
-
-  buf.push(now);
+  buf.push(pos);
   if(buf.length>3) buf.shift();
 
-  const d=dist(now,p1);
+  const current=pos;
 
-  document.getElementById("distance").textContent=
-    Math.round(d)+" m";
+  // 距離
+  const d=dist(current,p1);
+  document.getElementById("distance").textContent=Math.round(d)+" m";
+
+  // 速度
+  let sp=0;
+  if(buf.length>=2){
+    sp=speed(buf[buf.length-2],buf[buf.length-1]);
+  }
+  document.getElementById("speed").textContent=sp.toFixed(1)+" kt";
+
+  // 方位
+  if(buf.length>=2){
+    const brg=bearing(buf[buf.length-2],buf[buf.length-1]);
+    document.getElementById("bearing").textContent=Math.round(brg)+" °";
+  }
 }
 
 function startNav(){
   if(navTimer) clearInterval(navTimer);
-
   updateNav();
-
   navTimer=setInterval(updateNav,1000);
 }
 
@@ -216,19 +231,26 @@ function resetNav(){
   p1=p2=null;
   buf=[];
   document.getElementById("distance").textContent="---";
+  document.getElementById("speed").textContent="0.0 kt";
+  document.getElementById("bearing").textContent="--- °";
 }
 
 //////////////////////////
-// タイマー（簡略維持）
+// タイマー（そのまま）
 //////////////////////////
 
 let t=300;
 let timer=null;
 
+function updateTimer(){
+  let m=Math.floor(t/60);
+  let s=t%60;
+  document.getElementById("timer").textContent=m+":"+String(s).padStart(2,"0");
+}
+
 function startTimer(){
   t=300;
   updateTimer();
-
   if(timer) return;
 
   timer=setInterval(()=>{
@@ -237,28 +259,13 @@ function startTimer(){
   },1000);
 }
 
-function updateTimer(){
-  let m=Math.floor(t/60);
-  let s=t%60;
-  document.getElementById("timer").textContent=
-    m+":"+String(s).padStart(2,"0");
-}
+function stopTimer(){ clearInterval(timer); timer=null; }
 
-function stopTimer(){
-  clearInterval(timer);
-  timer=null;
-}
+function resetTimer(){ t=300; updateTimer(); }
 
-function resetTimer(){
-  t=300;
-  updateTimer();
-}
+function adjustTimer(v){ t+=v; if(t<0)t=0; updateTimer(); }
 
-function adjustTimer(v){
-  t+=v;
-  if(t<0)t=0;
-  updateTimer();
-}
+updateTimer();
 
 </script>
 
