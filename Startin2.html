@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>安定速度表示</title>
+<title>レース計測アプリ</title>
 
 <style>
   body {
@@ -15,20 +15,19 @@
   }
 
   .wrap {
-    padding-top: 30px;
+    padding-top: 20px;
+  }
+
+  #distance {
+    font-size: 72px;
+    font-weight: bold;
+    margin-top: 20px;
   }
 
   #speed {
-    font-size: 90px;
-    font-weight: bold;
-    margin-top: 40px;
-    color: #00ffcc;
-  }
-
-  #status {
-    font-size: 16px;
-    color: #888;
+    font-size: 42px;
     margin-top: 10px;
+    color: #00ffcc;
   }
 
   button {
@@ -40,7 +39,9 @@
     border-radius: 10px;
   }
 
-  .start { background:#0066ff; color:white; }
+  .b1 { background:#333; color:white; }
+  .b2 { background:#444; color:white; }
+  .b3 { background:#0066ff; color:white; }
   .stop { background:#aa0000; color:white; }
 </style>
 </head>
@@ -49,22 +50,28 @@
 
 <div class="wrap">
 
+  <div id="distance">---</div>
   <div id="speed">0.0 kt</div>
-  <div id="status">停止中</div>
 
-  <button class="start" onclick="start()">開始</button>
+  <button class="b1" onclick="setP1()">地点1取得</button>
+  <button class="b2" onclick="setP2()">地点2取得</button>
+  <button class="b3" onclick="start()">開始</button>
   <button class="stop" onclick="stop()">停止</button>
 
 </div>
 
 <script>
 
+let p1 = null;
+let p2 = null;
+
 let timer = null;
 
-// 位置履歴（3点）
+// 位置バッファ（3点）
 let buffer = [];
+let speedBuffer = [];
 
-// 取得
+// 現在地取得
 function getPos() {
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
@@ -75,7 +82,18 @@ function getPos() {
   });
 }
 
-// 距離
+// 地点セット
+async function setP1() {
+  p1 = await getPos();
+  alert("地点1セット");
+}
+
+async function setP2() {
+  p2 = await getPos();
+  alert("地点2セット");
+}
+
+// 距離計算（m）
 function dist(a, b) {
   const R = 6371000;
   const toRad = d => d * Math.PI / 180;
@@ -92,33 +110,59 @@ function dist(a, b) {
   return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
 }
 
-// ノイズ除去（中央値的安定化）
-function smoothSpeed(values) {
-  if (values.length < 3) return values[values.length - 1] || 0;
+// 垂線距離（符号付き簡易ベクトル）
+function signedDistance(p, a, b) {
 
-  const sorted = [...values].sort((a,b)=>a-b);
-  return sorted[1]; // 中央値
+  const ax = a.lon * Math.cos(a.lat * Math.PI/180);
+  const ay = a.lat;
+
+  const bx = b.lon * Math.cos(b.lat * Math.PI/180);
+  const by = b.lat;
+
+  const px = p.lon * Math.cos(p.lat * Math.PI/180);
+  const py = p.lat;
+
+  const ABx = bx - ax;
+  const ABy = by - ay;
+
+  const APx = px - ax;
+  const APy = py - ay;
+
+  const cross = ABx * APy - ABy * APx;
+
+  const sign = cross >= 0 ? 1 : -1;
+
+  const ABlen2 = ABx*ABx + ABy*ABy;
+  const t = (APx*ABx + APy*ABy) / ABlen2;
+
+  const cx = ax + t * ABx;
+  const cy = ay + t * ABy;
+
+  const d = dist(p, {
+    lat: cy,
+    lon: cx / Math.cos(p.lat * Math.PI/180)
+  });
+
+  return sign * d;
 }
 
-// 速度計算
-function calcSpeed() {
-
-  if (buffer.length < 3) return 0;
-
-  const p1 = buffer[0];
-  const p2 = buffer[2];
-
+// 速度（kt）
+function calcSpeed(p1, p2, dt) {
   const d = dist(p1, p2);
-  const dt = (p2.t - p1.t) / 1000;
-
-  if (dt <= 0) return 0;
-
   const mps = d / dt;
-  return mps * 1.94384; // kt
+  return mps * 1.94384;
 }
 
-// メイン更新
+// 中央値で安定化
+function median(arr) {
+  const s = [...arr].sort((a,b)=>a-b);
+  return s[Math.floor(s.length/2)];
+}
+
+// 更新処理
 async function update() {
+
+  if (!p1 || !p2) return;
 
   const pos = await getPos();
 
@@ -128,42 +172,50 @@ async function update() {
     t: Date.now()
   };
 
-  buffer.push(now);
+  // 垂線距離
+  const d = signedDistance(now, p1, p2);
 
-  // 3点保持
+  const dEl = document.getElementById("distance");
+  dEl.textContent = Math.round(d) + " m";
+  dEl.style.color = (d < 0) ? "red" : "white";
+
+  // バッファ管理（3点）
+  buffer.push(now);
   if (buffer.length > 3) buffer.shift();
 
-  const rawSpeed = calcSpeed();
+  let speed = 0;
 
-  speeds.push(rawSpeed);
-  if (speeds.length > 5) speeds.shift();
+  if (buffer.length === 3) {
+    const pA = buffer[0];
+    const pB = buffer[2];
+    const dt = (pB.t - pA.t) / 1000;
 
-  const stable = smoothSpeed(speeds);
+    if (dt > 0) {
+      speed = calcSpeed(pA, pB, dt);
+    }
+  }
 
-  const el = document.getElementById("speed");
+  // スピード平滑化（5点）
+  speedBuffer.push(speed);
+  if (speedBuffer.length > 5) speedBuffer.shift();
 
-  el.textContent = stable.toFixed(1) + " kt";
+  const stableSpeed = median(speedBuffer);
 
-  document.getElementById("status").textContent =
-    "更新中（" + new Date().toLocaleTimeString() + ")";
+  document.getElementById("speed").textContent =
+    stableSpeed.toFixed(1) + " kt";
 }
-
-// 速度履歴（さらに平滑化用）
-let speeds = [];
 
 // 開始
 function start() {
   if (timer) clearInterval(timer);
   update();
-  timer = setInterval(update, 2000); // 2秒周期（安定重視）
-  document.getElementById("status").textContent = "計測中";
+  timer = setInterval(update, 1000);
 }
 
 // 停止
 function stop() {
   clearInterval(timer);
   timer = null;
-  document.getElementById("status").textContent = "停止中";
 }
 
 </script>
