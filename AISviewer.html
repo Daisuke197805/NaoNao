@@ -32,13 +32,22 @@ html, body {
   left: 0;
   background: rgba(255,255,255,0.9);
   font-size: 12px;
-  max-height: 220px;
+  max-height: 180px;
   overflow: auto;
   z-index: 9999;
   width: 100%;
   padding: 4px;
   box-sizing: border-box;
   font-family: monospace;
+}
+
+.ship-label {
+  font-size: 11px;
+  font-weight: bold;
+  color: blue;
+  background: rgba(255,255,255,0.8);
+  border: none;
+  box-shadow: none;
 }
 
 </style>
@@ -96,12 +105,13 @@ function initMap() {
 
   log("initMap完了");
 
+  // 範囲を少し狭めた
   startAIS(35.0, 139.8);
 }
 
 function startAIS(lat, lng) {
 
-  const delta = 1.0;
+  const delta = 2.0;
 
   log("AIS開始");
 
@@ -123,8 +133,6 @@ function startAIS(lat, lng) {
 
     log("送信開始");
 
-    log(JSON.stringify(sub));
-
     socket.send(JSON.stringify(sub));
 
     log("送信完了");
@@ -132,16 +140,12 @@ function startAIS(lat, lng) {
 
   socket.onmessage = async (msg) => {
 
-    log("メッセージ受信");
-
-    let text;
-
     try {
 
-      // iPad Safari対応
-      if (msg.data instanceof Blob) {
+      let text;
 
-        log("Blob受信");
+      // iPad Safari Blob対応
+      if (msg.data instanceof Blob) {
 
         text = await msg.data.text();
 
@@ -150,28 +154,18 @@ function startAIS(lat, lng) {
         text = msg.data;
       }
 
-      log("受信文字列取得OK");
-
       const data = JSON.parse(text);
-
-      log("JSON解析OK");
 
       const message = data.Message;
 
-      if (!message) {
-        log("Messageなし");
-        return;
-      }
+      if (!message) return;
 
       const report =
         message.PositionReport ||
         message.StandardClassBPositionReport ||
         message.LongRangeAisBroadcastMessage;
 
-      if (!report) {
-        log("位置レポートなし");
-        return;
-      }
+      if (!report) return;
 
       const mmsi = report.UserID;
 
@@ -179,16 +173,21 @@ function startAIS(lat, lng) {
 
       const shipLng = report.Longitude;
 
-      if (shipLat == null || shipLng == null) {
+      if (shipLat == null || shipLng == null) return;
 
-        log("緯度経度なし");
+      // 速度（ノット）
+      const sog = report.Sog ?? 0;
 
-        return;
-      }
+      // 進行方向
+      const cog = report.Cog ?? 0;
 
-      log("船データOK MMSI=" + mmsi);
-
-      updateShip(mmsi, shipLat, shipLng);
+      updateShip(
+        mmsi,
+        shipLat,
+        shipLng,
+        sog,
+        cog
+      );
 
     } catch (err) {
 
@@ -212,21 +211,41 @@ function startAIS(lat, lng) {
     log("code=" + e.code);
 
     log("reason=" + e.reason);
-
-    console.log(e);
   };
 }
 
-function updateShip(mmsi, lat, lng) {
+function updateShip(mmsi, lat, lng, sog, cog) {
 
+  const label =
+    sog.toFixed(1) + "kt" +
+    " / " +
+    Math.round(cog) + "°";
+
+  // 既存船
   if (ships[mmsi]) {
 
-    ships[mmsi].setLatLng([lat, lng]);
+    ships[mmsi].marker.setLatLng([lat, lng]);
+
+    ships[mmsi].marker.setTooltipContent(label);
+
+    // 航跡追加
+    ships[mmsi].track.push([lat, lng]);
+
+    // 長すぎ防止
+    if (ships[mmsi].track.length > 50) {
+      ships[mmsi].track.shift();
+    }
+
+    // 航跡更新
+    ships[mmsi].line.setLatLngs(
+      ships[mmsi].track
+    );
 
   } else {
 
     log("新規船追加 " + mmsi);
 
+    // 船マーカー
     const marker = L.circleMarker(
       [lat, lng],
       {
@@ -237,7 +256,34 @@ function updateShip(mmsi, lat, lng) {
       }
     ).addTo(map);
 
-    ships[mmsi] = marker;
+    // 速度・COG表示
+    marker.bindTooltip(
+      label,
+      {
+        permanent: true,
+        direction: "top",
+        className: "ship-label"
+      }
+    );
+
+    // 航跡線
+    const line = L.polyline(
+      [[lat, lng]],
+      {
+        color: 'blue',
+        weight: 2
+      }
+    ).addTo(map);
+
+    // 保存
+    ships[mmsi] = {
+
+      marker: marker,
+
+      track: [[lat, lng]],
+
+      line: line
+    };
   }
 }
 
