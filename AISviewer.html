@@ -136,7 +136,13 @@ socket.onopen = () => {
     log("WebSocketエラー");
 
   };
+socket.onclose = (e) => {
+  log("WebSocket切断");
+  log("code=" + e.code);
+  log("reason=" + e.reason);
+};
 
+  
   socket.onmessage = (msg) => {
 
     // ★ここに入れてます（重要）
