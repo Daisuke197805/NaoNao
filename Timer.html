@@ -74,8 +74,17 @@
     justify-content:space-between;
   }
 
-  .nav{left:10px;background:rgba(0,255,0,0.12);border-radius:12px;}
-  .timerPanel{right:10px;background:rgba(255,150,150,0.15);border-radius:12px;}
+  .nav{
+    left:10px;
+    background:rgba(0,255,0,0.12);
+    border-radius:12px;
+  }
+
+  .timerPanel{
+    right:10px;
+    background:rgba(255,150,150,0.15);
+    border-radius:12px;
+  }
 
   button{
     flex:0 0 48%;
@@ -85,7 +94,15 @@
     border-radius:10px;
   }
 
-  .big{flex:0 0 100%;}
+  .big{
+    flex:0 0 100%;
+    font-size:16px;
+    font-weight:bold;
+  }
+
+  .b1,.b2{background:#333;color:white;}
+  .startNav{background:#0066ff;color:white;}
+  .resetNav{background:#444;color:white;}
 </style>
 </head>
 
@@ -119,9 +136,9 @@
 
 <script>
 
-//////////////////////////
+//////////////////////////////
 // ロック
-//////////////////////////
+//////////////////////////////
 
 let isLocked=false;
 
@@ -131,13 +148,12 @@ function toggleLock(){
   document.getElementById("lockOverlay").style.display=isLocked?"block":"none";
 }
 
-//////////////////////////
-// ナビ（完全版復元）
-//////////////////////////
+//////////////////////////////
+// GPS
+//////////////////////////////
 
 let p1=null,p2=null;
 let navTimer=null;
-
 let buf=[];
 
 function getPos(){
@@ -164,6 +180,37 @@ async function setP2(){
   alert("②セット");
 }
 
+//////////////////////////////
+// 距離（ここが核心）
+//////////////////////////////
+
+function signedProgress(p,a,b){
+
+  const ax=a.lon*Math.cos(a.lat*Math.PI/180);
+  const ay=a.lat;
+  const bx=b.lon*Math.cos(b.lat*Math.PI/180);
+  const by=b.lat;
+  const px=p.lon*Math.cos(p.lat*Math.PI/180);
+  const py=p.lat;
+
+  const ABx=bx-ax;
+  const ABy=by-ay;
+  const APx=px-ax;
+  const APy=py-ay;
+
+  const ab2=ABx*ABx+ABy*ABy;
+
+  const t=(APx*ABx+APy*ABy)/ab2;
+
+  const ABlen=Math.sqrt(ab2);
+
+  return t*ABlen; // メートル相当（簡易）
+}
+
+//////////////////////////////
+// 速度・方位
+//////////////////////////////
+
 function dist(a,b){
   const R=6371000,toRad=d=>d*Math.PI/180;
   const dLat=toRad(b.lat-a.lat);
@@ -189,8 +236,13 @@ function bearing(a,b){
   const x=
     Math.cos(toRad(a.lat))*Math.sin(toRad(b.lat))-
     Math.sin(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.cos(toRad(b.lon-a.lon));
+
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
+
+//////////////////////////////
+// 更新
+//////////////////////////////
 
 async function updateNav(){
 
@@ -201,23 +253,24 @@ async function updateNav(){
   buf.push(pos);
   if(buf.length>3) buf.shift();
 
-  const current=pos;
+  // ★ 距離（コース進捗）
+  const prog = signedProgress(pos,p1,p2);
+  document.getElementById("distance").textContent =
+    Math.round(prog)+" m";
 
-  // 距離
-  const d=dist(current,p1);
-  document.getElementById("distance").textContent=Math.round(d)+" m";
-
-  // 速度
+  // ★ 速度
   let sp=0;
   if(buf.length>=2){
     sp=speed(buf[buf.length-2],buf[buf.length-1]);
   }
-  document.getElementById("speed").textContent=sp.toFixed(1)+" kt";
+  document.getElementById("speed").textContent =
+    sp.toFixed(1)+" kt";
 
-  // 方位
+  // ★ 方位
   if(buf.length>=2){
     const brg=bearing(buf[buf.length-2],buf[buf.length-1]);
-    document.getElementById("bearing").textContent=Math.round(brg)+" °";
+    document.getElementById("bearing").textContent =
+      Math.round(brg)+" °";
   }
 }
 
@@ -235,9 +288,9 @@ function resetNav(){
   document.getElementById("bearing").textContent="--- °";
 }
 
-//////////////////////////
-// タイマー（そのまま）
-//////////////////////////
+//////////////////////////////
+// タイマー
+//////////////////////////////
 
 let t=300;
 let timer=null;
@@ -245,7 +298,8 @@ let timer=null;
 function updateTimer(){
   let m=Math.floor(t/60);
   let s=t%60;
-  document.getElementById("timer").textContent=m+":"+String(s).padStart(2,"0");
+  document.getElementById("timer").textContent=
+    m+":"+String(s).padStart(2,"0");
 }
 
 function startTimer(){
