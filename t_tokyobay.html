@@ -6,7 +6,7 @@
 
 <meta charset="utf-8">
 
-<title>東京湾 海図GPS</title>
+<title>東京湾 海図ナビ</title>
 
 <meta name="viewport"
 
@@ -60,6 +60,8 @@ html, body {
 
   font-size: 14px;
 
+  line-height: 1.5;
+
 }
 
 </style>
@@ -72,7 +74,9 @@ html, body {
 
 <div class="info">
 
-  東京湾 海図GPS
+  東京湾 海図ナビ<br>
+
+  GPS + 航路 + ブイ
 
 </div>
 
@@ -80,23 +84,23 @@ html, body {
 
 <script>
 
-// ======================
+// =====================================
 
-// 地図作成
+// 地図
 
-// ======================
+// =====================================
 
 const map = L.map('map', {
 
   zoomControl: true
 
-}).setView([35.35, 139.75], 10);
+}).setView([35.30, 139.80], 10);
 
-// ======================
+// =====================================
 
 // OpenStreetMap
 
-// ======================
+// =====================================
 
 L.tileLayer(
 
@@ -110,11 +114,11 @@ L.tileLayer(
 
 ).addTo(map);
 
-// ======================
+// =====================================
 
-// OpenSeaMap 海図
+// OpenSeaMap
 
-// ======================
+// =====================================
 
 L.tileLayer(
 
@@ -128,11 +132,11 @@ L.tileLayer(
 
 ).addTo(map);
 
-// ======================
+// =====================================
 
-// 東京湾主要航路（簡易版）
+// 東京湾主要航路
 
-// ======================
+// =====================================
 
 // 浦賀水道航路
 
@@ -168,7 +172,11 @@ L.polyline(uragaRoute, {
 
   opacity: 0.8
 
-}).addTo(map).bindPopup("浦賀水道航路");
+})
+
+.addTo(map)
+
+.bindPopup("浦賀水道航路");
 
 L.polyline(nakanoseRoute, {
 
@@ -178,13 +186,105 @@ L.polyline(nakanoseRoute, {
 
   opacity: 0.8
 
-}).addTo(map).bindPopup("中ノ瀬航路");
+})
 
-// ======================
+.addTo(map)
 
-// 現在位置
+.bindPopup("中ノ瀬航路");
 
-// ======================
+// =====================================
+
+// 東京湾主要ブイ
+
+// =====================================
+
+const buoys = [
+
+  {
+
+    name: "中ノ瀬ブイ",
+
+    lat: 35.30,
+
+    lon: 139.86
+
+  },
+
+  {
+
+    name: "浦賀水道航路第一号灯浮標",
+
+    lat: 35.18,
+
+    lon: 139.79
+
+  },
+
+  {
+
+    name: "浦賀水道航路第三号灯浮標",
+
+    lat: 35.12,
+
+    lon: 139.81
+
+  },
+
+  {
+
+    name: "第一海堡",
+
+    lat: 35.31,
+
+    lon: 139.76
+
+  },
+
+  {
+
+    name: "第二海堡",
+
+    lat: 35.29,
+
+    lon: 139.79
+
+  }
+
+];
+
+// ブイ表示
+
+buoys.forEach(b => {
+
+  const marker = L.circleMarker(
+
+    [b.lat, b.lon],
+
+    {
+
+      radius: 8,
+
+      color: "yellow",
+
+      fillColor: "orange",
+
+      fillOpacity: 0.9,
+
+      weight: 2
+
+    }
+
+  ).addTo(map);
+
+  marker.bindPopup(b.name);
+
+});
+
+// =====================================
+
+// 自船GPS
+
+// =====================================
 
 let myMarker = null;
 
@@ -200,8 +300,6 @@ navigator.geolocation.watchPosition(
 
     const acc = pos.coords.accuracy;
 
-    // 初回
-
     if (!myMarker) {
 
       map.setView([lat, lon], 14);
@@ -216,9 +314,9 @@ navigator.geolocation.watchPosition(
 
         radius: acc,
 
-        color: 'blue',
+        color: "blue",
 
-        fillColor: '#30f',
+        fillColor: "#30f",
 
         fillOpacity: 0.15
 
@@ -238,7 +336,7 @@ navigator.geolocation.watchPosition(
 
   (err) => {
 
-    alert("位置情報取得失敗: " + err.message);
+    alert("GPS取得失敗: " + err.message);
 
   },
 
