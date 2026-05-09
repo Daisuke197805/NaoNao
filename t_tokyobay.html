@@ -74,7 +74,7 @@ html, body {
 
   z-index: 1000;
 
-  width: 340px;
+  width: 320px;
 
   max-height: 220px;
 
@@ -90,7 +90,7 @@ html, body {
 
   font-family: monospace;
 
-  font-size: 10px;
+  font-size: 11px;
 
   line-height: 1.4;
 
@@ -128,7 +128,7 @@ html, body {
 
 // ======================================
 
-const API_KEY = "02bfdf3e9685ae762daf1b00a97b9ef6d52ad98a";
+const API_KEY = "ここにAPIキー";
 
 // ======================================
 
@@ -416,7 +416,11 @@ const socket = new WebSocket(
 
 );
 
+// ======================================
+
 // 接続成功
+
+// ======================================
 
 socket.addEventListener("open", () => {
 
@@ -450,7 +454,11 @@ socket.addEventListener("open", () => {
 
 });
 
+// ======================================
+
 // メッセージ受信
+
+// ======================================
 
 socket.addEventListener("message", (event) => {
 
@@ -458,23 +466,17 @@ socket.addEventListener("message", (event) => {
 
     log("AIS受信");
 
+    // まず受信確認
+
     console.log(event.data);
 
-log("JSON受信");
+    log("JSON解析開始");
 
-const data = JSON.parse(event.data);
+    const data = JSON.parse(event.data);
 
-log("JSON解析成功");
+    log("JSON解析成功");
 
-    // ログへJSON表示
-
-    log(JSON.stringify(data));
-
-    // ======================================
-
-    // PositionReport探索
-
-    // ======================================
+    // Message存在確認
 
     if (!data.Message) {
 
@@ -484,11 +486,9 @@ log("JSON解析成功");
 
     }
 
-    // PositionReport
+    // PositionReport存在確認
 
-    const report = data.Message.PositionReport;
-
-    if (!report) {
+    if (!data.Message.PositionReport) {
 
       log("PositionReportなし");
 
@@ -496,7 +496,7 @@ log("JSON解析成功");
 
     }
 
-    // 緯度経度
+    const report = data.Message.PositionReport;
 
     const lat = report.Latitude;
 
@@ -506,7 +506,7 @@ log("JSON解析成功");
 
     log(
 
-      "船データ " +
+      "船座標 " +
 
       lat + "," + lon
 
@@ -522,7 +522,7 @@ log("JSON解析成功");
 
     // ======================================
 
-    // 船描画
+    // 初回生成
 
     // ======================================
 
@@ -564,19 +564,21 @@ log("JSON解析成功");
 
     }
 
-} catch(err) {
+  } catch(err) {
 
-  log("AIS解析エラー: " + err.message);
+    log("AIS解析エラー: " + err.message);
 
-  console.log(err);
-
-}
+    console.log(err);
 
   }
 
 });
 
+// ======================================
+
 // エラー
+
+// ======================================
 
 socket.addEventListener("error", (err) => {
 
@@ -586,7 +588,11 @@ socket.addEventListener("error", (err) => {
 
 });
 
+// ======================================
+
 // 切断
+
+// ======================================
 
 socket.addEventListener("close", () => {
 
