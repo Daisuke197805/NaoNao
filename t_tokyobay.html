@@ -2,22 +2,41 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>Worker Test</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>東京湾 AIS Map</title>
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<link
+ rel="stylesheet"
+ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 
 <style>
 
-body{
-  font-family:sans-serif;
-  padding:20px;
+html, body {
+  margin:0;
+  padding:0;
+  height:100%;
 }
 
-#result{
-  margin-top:20px;
-  white-space:pre-wrap;
-  background:#eee;
+#map{
+  width:100%;
+  height:100%;
+}
+
+.info{
+  position:absolute;
+  top:10px;
+  left:10px;
+  z-index:1000;
+
+  background:white;
   padding:10px;
   border-radius:10px;
+
+  font-family:sans-serif;
 }
 
 </style>
@@ -25,24 +44,53 @@ body{
 
 <body>
 
-<h2>Cloudflare Worker 接続テスト</h2>
+<div id="map"></div>
 
-<button onclick="loadData()">
-  Workerへ接続
-</button>
-
-<div id="result">
-待機中
+<div class="info">
+  東京湾 AIS
 </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-async function loadData(){
+// ======================================
+// 地図
+// ======================================
 
-  const result =
-    document.getElementById("result");
+const map = L.map("map")
+  .setView([35.30,139.80], 10);
 
-  result.textContent = "通信中...";
+
+// ======================================
+// OSM
+// ======================================
+
+L.tileLayer(
+  "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    attribution:"OSM"
+  }
+).addTo(map);
+
+
+// ======================================
+// OpenSeaMap
+// ======================================
+
+L.tileLayer(
+  "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
+  {
+    attribution:"OpenSeaMap"
+  }
+).addTo(map);
+
+
+// ======================================
+// AIS取得
+// ======================================
+
+async function loadAIS(){
 
   try{
 
@@ -52,17 +100,48 @@ async function loadData(){
 
     const data = await res.json();
 
-    result.textContent =
-      JSON.stringify(data, null, 2);
+    console.log(data);
+
+
+    // ======================================
+    // MetaData利用
+    // ======================================
+
+    if(!data.MetaData)
+      return;
+
+    const lat = data.MetaData.latitude;
+    const lon = data.MetaData.longitude;
+
+    const mmsi = data.MetaData.MMSI;
+
+
+    L.circleMarker(
+      [lat, lon],
+      {
+        radius:6,
+        color:"lime",
+        fillColor:"lime",
+        fillOpacity:0.8
+      }
+    )
+    .addTo(map)
+    .bindPopup(
+      "MMSI: " + mmsi
+    );
+
 
   }catch(err){
 
-    result.textContent =
-      "ERROR: " + err.message;
+    console.log(err);
 
   }
 
 }
+
+
+// 初回読み込み
+loadAIS();
 
 </script>
 
