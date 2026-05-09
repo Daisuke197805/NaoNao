@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 
 <head>
@@ -10,26 +9,36 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
 
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
 
 html, body {
-
   margin: 0;
-
   height: 100%;
-
 }
 
 #map {
-
   width: 100%;
-
   height: 100%;
+}
 
+#log {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(255,255,255,0.9);
+  font-size: 12px;
+  max-height: 220px;
+  overflow: auto;
+  z-index: 9999;
+  width: 100%;
+  padding: 4px;
+  box-sizing: border-box;
+  font-family: monospace;
 }
 
 </style>
@@ -38,27 +47,7 @@ html, body {
 
 <body>
 
-<div id="log" style="
-
-  position:absolute;
-
-  top:0;
-
-  left:0;
-
-  background:white;
-
-  font-size:12px;
-
-  max-height:200px;
-
-  overflow:auto;
-
-  z-index:9999;
-
-  width:100%;
-
-"></div>
+<div id="log"></div>
 
 <div id="map"></div>
 
@@ -67,19 +56,18 @@ html, body {
 const API_KEY = "02bfdf3e9685ae762daf1b00a97b9ef6d52ad98a";
 
 let map;
-
 let ships = {};
-
 let socket;
 
 window.onload = () => {
 
   const el = document.getElementById("log");
 
-  if (el) el.innerHTML = "ログ開始<br>";
+  if (el) {
+    el.innerHTML = "ログ開始<br>";
+  }
 
   initMap();
-
 };
 
 function log(msg) {
@@ -88,97 +76,129 @@ function log(msg) {
 
   if (!el) return;
 
+  console.log(msg);
+
   el.innerHTML += msg + "<br>";
 
+  el.scrollTop = el.scrollHeight;
 }
 
 function initMap() {
 
   map = L.map('map').setView([35.3, 139.8], 10);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-
-    attribution: '&copy; OpenStreetMap contributors'
-
-  }).addTo(map);
+  L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      attribution: '&copy; OpenStreetMap contributors'
+    }
+  ).addTo(map);
 
   log("initMap完了");
 
-startAIS(35.0, 139.8);
-
-
+  startAIS(35.0, 139.8);
 }
 
 function startAIS(lat, lng) {
 
   const delta = 3.0;
 
+  log("AIS開始");
+
   socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
 
-socket.onopen = () => {
+  socket.onopen = () => {
 
-  log("WebSocket接続OK");
+    log("WebSocket接続OK");
 
-  const sub = {
-    APIKey: API_KEY,
-    BoundingBoxes: [[
-      [lat - delta, lng - delta],
-      [lat + delta, lng + delta]
-    ]]
+    const sub = {
+
+      APIKey: API_KEY,
+
+      BoundingBoxes: [[
+        [lat - delta, lng - delta],
+        [lat + delta, lng + delta]
+      ]]
+    };
+
+    log("送信開始");
+
+    log(JSON.stringify(sub));
+
+    socket.send(JSON.stringify(sub));
+
+    log("送信完了");
   };
 
-  log("送信:" + JSON.stringify(sub));
+  socket.onmessage = (msg) => {
 
-  socket.send(JSON.stringify(sub));
-};
-  socket.onerror = () => {
+    log("メッセージ受信");
+
+    try {
+
+      const data = JSON.parse(msg.data);
+
+      log("JSON解析OK");
+
+      log(JSON.stringify(data));
+
+      const message = data.Message;
+
+      if (!message) {
+        log("Messageなし");
+        return;
+      }
+
+      const report =
+        message.PositionReport ||
+        message.StandardClassBPositionReport ||
+        message.LongRangeAisBroadcastMessage;
+
+      if (!report) {
+        log("位置レポートなし");
+        return;
+      }
+
+      const mmsi = report.UserID;
+
+      const lat = report.Latitude;
+
+      const lng = report.Longitude;
+
+      if (lat == null || lng == null) {
+        log("緯度経度なし");
+        return;
+      }
+
+      log("船データOK MMSI=" + mmsi);
+
+      updateShip(mmsi, lat, lng);
+
+    } catch (err) {
+
+      log("JSON解析エラー");
+
+      console.error(err);
+    }
+  };
+
+  socket.onerror = (e) => {
 
     log("WebSocketエラー");
 
-  };
-socket.onclose = (e) => {
-  log("WebSocket切断");
-  log("code=" + e.code);
-  log("reason=" + e.reason);
-};
-
-  
-  socket.onmessage = (msg) => {
-
-    // ★ここに入れてます（重要）
-
-    const data = JSON.parse(msg.data);
-
-    log(JSON.stringify(data));
-
-    const message = data.Message;
-
-    if (!message) return;
-
-    const report =
-
-      message.PositionReport ||
-
-      message.StandardClassBPositionReport ||
-
-      message.LongRangeAisBroadcastMessage;
-
-    if (!report) return;
-
-    const mmsi = report.UserID;
-
-    const lat = report.Latitude;
-
-    const lng = report.Longitude;
-
-    if (lat == null || lng == null) return;
-
-    log("船データOK");
-
-    updateShip(mmsi, lat, lng);
-
+    console.error(e);
   };
 
+  socket.onclose = (e) => {
+
+    log("WebSocket切断");
+
+    log("code=" + e.code);
+
+    log("reason=" + e.reason);
+
+    console.log(e);
+  };
 }
 
 function updateShip(mmsi, lat, lng) {
@@ -189,22 +209,23 @@ function updateShip(mmsi, lat, lng) {
 
   } else {
 
-    let marker = L.circleMarker([lat, lng], {
+    log("新規船追加 " + mmsi);
 
-      radius: 5,
-
-      color: 'blue'
-
-    }).addTo(map);
+    const marker = L.circleMarker(
+      [lat, lng],
+      {
+        radius: 5,
+        color: 'blue',
+        fillColor: 'blue',
+        fillOpacity: 0.8
+      }
+    ).addTo(map);
 
     ships[mmsi] = marker;
-
   }
-
 }
 
 </script>
 
 </body>
-
 </html>
