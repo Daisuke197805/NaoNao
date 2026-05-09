@@ -130,20 +130,31 @@ function startAIS(lat, lng) {
     log("送信完了");
   };
 
-  socket.onmessage = (msg) => {
+  socket.onmessage = async (msg) => {
 
-  log("メッセージ受信");
+    log("メッセージ受信");
 
-  log("typeof=" + typeof msg.data);
+    let text;
 
-  log("raw=" + msg.data);
+    try {
 
-  try {
+      // iPad Safari対応
+      if (msg.data instanceof Blob) {
 
-    const data = JSON.parse(msg.data);
+        log("Blob受信");
+
+        text = await msg.data.text();
+
+      } else {
+
+        text = msg.data;
+      }
+
+      log("受信文字列取得OK");
+
+      const data = JSON.parse(text);
+
       log("JSON解析OK");
-
-      log(JSON.stringify(data));
 
       const message = data.Message;
 
@@ -164,18 +175,20 @@ function startAIS(lat, lng) {
 
       const mmsi = report.UserID;
 
-      const lat = report.Latitude;
+      const shipLat = report.Latitude;
 
-      const lng = report.Longitude;
+      const shipLng = report.Longitude;
 
-      if (lat == null || lng == null) {
+      if (shipLat == null || shipLng == null) {
+
         log("緯度経度なし");
+
         return;
       }
 
       log("船データOK MMSI=" + mmsi);
 
-      updateShip(mmsi, lat, lng);
+      updateShip(mmsi, shipLat, shipLng);
 
     } catch (err) {
 
