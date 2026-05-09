@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>レース計測アプリ</title>
+<title>レースナビ（距離・速度・方位）</title>
 
 <style>
   body {
@@ -19,15 +19,21 @@
   }
 
   #distance {
-    font-size: 72px;
+    font-size: 70px;
     font-weight: bold;
-    margin-top: 20px;
+    margin-top: 10px;
   }
 
   #speed {
-    font-size: 42px;
-    margin-top: 10px;
+    font-size: 40px;
     color: #00ffcc;
+    margin-top: 10px;
+  }
+
+  #bearing {
+    font-size: 32px;
+    color: #ffcc00;
+    margin-top: 10px;
   }
 
   button {
@@ -52,6 +58,7 @@
 
   <div id="distance">---</div>
   <div id="speed">0.0 kt</div>
+  <div id="bearing">--- °</div>
 
   <button class="b1" onclick="setP1()">地点1取得</button>
   <button class="b2" onclick="setP2()">地点2取得</button>
@@ -67,9 +74,10 @@ let p2 = null;
 
 let timer = null;
 
-// 位置バッファ（3点）
-let buffer = [];
+// バッファ
+let posBuffer = [];
 let speedBuffer = [];
+let bearingBuffer = [];
 
 // 現在地取得
 function getPos() {
@@ -82,7 +90,7 @@ function getPos() {
   });
 }
 
-// 地点セット
+// 地点取得
 async function setP1() {
   p1 = await getPos();
   alert("地点1セット");
@@ -93,7 +101,7 @@ async function setP2() {
   alert("地点2セット");
 }
 
-// 距離計算（m）
+// 距離計算
 function dist(a, b) {
   const R = 6371000;
   const toRad = d => d * Math.PI / 180;
@@ -110,7 +118,7 @@ function dist(a, b) {
   return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
 }
 
-// 垂線距離（符号付き簡易ベクトル）
+// 垂線距離
 function signedDistance(p, a, b) {
 
   const ax = a.lon * Math.cos(a.lat * Math.PI/180);
@@ -129,7 +137,6 @@ function signedDistance(p, a, b) {
   const APy = py - ay;
 
   const cross = ABx * APy - ABy * APx;
-
   const sign = cross >= 0 ? 1 : -1;
 
   const ABlen2 = ABx*ABx + ABy*ABy;
@@ -138,28 +145,57 @@ function signedDistance(p, a, b) {
   const cx = ax + t * ABx;
   const cy = ay + t * ABy;
 
-  const d = dist(p, {
+  return sign * dist(p, {
     lat: cy,
     lon: cx / Math.cos(p.lat * Math.PI/180)
   });
-
-  return sign * d;
 }
 
-// 速度（kt）
-function calcSpeed(p1, p2, dt) {
-  const d = dist(p1, p2);
-  const mps = d / dt;
-  return mps * 1.94384;
+// 方位計算
+function calcBearing(a, b) {
+  const toRad = d => d * Math.PI / 180;
+  const toDeg = r => r * 180 / Math.PI;
+
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const dLon = toRad(b.lon - a.lon);
+
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) -
+    Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+
+  let brng = toDeg(Math.atan2(y, x));
+  return (brng + 360) % 360;
 }
 
-// 中央値で安定化
+// ノット速度
+function calcSpeed(a, b, dt) {
+  const d = dist(a, b);
+  return (d / dt) * 1.94384;
+}
+
+// 角度平均（重要）
+function avgBearing(list) {
+  let x = 0;
+  let y = 0;
+
+  for (let b of list) {
+    const r = b * Math.PI / 180;
+    x += Math.cos(r);
+    y += Math.sin(r);
+  }
+
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+// 中央値
 function median(arr) {
   const s = [...arr].sort((a,b)=>a-b);
   return s[Math.floor(s.length/2)];
 }
 
-// 更新処理
+// 更新
 async function update() {
 
   if (!p1 || !p2) return;
@@ -172,30 +208,30 @@ async function update() {
     t: Date.now()
   };
 
-  // 垂線距離
+  // バッファ
+  posBuffer.push(now);
+  if (posBuffer.length > 3) posBuffer.shift();
+
+  // 距離
   const d = signedDistance(now, p1, p2);
 
   const dEl = document.getElementById("distance");
   dEl.textContent = Math.round(d) + " m";
   dEl.style.color = (d < 0) ? "red" : "white";
 
-  // バッファ管理（3点）
-  buffer.push(now);
-  if (buffer.length > 3) buffer.shift();
-
+  // 速度
   let speed = 0;
 
-  if (buffer.length === 3) {
-    const pA = buffer[0];
-    const pB = buffer[2];
-    const dt = (pB.t - pA.t) / 1000;
+  if (posBuffer.length === 3) {
+    const a = posBuffer[0];
+    const b = posBuffer[2];
+    const dt = (b.t - a.t) / 1000;
 
     if (dt > 0) {
-      speed = calcSpeed(pA, pB, dt);
+      speed = calcSpeed(a, b, dt);
     }
   }
 
-  // スピード平滑化（5点）
   speedBuffer.push(speed);
   if (speedBuffer.length > 5) speedBuffer.shift();
 
@@ -203,6 +239,22 @@ async function update() {
 
   document.getElementById("speed").textContent =
     stableSpeed.toFixed(1) + " kt";
+
+  // 方位
+  if (posBuffer.length === 3) {
+    const a = posBuffer[0];
+    const b = posBuffer[2];
+
+    const brg = calcBearing(a, b);
+
+    bearingBuffer.push(brg);
+    if (bearingBuffer.length > 5) bearingBuffer.shift();
+
+    const stableBrg = avgBearing(bearingBuffer);
+
+    document.getElementById("bearing").textContent =
+      Math.round(stableBrg) + " °";
+  }
 }
 
 // 開始
