@@ -15,7 +15,6 @@
     overflow:hidden;
   }
 
-  /* ===== 表示 ===== */
   #distance{
     font-size:70px;
     font-weight:bold;
@@ -39,7 +38,6 @@
     color:lime;
   }
 
-  /* ===== 下部パネル ===== */
   .panel{
     position:fixed;
     bottom:10px;
@@ -65,7 +63,6 @@
     border-radius:12px;
   }
 
-  /* ===== ボタン共通 ===== */
   button{
     flex:0 0 48%;
     padding:12px;
@@ -81,43 +78,35 @@
     font-weight:bold;
   }
 
-  /* ナビ */
   .b1,.b2{background:#333;color:white;}
   .startNav{background:#0066ff;color:white;}
   .resetNav{background:#444;color:white;}
 
-  /* タイマー */
   .tStart{background:limegreen;color:black;font-weight:bold;}
   .tPlus,.tMinus{background:yellow;color:black;}
   .tStop{background:red;color:white;}
   .tReset{background:#555;color:white;}
-
 </style>
 </head>
 
 <body>
 
-<!-- ===== 表示 ===== -->
 <div id="distance">---</div>
 <div id="speed">0.0 kt</div>
 <div id="bearing">--- °</div>
-
 <div id="timer">5:00</div>
 
-<!-- ===== 左：ナビ ===== -->
+<!-- ナビ -->
 <div class="panel nav">
-
   <button class="b2" onclick="setP2()">②</button>
   <button class="b1" onclick="setP1()">①</button>
 
   <button class="big startNav" onclick="startNav()">開始</button>
   <button class="big resetNav" onclick="resetNav()">リセット</button>
-
 </div>
 
-<!-- ===== 右：タイマー ===== -->
+<!-- タイマー -->
 <div class="panel timer">
-
   <button class="big tStart" onclick="startTimer()">5分開始</button>
 
   <button class="tMinus" onclick="adjustTimer(-1)">-1</button>
@@ -125,10 +114,49 @@
 
   <button class="tStop" onclick="stopTimer()">STOP</button>
   <button class="tReset" onclick="resetTimer()">RESET</button>
-
 </div>
 
 <script>
+
+//////////////////////////
+// 音声
+//////////////////////////
+
+let audioUnlocked = false;
+
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "ja-JP";
+  speechSynthesis.cancel();
+  speechSynthesis.speak(msg);
+}
+
+function unlockAudio(){
+  if(audioUnlocked) return;
+  const msg = new SpeechSynthesisUtterance("");
+  msg.lang = "ja-JP";
+  speechSynthesis.speak(msg);
+  audioUnlocked = true;
+}
+
+function formatTime(sec){
+  let m = Math.floor(sec/60);
+  let s = sec%60;
+
+  if(m>0 && s>0) return m+"分"+s+"秒";
+  if(m>0) return m+"分";
+  return s+"秒";
+}
+
+const callTimes = [
+  300,270,240,210,180,150,120,
+  105,90,75,60,
+  50,40,30,20,15,10,
+  9,8,7,6,5,4,3,2,1
+];
+
+let spokenSet = new Set();
 
 //////////////////////////
 // ナビ
@@ -291,15 +319,31 @@ function updateTimer(){
 }
 
 function startTimer(){
+
+  unlockAudio();
+
   t=300;
   updateTimer();
 
   if(timer)return;
 
   timer=setInterval(()=>{
+
     if(t>0)t--;
     updateTimer();
-    if(t===0)clearInterval(timer);
+
+    // 音声読み上げ
+    if(callTimes.includes(t) && !spokenSet.has(t)){
+      speak(formatTime(t));
+      spokenSet.add(t);
+    }
+
+    if(t===0){
+      speak("スタート");
+      clearInterval(timer);
+      spokenSet.clear();
+    }
+
   },1000);
 }
 
