@@ -564,11 +564,13 @@ log("JSON解析成功");
 
     }
 
-  } catch(err) {
+} catch(err) {
 
-    log("AIS解析エラー");
+  log("AIS解析エラー: " + err.message);
 
-    console.log(err);
+  console.log(err);
+
+}
 
   }
 
