@@ -3,113 +3,90 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>レース計測＋スタートタイマー</title>
+<title>Race Navigation & Timer</title>
 
 <style>
-  body {
-    margin: 0;
-    background: black;
-    color: white;
-    font-family: sans-serif;
-    text-align: center;
-    overflow: hidden;
+  body{
+    margin:0;
+    background:black;
+    color:white;
+    font-family:sans-serif;
+    text-align:center;
+    overflow:hidden;
   }
 
-  /* ===== 表示エリア ===== */
-  #distance {
-    font-size: 70px;
-    font-weight: bold;
-    margin-top: 20px;
+  /* ===== メイン表示 ===== */
+  #distance{
+    font-size:70px;
+    font-weight:bold;
+    margin-top:10px;
   }
 
-  #speed {
-    font-size: 40px;
-    color: #00ffcc;
+  #speed{
+    font-size:40px;
+    color:#00ffcc;
   }
 
-  #bearing {
-    font-size: 28px;
-    color: #ffcc00;
+  #bearing{
+    font-size:28px;
+    color:#ffcc00;
   }
 
-  /* ===== タイマー表示 ===== */
-  #timer {
-    font-size: 120px;
-    margin-top: 20px;
-    font-weight: bold;
-    color: lime;
+  #timer{
+    font-size:100px;
+    font-weight:bold;
+    margin-top:10px;
+    color:lime;
   }
 
-  /* ===== ボタン共通 ===== */
-  button {
-    padding: 14px 18px;
-    margin: 4px;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
+  /* ===== 下部エリア共通 ===== */
+  .panel{
+    position:fixed;
+    bottom:10px;
+    width:48%;
+    padding:10px;
+    box-sizing:border-box;
   }
 
-  /* ===== 左下（ナビ系） ===== */
-  .navPanel {
-    position: fixed;
-    bottom: 10px;
-    left: 10px;
-    width: 48%;
-    text-align: left;
+  /* ===== 左（ナビ） ===== */
+  .nav{
+    left:10px;
+    background:rgba(0,255,0,0.12);
+    border-radius:12px;
   }
 
-  .navPanel button {
-    width: 48%;
-    background: #333;
-    color: white;
+  /* ===== 右（タイマー） ===== */
+  .timer{
+    right:10px;
+    background:rgba(255,150,150,0.15);
+    border-radius:12px;
   }
 
-  .navStart {
-    background: #0066ff !important;
+  button{
+    width:48%;
+    padding:12px;
+    margin:3px;
+    font-size:14px;
+    border:none;
+    border-radius:10px;
   }
 
-  .navStop {
-    background: #aa0000 !important;
+  .big{
+    width:98%;
+    font-size:16px;
+    font-weight:bold;
   }
 
-  /* ===== 右下（タイマー系） ===== */
-  .timerPanel {
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    width: 48%;
-    text-align: right;
-  }
+  /* ナビボタン */
+  .b1,.b2{background:#333;color:white;}
+  .startNav{background:#0066ff;color:white;}
+  .resetNav{background:#444;color:white;}
 
-  .timerPanel button {
-    width: 45%;
-  }
-
-  .startBtn {
-    background: limegreen;
-    color: black;
-    font-weight: bold;
-  }
-
-  .plusBtn {
-    background: yellow;
-    color: black;
-  }
-
-  .minusBtn {
-    background: yellow;
-    color: black;
-  }
-
-  .stopBtn {
-    background: red;
-    color: white;
-  }
-
-  .resetBtn {
-    background: #555;
-    color: white;
-  }
+  /* タイマーボタン */
+  .tStart{background:limegreen;color:black;font-weight:bold;}
+  .tPlus,.tMinus{background:yellow;color:black;}
+  .tStop{background:red;color:white;}
+  .tReset{background:#555;color:white;}
 
 </style>
 </head>
@@ -123,70 +100,78 @@
 
 <div id="timer">5:00</div>
 
-<!-- ===== 左下：ナビ ===== -->
-<div class="navPanel">
-  <button onclick="setP1()">地点1</button>
-  <button onclick="setP2()">地点2</button>
-  <button class="navStart" onclick="startNav()">開始</button>
-  <button class="navStop" onclick="stopNav()">停止</button>
+<!-- ===== 左：ナビ ===== -->
+<div class="panel nav">
+
+  <button class="b1" onclick="setP1()">①</button>
+  <button class="b2" onclick="setP2()">②</button>
+
+  <button class="big startNav" onclick="startNav()">開始</button>
+  <button class="big resetNav" onclick="resetNav()">リセット</button>
+
 </div>
 
-<!-- ===== 右下：タイマー ===== -->
-<div class="timerPanel">
-  <button class="startBtn" onclick="startTimer()">スタート</button>
-  <button class="plusBtn" onclick="adjustTimer(1)">＋1</button>
-  <button class="minusBtn" onclick="adjustTimer(-1)">－1</button>
-  <button class="stopBtn" onclick="stopTimer()">ストップ</button>
-  <button class="resetBtn" onclick="resetTimer()">リセット</button>
+<!-- ===== 右：タイマー ===== -->
+<div class="panel timer">
+
+  <button class="big tStart" onclick="startTimer()">5分開始</button>
+
+  <button class="tMinus" onclick="adjustTimer(-1)">-1</button>
+  <button class="tPlus" onclick="adjustTimer(1)">+1</button>
+
+  <button class="tStop" onclick="stopTimer()">STOP</button>
+  <button class="tReset" onclick="resetTimer()">RESET</button>
+
 </div>
 
 <script>
 
-////////////////////////
-// ナビ系
-////////////////////////
+//////////////////////////
+// ナビ
+//////////////////////////
 
-let p1 = null;
-let p2 = null;
+let p1=null,p2=null;
+let navTimer=null;
 
-let navTimer = null;
+let buf=[];
+let speedBuf=[];
+let bearingBuf=[];
 
-let posBuffer = [];
-let speedBuffer = [];
-let bearingBuffer = [];
-
-function getPos() {
-  return new Promise((res, rej) => {
+function getPos(){
+  return new Promise((res,rej)=>{
     navigator.geolocation.getCurrentPosition(
-      p => res(p.coords),
-      e => rej(e),
-      { enableHighAccuracy: true }
+      p=>res(p.coords),
+      e=>rej(e),
+      {enableHighAccuracy:true}
     );
   });
 }
 
-async function setP1() {
-  p1 = await getPos();
-  alert("地点1セット");
+async function setP1(){
+  p1=await getPos();
+  alert("①セット");
 }
 
-async function setP2() {
-  p2 = await getPos();
-  alert("地点2セット");
+async function setP2(){
+  p2=await getPos();
+  alert("②セット");
 }
 
 function dist(a,b){
   const R=6371000,toRad=d=>d*Math.PI/180;
   const dLat=toRad(b.lat-a.lat);
   const dLon=toRad(b.lon-a.lon);
-  const x=Math.sin(dLat/2)**2+
+
+  const x=
+    Math.sin(dLat/2)**2+
     Math.cos(toRad(a.lat))*
     Math.cos(toRad(b.lat))*
     Math.sin(dLon/2)**2;
+
   return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
 
-function signedDistance(p,a,b){
+function signedDist(p,a,b){
   const ax=a.lon*Math.cos(a.lat*Math.PI/180);
   const ay=a.lat;
   const bx=b.lon*Math.cos(b.lat*Math.PI/180);
@@ -200,18 +185,18 @@ function signedDistance(p,a,b){
   const sign=(ABx*APy-ABy*APx)>=0?1:-1;
 
   const t=(APx*ABx+APy*ABy)/(ABx*ABx+ABy*ABy);
-  const cx=ax+t*ABx, cy=ay+t*ABy;
+  const cx=ax+t*ABx,cy=ay+t*ABy;
 
   return sign*dist(p,{lat:cy,lon:cx/Math.cos(p.lat*Math.PI/180)});
 }
 
-function calcSpeed(a,b,dt){
+function speed(a,b,dt){
   return (dist(a,b)/dt)*1.94384;
 }
 
-function avg(arr){
+function avgAngle(list){
   let x=0,y=0;
-  for(let v of arr){
+  for(let v of list){
     let r=v*Math.PI/180;
     x+=Math.cos(r);
     y+=Math.sin(r);
@@ -229,43 +214,46 @@ async function updateNav(){
 
   const pos=await getPos();
 
-  const now={lat:pos.latitude,lon:pos.longitude,t:Date.now()};
+  const now={
+    lat:pos.latitude,
+    lon:pos.longitude,
+    t:Date.now()
+  };
 
-  posBuffer.push(now);
-  if(posBuffer.length>3)posBuffer.shift();
+  buf.push(now);
+  if(buf.length>3)buf.shift();
 
-  const d=signedDistance(now,p1,p2);
+  const d=signedDist(now,p1,p2);
 
-  document.getElementById("distance").textContent=
-    Math.round(d)+" m";
-  document.getElementById("distance").style.color=
-    (d<0)?"red":"white";
+  const dEl=document.getElementById("distance");
+  dEl.textContent=Math.round(d)+" m";
+  dEl.style.color=(d<0)?"red":"white";
 
-  let speed=0;
-  if(posBuffer.length===3){
-    const a=posBuffer[0],b=posBuffer[2];
-    speed=calcSpeed(a,b,(b.t-a.t)/1000);
+  let sp=0;
+
+  if(buf.length===3){
+    sp=speed(buf[0],buf[2],(buf[2].t-buf[0].t)/1000);
   }
 
-  speedBuffer.push(speed);
-  if(speedBuffer.length>5)speedBuffer.shift();
+  speedBuf.push(sp);
+  if(speedBuf.length>5)speedBuf.shift();
 
   document.getElementById("speed").textContent=
-    median(speedBuffer).toFixed(1)+" kt";
+    median(speedBuf).toFixed(1)+" kt";
 
-  if(posBuffer.length===3){
-    const brg=avg(posBuffer.map((_,i)=>{
-      if(i<2){
-        return calcBearing(posBuffer[i],posBuffer[i+1]);
-      }
-      return 0;
-    }).filter(v=>v));
+  if(buf.length===3){
+    const brg=
+      avgAngle(
+        buf.slice(0,2).map((p,i)=>
+          calcBearing(buf[i],buf[i+1])
+        )
+      );
 
-    bearingBuffer.push(brg);
-    if(bearingBuffer.length>5)bearingBuffer.shift();
+    bearingBuf.push(brg);
+    if(bearingBuf.length>5)bearingBuf.shift();
 
     document.getElementById("bearing").textContent=
-      Math.round(avg(bearingBuffer))+" °";
+      Math.round(avgAngle(bearingBuf))+" °";
   }
 }
 
@@ -275,14 +263,19 @@ function startNav(){
   navTimer=setInterval(updateNav,1000);
 }
 
-function stopNav(){
-  clearInterval(navTimer);
-  navTimer=null;
+function resetNav(){
+  p1=p2=null;
+  buf=[];
+  speedBuf=[];
+  bearingBuf=[];
+  document.getElementById("distance").textContent="---";
+  document.getElementById("speed").textContent="0.0 kt";
+  document.getElementById("bearing").textContent="--- °";
 }
 
-////////////////////////
-// タイマー系
-////////////////////////
+//////////////////////////
+// タイマー
+//////////////////////////
 
 let t=300;
 let timer=null;
@@ -295,7 +288,11 @@ function updateTimer(){
 }
 
 function startTimer(){
+  t=300;
+  updateTimer();
+
   if(timer)return;
+
   timer=setInterval(()=>{
     if(t>0)t--;
     updateTimer();
