@@ -1,596 +1,70 @@
 <!DOCTYPE html>
-
 <html lang="ja">
-
 <head>
-
 <meta charset="utf-8">
-
-<title>東京湾 AIS 海図ナビ</title>
-
-<meta name="viewport"
-
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-<link
-
-  rel="stylesheet"
-
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-
-/>
+<title>Worker Test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 
-html, body {
-
-  margin: 0;
-
-  padding: 0;
-
-  height: 100%;
-
+body{
+  font-family:sans-serif;
+  padding:20px;
 }
 
-#map {
-
-  width: 100%;
-
-  height: 100%;
-
-}
-
-.info {
-
-  position: absolute;
-
-  top: 10px;
-
-  left: 10px;
-
-  z-index: 1000;
-
-  background: rgba(255,255,255,0.9);
-
-  padding: 10px 14px;
-
-  border-radius: 10px;
-
-  font-family: sans-serif;
-
-  font-size: 14px;
-
-  line-height: 1.5;
-
-}
-
-.log {
-
-  position: absolute;
-
-  left: 10px;
-
-  bottom: 10px;
-
-  z-index: 1000;
-
-  width: 320px;
-
-  max-height: 220px;
-
-  overflow: auto;
-
-  background: rgba(0,0,0,0.8);
-
-  color: lime;
-
-  padding: 10px;
-
-  border-radius: 10px;
-
-  font-family: monospace;
-
-  font-size: 11px;
-
-  line-height: 1.4;
-
+#result{
+  margin-top:20px;
+  white-space:pre-wrap;
+  background:#eee;
+  padding:10px;
+  border-radius:10px;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<div id="map"></div>
+<h2>Cloudflare Worker 接続テスト</h2>
 
-<div class="info">
+<button onclick="loadData()">
+  Workerへ接続
+</button>
 
-  東京湾 AIS 海図ナビ<br>
-
-  GPS + 航路 + ブイ + AIS
-
+<div id="result">
+待機中
 </div>
-
-<div class="log" id="log">
-
-  ログ開始<br>
-
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-// ======================================
+async function loadData(){
 
-// AISSTREAM API KEY
+  const result =
+    document.getElementById("result");
 
-// ======================================
+  result.textContent = "通信中...";
 
-const API_KEY = "ここにAPIキー";
+  try{
 
-// ======================================
-
-// ログ
-
-// ======================================
-
-function log(msg){
-
-  console.log(msg);
-
-  const el = document.getElementById("log");
-
-  el.innerHTML += msg + "<br>";
-
-  el.scrollTop = el.scrollHeight;
-
-}
-
-// ======================================
-
-// 地図
-
-// ======================================
-
-const map = L.map('map', {
-
-  zoomControl: true
-
-}).setView([35.30, 139.80], 10);
-
-log("地図初期化");
-
-// ======================================
-
-// OpenStreetMap
-
-// ======================================
-
-L.tileLayer(
-
-  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-
-  {
-
-    attribution: '&copy; OpenStreetMap'
-
-  }
-
-).addTo(map);
-
-// ======================================
-
-// OpenSeaMap
-
-// ======================================
-
-L.tileLayer(
-
-  'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png',
-
-  {
-
-    attribution: 'OpenSeaMap'
-
-  }
-
-).addTo(map);
-
-log("海図レイヤ追加");
-
-// ======================================
-
-// 航路
-
-// ======================================
-
-const uragaRoute = [
-
-  [35.22, 139.78],
-
-  [35.15, 139.80],
-
-  [35.08, 139.82]
-
-];
-
-const nakanoseRoute = [
-
-  [35.33, 139.83],
-
-  [35.28, 139.86],
-
-  [35.22, 139.88]
-
-];
-
-L.polyline(uragaRoute, {
-
-  color: 'red',
-
-  weight: 4,
-
-  opacity: 0.8
-
-})
-
-.addTo(map)
-
-.bindPopup("浦賀水道航路");
-
-L.polyline(nakanoseRoute, {
-
-  color: 'orange',
-
-  weight: 4,
-
-  opacity: 0.8
-
-})
-
-.addTo(map)
-
-.bindPopup("中ノ瀬航路");
-
-log("航路描画");
-
-// ======================================
-
-// ブイ
-
-// ======================================
-
-const buoys = [
-
-  {
-
-    name: "中ノ瀬ブイ",
-
-    lat: 35.2937,
-
-    lon: 139.8592
-
-  },
-
-  {
-
-    name: "第一海堡",
-
-    lat: 35.3065,
-
-    lon: 139.7600
-
-  },
-
-  {
-
-    name: "第二海堡",
-
-    lat: 35.2890,
-
-    lon: 139.7880
-
-  }
-
-];
-
-buoys.forEach(b => {
-
-  L.circleMarker(
-
-    [b.lat, b.lon],
-
-    {
-
-      radius: 8,
-
-      color: "yellow",
-
-      fillColor: "orange",
-
-      fillOpacity: 0.9,
-
-      weight: 2
-
-    }
-
-  )
-
-  .addTo(map)
-
-  .bindPopup(b.name);
-
-});
-
-log("ブイ描画");
-
-// ======================================
-
-// GPS
-
-// ======================================
-
-let myMarker = null;
-
-let myCircle = null;
-
-navigator.geolocation.watchPosition(
-
-  (pos) => {
-
-    const lat = pos.coords.latitude;
-
-    const lon = pos.coords.longitude;
-
-    const acc = pos.coords.accuracy;
-
-    if (!myMarker) {
-
-      map.setView([lat, lon], 14);
-
-      myMarker = L.marker([lat, lon])
-
-        .addTo(map)
-
-        .bindPopup("現在位置");
-
-      myCircle = L.circle([lat, lon], {
-
-        radius: acc,
-
-        color: "blue",
-
-        fillColor: "#30f",
-
-        fillOpacity: 0.15
-
-      }).addTo(map);
-
-      log("GPS取得成功");
-
-    } else {
-
-      myMarker.setLatLng([lat, lon]);
-
-      myCircle.setLatLng([lat, lon]);
-
-      myCircle.setRadius(acc);
-
-    }
-
-  },
-
-  (err) => {
-
-    log("GPSエラー: " + err.message);
-
-  },
-
-  {
-
-    enableHighAccuracy: true,
-
-    maximumAge: 0,
-
-    timeout: 10000
-
-  }
-
-);
-
-// ======================================
-
-// AIS
-
-// ======================================
-
-const ships = {};
-
-log("AIS接続開始");
-
-const socket = new WebSocket(
-
-  "wss://stream.aisstream.io/v0/stream"
-
-);
-
-// ======================================
-
-// 接続成功
-
-// ======================================
-
-socket.addEventListener("open", () => {
-
-  log("AIS connected");
-
-socket.send(JSON.stringify({
-
-  APIKey: API_KEY,
-
-  BoundingBoxes: [
-    [
-      [35.0, 139.6],
-      [35.8, 140.1]
-    ]
-  ]
-
-}));
-
-  log("AIS購読送信");
-
-});
-
-// ======================================
-
-// メッセージ受信
-
-// ======================================
-
-socket.addEventListener("message", (event) => {
-
-  try {
-
-    log("AIS受信");
-
-    // まず受信確認
-
-    console.log(event.data);
-
-    log("JSON解析開始");
-
-    const data = JSON.parse(event.data);
-
-    log("JSON解析成功");
-
-    // Message存在確認
-
-    if (!data.Message) {
-
-      log("Messageなし");
-
-      return;
-
-    }
-
-    // PositionReport存在確認
-
-    if (!data.Message.PositionReport) {
-
-      log("PositionReportなし");
-
-      return;
-
-    }
-
-    const report = data.Message.PositionReport;
-
-    const lat = report.Latitude;
-
-    const lon = report.Longitude;
-
-    const mmsi = report.UserID;
-
-    log(
-
-      "船座標 " +
-
-      lat + "," + lon
-
+    const res = await fetch(
+      "https://tokyobayais.daidai36.workers.dev/"
     );
 
-    if (lat == null || lon == null) {
+    const data = await res.json();
 
-      log("座標なし");
+    result.textContent =
+      JSON.stringify(data, null, 2);
 
-      return;
+  }catch(err){
 
-    }
-
-    // ======================================
-
-    // 初回生成
-
-    // ======================================
-
-    if (!ships[mmsi]) {
-
-      ships[mmsi] = L.circleMarker(
-
-        [lat, lon],
-
-        {
-
-          radius: 5,
-
-          color: "lime",
-
-          fillColor: "lime",
-
-          fillOpacity: 0.8,
-
-          weight: 1
-
-        }
-
-      )
-
-      .addTo(map)
-
-      .bindPopup(
-
-        "MMSI: " + mmsi
-
-      );
-
-      log("船追加: " + mmsi);
-
-    } else {
-
-      ships[mmsi].setLatLng([lat, lon]);
-
-    }
-
-  } catch(err) {
-
-    log("AIS解析エラー: " + err.message);
-
-    console.log(err);
+    result.textContent =
+      "ERROR: " + err.message;
 
   }
 
-});
-
-// ======================================
-
-// エラー
-
-// ======================================
-
-socket.addEventListener("error", (err) => {
-
-  log("AIS error");
-
-  console.log(err);
-
-});
-
-// ======================================
-
-// 切断
-
-// ======================================
-
-socket.addEventListener("close", () => {
-
-  log("AIS disconnected");
-
-});
+}
 
 </script>
 
 </body>
-
 </html>
