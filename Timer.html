@@ -92,12 +92,20 @@
     font-size:14px;
     border:none;
     border-radius:10px;
+    background:#333;
+    color:white;
   }
 
   .big{
     flex:0 0 100%;
     font-size:16px;
     font-weight:bold;
+  }
+
+  /* ★ 選択状態（薄ピンク） */
+  .selected{
+    background:#ffb6c1 !important;
+    color:black !important;
   }
 </style>
 </head>
@@ -115,8 +123,8 @@
 
 <!-- ナビ -->
 <div class="panel nav">
-  <button onclick="setP2()">②</button>
-  <button onclick="setP1()">①</button>
+  <button id="btnP2" onclick="setP2()">②</button>
+  <button id="btnP1" onclick="setP1()">①</button>
   <button class="big" onclick="startNav()">開始</button>
   <button class="big" onclick="resetNav()">リセット</button>
 </div>
@@ -133,24 +141,28 @@
 <script>
 
 //////////////////////////////
-// ロック
-//////////////////////////////
-
-let isLocked=false;
-
-function toggleLock(){
-  isLocked=!isLocked;
-  document.getElementById("lockIcon").textContent=isLocked?"🔒":"🔓";
-  document.getElementById("lockOverlay").style.display=isLocked?"block":"none";
-}
-
-//////////////////////////////
-// GPS
+// 状態
 //////////////////////////////
 
 let p1=null,p2=null;
-let navTimer=null;
-let buf=[];
+
+//////////////////////////////
+// ボタン状態管理
+//////////////////////////////
+
+function setP1(){
+  getPos().then(pos=>{
+    p1=pos;
+    document.getElementById("btnP1").classList.add("selected");
+  });
+}
+
+function setP2(){
+  getPos().then(pos=>{
+    p2=pos;
+    document.getElementById("btnP2").classList.add("selected");
+  });
+}
 
 function getPos(){
   return new Promise((res,rej)=>{
@@ -166,18 +178,8 @@ function getPos(){
   });
 }
 
-async function setP1(){
-  p1=await getPos();
-  alert("①セット");
-}
-
-async function setP2(){
-  p2=await getPos();
-  alert("②セット");
-}
-
 //////////////////////////////
-// ★ 重要：緯度経度→メートル変換
+// クロストラック距離
 //////////////////////////////
 
 function toXY(p){
@@ -190,66 +192,31 @@ function toXY(p){
   };
 }
 
-//////////////////////////////
-// クロストラック距離（安定版）
-//////////////////////////////
-
 function crossTrackDistance(p,a,b){
 
-  const P = toXY(p);
-  const A = toXY(a);
-  const B = toXY(b);
+  const P=toXY(p);
+  const A=toXY(a);
+  const B=toXY(b);
 
-  const ABx = B.x - A.x;
-  const ABy = B.y - A.y;
+  const ABx=B.x-A.x;
+  const ABy=B.y-A.y;
 
-  const APx = P.x - A.x;
-  const APy = P.y - A.y;
+  const APx=P.x-A.x;
+  const APy=P.y-A.y;
 
-  const abLen = Math.sqrt(ABx*ABx + ABy*ABy);
-  if(abLen === 0) return 0;
+  const abLen=Math.sqrt(ABx*ABx+ABy*ABy);
+  if(abLen===0) return 0;
 
-  const cross = ABx*APy - ABy*APx;
+  const cross=ABx*APy-ABy*APx;
 
-  return cross / abLen; // m単位
+  return cross/abLen;
 }
 
 //////////////////////////////
-// 速度・方位
+// ナビ
 //////////////////////////////
 
-function dist(a,b){
-  const R=6371000,toRad=d=>d*Math.PI/180;
-  const dLat=toRad(b.lat-a.lat);
-  const dLon=toRad(b.lon-a.lon);
-
-  const x=
-    Math.sin(dLat/2)**2+
-    Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*
-    Math.sin(dLon/2)**2;
-
-  return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
-}
-
-function speed(a,b){
-  const dt=(b.t-a.t)/1000;
-  if(dt<=0) return 0;
-  return (dist(a,b)/dt)*1.94384;
-}
-
-function bearing(a,b){
-  const toRad=d=>d*Math.PI/180;
-  const y=Math.sin(toRad(b.lon-a.lon))*Math.cos(toRad(b.lat));
-  const x=
-    Math.cos(toRad(a.lat))*Math.sin(toRad(b.lat))-
-    Math.sin(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.cos(toRad(b.lon-a.lon));
-
-  return (Math.atan2(y,x)*180/Math.PI+360)%360;
-}
-
-//////////////////////////////
-// 更新
-//////////////////////////////
+let navTimer=null;
 
 async function updateNav(){
 
@@ -257,32 +224,12 @@ async function updateNav(){
 
   const pos=await getPos();
 
-  buf.push(pos);
-  if(buf.length>3) buf.shift();
+  let ctd=crossTrackDistance(pos,p1,p2);
 
-  // ★ クロストラック距離
-  let ctd = crossTrackDistance(pos,p1,p2);
+  if(Math.abs(ctd)<0.5) ctd=0;
 
-  // ノイズ潰し（重要）
-  if(Math.abs(ctd) < 0.5) ctd = 0;
-
-  document.getElementById("distance").textContent =
+  document.getElementById("distance").textContent=
     ctd.toFixed(1)+" m";
-
-  // 速度
-  let sp=0;
-  if(buf.length>=2){
-    sp=speed(buf[buf.length-2],buf[buf.length-1]);
-  }
-  document.getElementById("speed").textContent =
-    sp.toFixed(1)+" kt";
-
-  // 方位
-  if(buf.length>=2){
-    const brg=bearing(buf[buf.length-2],buf[buf.length-1]);
-    document.getElementById("bearing").textContent =
-      Math.round(brg)+" °";
-  }
 }
 
 function startNav(){
@@ -292,26 +239,20 @@ function startNav(){
 }
 
 function resetNav(){
-  p1=p2=null;
-  buf=[];
+  p1=null;p2=null;
+
+  document.getElementById("btnP1").classList.remove("selected");
+  document.getElementById("btnP2").classList.remove("selected");
+
   document.getElementById("distance").textContent="---";
-  document.getElementById("speed").textContent="0.0 kt";
-  document.getElementById("bearing").textContent="--- °";
 }
 
 //////////////////////////////
-// タイマー
+// タイマー（そのまま）
 //////////////////////////////
 
 let t=300;
 let timer=null;
-
-function updateTimer(){
-  let m=Math.floor(t/60);
-  let s=t%60;
-  document.getElementById("timer").textContent=
-    m+":"+String(s).padStart(2,"0");
-}
 
 function startTimer(){
   t=300;
@@ -324,11 +265,18 @@ function startTimer(){
   },1000);
 }
 
+function updateTimer(){
+  let m=Math.floor(t/60);
+  let s=t%60;
+  document.getElementById("timer").textContent=
+    m+":"+String(s).padStart(2,"0");
+}
+
 function stopTimer(){ clearInterval(timer); timer=null; }
 
 function resetTimer(){ t=300; updateTimer(); }
 
-function adjustTimer(v){ t+=v; if(t<0)t=0; updateTimer(); }
+function adjustTimer(v){ t+=v;if(t<0)t=0;updateTimer(); }
 
 updateTimer();
 
