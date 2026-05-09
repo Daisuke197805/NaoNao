@@ -62,8 +62,6 @@ html, body {
 
   line-height: 1.5;
 
-  max-width: 260px;
-
 }
 
 .log {
@@ -76,13 +74,13 @@ html, body {
 
   z-index: 1000;
 
-  width: 300px;
+  width: 340px;
 
-  max-height: 180px;
+  max-height: 220px;
 
   overflow: auto;
 
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.8);
 
   color: lime;
 
@@ -92,7 +90,9 @@ html, body {
 
   font-family: monospace;
 
-  font-size: 11px;
+  font-size: 10px;
+
+  line-height: 1.4;
 
 }
 
@@ -132,7 +132,7 @@ const API_KEY = "02bfdf3e9685ae762daf1b00a97b9ef6d52ad98a";
 
 // ======================================
 
-// ログ表示
+// ログ
 
 // ======================================
 
@@ -202,11 +202,9 @@ log("海図レイヤ追加");
 
 // ======================================
 
-// 東京湾主要航路
+// 航路
 
 // ======================================
-
-// 浦賀水道航路
 
 const uragaRoute = [
 
@@ -218,8 +216,6 @@ const uragaRoute = [
 
 ];
 
-// 中ノ瀬航路
-
 const nakanoseRoute = [
 
   [35.33, 139.83],
@@ -229,8 +225,6 @@ const nakanoseRoute = [
   [35.22, 139.88]
 
 ];
-
-// 航路描画
 
 L.polyline(uragaRoute, {
 
@@ -264,7 +258,7 @@ log("航路描画");
 
 // ======================================
 
-// 東京湾主要ブイ
+// ブイ
 
 // ======================================
 
@@ -302,8 +296,6 @@ const buoys = [
 
 ];
 
-// ブイ描画
-
 buoys.forEach(b => {
 
   L.circleMarker(
@@ -336,7 +328,7 @@ log("ブイ描画");
 
 // ======================================
 
-// 自船GPS
+// GPS
 
 // ======================================
 
@@ -464,28 +456,45 @@ socket.addEventListener("message", (event) => {
 
   try {
 
-    // 生データ確認
-
     log("AIS受信");
 
-const data = JSON.parse(event.data);
+    const data = JSON.parse(event.data);
 
-// デバッグ
-console.log(data);
+    // 生JSON確認
 
-log(JSON.stringify(data));
+    console.log(data);
 
-    // PositionReportのみ
+    // ログへJSON表示
 
-    if (!data.Message)
+    log(JSON.stringify(data));
+
+    // ======================================
+
+    // PositionReport探索
+
+    // ======================================
+
+    if (!data.Message) {
+
+      log("Messageなし");
 
       return;
 
-    if (!data.Message.PositionReport)
+    }
 
-      return;
+    // PositionReport
 
     const report = data.Message.PositionReport;
+
+    if (!report) {
+
+      log("PositionReportなし");
+
+      return;
+
+    }
+
+    // 緯度経度
 
     const lat = report.Latitude;
 
@@ -493,13 +502,27 @@ log(JSON.stringify(data));
 
     const mmsi = report.UserID;
 
-    // 座標確認
+    log(
 
-    if (lat == null || lon == null)
+      "船データ " +
+
+      lat + "," + lon
+
+    );
+
+    if (lat == null || lon == null) {
+
+      log("座標なし");
 
       return;
 
-    // 初回生成
+    }
+
+    // ======================================
+
+    // 船描画
+
+    // ======================================
 
     if (!ships[mmsi]) {
 
@@ -534,8 +557,6 @@ log(JSON.stringify(data));
       log("船追加: " + mmsi);
 
     } else {
-
-      // 更新
 
       ships[mmsi].setLatLng([lat, lon]);
 
