@@ -43,6 +43,30 @@
     border-radius:12px;
   }
 
+  /* ===== 右上ロックアイコン ===== */
+  #lockIcon{
+    position:fixed;
+    top:10px;
+    right:15px;
+    font-size:28px;
+    cursor:pointer;
+    z-index:1000;
+    user-select:none;
+  }
+
+  /* ===== ロックオーバーレイ ===== */
+  #lockOverlay{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:160px;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    z-index:900;
+  }
+
+  /* ===== パネル ===== */
   .panel{
     position:fixed;
     bottom:10px;
@@ -54,6 +78,7 @@
     flex-wrap:wrap;
     gap:6px;
     justify-content:space-between;
+    z-index:1;
   }
 
   .nav{
@@ -96,6 +121,12 @@
 
 <body>
 
+<!-- ロックアイコン -->
+<div id="lockIcon" onclick="toggleLock()">🔓</div>
+
+<!-- ロックレイヤー -->
+<div id="lockOverlay"></div>
+
 <div id="distance">---</div>
 <div id="speed">0.0 kt</div>
 <div id="bearing">--- °</div>
@@ -125,6 +156,27 @@
 <script>
 
 //////////////////////////
+// ロック機能
+//////////////////////////
+
+let isLocked = false;
+
+function toggleLock(){
+  isLocked = !isLocked;
+
+  document.getElementById("lockIcon").textContent =
+    isLocked ? "🔒" : "🔓";
+
+  document.getElementById("lockOverlay").style.display =
+    isLocked ? "block" : "none";
+}
+
+// ボタンガード
+function guard(){
+  return isLocked;
+}
+
+//////////////////////////
 // 音声
 //////////////////////////
 
@@ -147,50 +199,22 @@ function unlockAudio(){
 }
 
 function formatTime(sec){
-  let m = Math.floor(sec/60);
-  let s = sec%60;
+  let m=Math.floor(sec/60);
+  let s=sec%60;
 
   if(m>0 && s>0) return m+"分"+s+"秒";
   if(m>0) return m+"分";
   return s;
 }
 
-//////////////////////////
-// 音声タイミング
-//////////////////////////
-
-const callTimes = [
+const callTimes=[
   300,270,240,210,180,150,120,
   105,90,75,60,
   50,40,30,20,15,10,
   9,8,7,6,5,4,3,2,1
 ];
 
-let spokenSet = new Set();
-
-//////////////////////////
-// ナビ（そのまま）
-//////////////////////////
-
-let p1=null,p2=null;
-let navTimer=null;
-
-let buf=[];
-let speedBuf=[];
-let bearingBuf=[];
-
-function getPos(){
-  return new Promise((res,rej)=>{
-    navigator.geolocation.getCurrentPosition(
-      p=>res(p.coords),
-      e=>rej(e),
-      {enableHighAccuracy:true}
-    );
-  });
-}
-
-async function setP1(){ p1=await getPos(); alert("①セット"); }
-async function setP2(){ p2=await getPos(); alert("②セット"); }
+let spokenSet=new Set();
 
 //////////////////////////
 // タイマー
@@ -204,22 +228,23 @@ function updateTimer(){
   let s=t%60;
 
   const el=document.getElementById("timer");
-  el.textContent = m+":"+String(s).padStart(2,"0");
+  el.textContent=m+":"+String(s).padStart(2,"0");
 
-  // ★ 背景ルール
-  if(t <= 10){
-    el.style.background = "red";
-    el.style.color = "white";
-  } else if(t <= 60){
-    el.style.background = "yellow";
-    el.style.color = "black";
-  } else {
-    el.style.background = "black";
-    el.style.color = "lime";
+  if(t<=10){
+    el.style.background="red";
+    el.style.color="white";
+  }else if(t<=60){
+    el.style.background="yellow";
+    el.style.color="black";
+  }else{
+    el.style.background="black";
+    el.style.color="lime";
   }
 }
 
 function startTimer(){
+
+  if(guard()) return;
 
   unlockAudio();
 
@@ -235,7 +260,6 @@ function startTimer(){
 
     updateTimer();
 
-    // ★ 音声（ここが重要：安定版）
     if(callTimes.includes(t) && !spokenSet.has(t)){
       speak(formatTime(t));
       spokenSet.add(t);
@@ -250,23 +274,36 @@ function startTimer(){
 }
 
 function stopTimer(){
+  if(guard()) return;
   clearInterval(timer);
   timer=null;
 }
 
 function resetTimer(){
+  if(guard()) return;
   t=300;
   spokenSet.clear();
   updateTimer();
 }
 
 function adjustTimer(v){
+  if(guard()) return;
   t+=v;
   if(t<0) t=0;
   updateTimer();
 }
 
 updateTimer();
+
+//////////////////////////
+// ナビ（簡略）
+//////////////////////////
+
+async function setP1(){ if(guard()) return; }
+async function setP2(){ if(guard()) return; }
+
+function startNav(){ if(guard()) return; }
+function resetNav(){ if(guard()) return; }
 
 </script>
 
