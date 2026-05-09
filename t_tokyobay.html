@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 
-<title>東京湾 AIS Map</title>
+<title>東京湾 AIS NAVI</title>
 
 <meta name="viewport"
       content="width=device-width, initial-scale=1.0">
@@ -15,7 +15,7 @@
 
 <style>
 
-html, body {
+html, body{
   margin:0;
   padding:0;
   height:100%;
@@ -27,6 +27,7 @@ html, body {
 }
 
 .info{
+
   position:absolute;
   top:10px;
   left:10px;
@@ -37,6 +38,7 @@ html, body {
   border-radius:10px;
 
   font-family:sans-serif;
+  font-size:14px;
 }
 
 </style>
@@ -47,7 +49,7 @@ html, body {
 <div id="map"></div>
 
 <div class="info">
-  東京湾 AIS
+  東京湾 AIS NAVI
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -87,6 +89,13 @@ L.tileLayer(
 
 
 // ======================================
+// AIS管理
+// ======================================
+
+const ships = {};
+
+
+// ======================================
 // AIS取得
 // ======================================
 
@@ -98,38 +107,79 @@ async function loadAIS(){
       "https://tokyobayais.daidai36.workers.dev/"
     );
 
-    const data = await res.json();
+    const list = await res.json();
 
-    console.log(data);
-
-
-    // ======================================
-    // MetaData利用
-    // ======================================
-
-    if(!data.MetaData)
-      return;
-
-    const lat = data.MetaData.latitude;
-    const lon = data.MetaData.longitude;
-
-    const mmsi = data.MetaData.MMSI;
+    console.log(list);
 
 
-    L.circleMarker(
-      [lat, lon],
-      {
-        radius:6,
-        color:"lime",
-        fillColor:"lime",
-        fillOpacity:0.8
+    list.forEach(ship => {
+
+      const mmsi = ship.mmsi;
+
+      const lat = ship.lat;
+      const lon = ship.lon;
+
+      if(lat == null || lon == null)
+        return;
+
+
+      // ======================================
+      // 初回生成
+      // ======================================
+
+      if(!ships[mmsi]){
+
+        // 船マーカー
+        const marker = L.circleMarker(
+          [lat, lon],
+          {
+            radius:6,
+            color:"lime",
+            fillColor:"lime",
+            fillOpacity:0.8
+          }
+        )
+        .addTo(map)
+        .bindPopup(
+          "MMSI: " + mmsi
+        );
+
+
+        // 進行方向線
+        const heading = L.polyline(
+          [
+            [lat, lon],
+            [lat + 0.01, lon]
+          ],
+          {
+            color:"lime",
+            weight:2
+          }
+        ).addTo(map);
+
+
+        ships[mmsi] = {
+          marker,
+          heading
+        };
+
+      }else{
+
+        // 更新
+        ships[mmsi].marker
+          .setLatLng([lat, lon]);
+
+
+        // 仮方向
+        ships[mmsi].heading
+          .setLatLngs([
+            [lat, lon],
+            [lat + 0.01, lon]
+          ]);
+
       }
-    )
-    .addTo(map)
-    .bindPopup(
-      "MMSI: " + mmsi
-    );
 
+    });
 
   }catch(err){
 
@@ -140,8 +190,63 @@ async function loadAIS(){
 }
 
 
-// 初回読み込み
+// ======================================
+// AIS定期更新
+// ======================================
+
 loadAIS();
+
+setInterval(loadAIS, 5000);
+
+
+// ======================================
+// 自船GPS
+// ======================================
+
+let myMarker = null;
+
+navigator.geolocation.watchPosition(
+
+  (pos) => {
+
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    if(!myMarker){
+
+      myMarker = L.circleMarker(
+        [lat, lon],
+        {
+          radius:8,
+          color:"blue",
+          fillColor:"cyan",
+          fillOpacity:0.9
+        }
+      )
+      .addTo(map)
+      .bindPopup("現在位置");
+
+      map.setView([lat, lon], 13);
+
+    }else{
+
+      myMarker.setLatLng([lat, lon]);
+
+    }
+
+  },
+
+  (err) => {
+
+    console.log(err);
+
+  },
+
+  {
+    enableHighAccuracy:true
+  }
+
+);
 
 </script>
 
