@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>安定速度表示</title>
+
+<style>
+  body {
+    margin: 0;
+    background: black;
+    color: white;
+    font-family: sans-serif;
+    text-align: center;
+  }
+
+  .wrap {
+    padding-top: 30px;
+  }
+
+  #speed {
+    font-size: 90px;
+    font-weight: bold;
+    margin-top: 40px;
+    color: #00ffcc;
+  }
+
+  #status {
+    font-size: 16px;
+    color: #888;
+    margin-top: 10px;
+  }
+
+  button {
+    width: 80%;
+    padding: 16px;
+    margin: 6px;
+    font-size: 18px;
+    border: none;
+    border-radius: 10px;
+  }
+
+  .start { background:#0066ff; color:white; }
+  .stop { background:#aa0000; color:white; }
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <div id="speed">0.0 kt</div>
+  <div id="status">停止中</div>
+
+  <button class="start" onclick="start()">開始</button>
+  <button class="stop" onclick="stop()">停止</button>
+
+</div>
+
+<script>
+
+let timer = null;
+
+// 位置履歴（3点）
+let buffer = [];
+
+// 取得
+function getPos() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      p => resolve(p.coords),
+      e => reject(e),
+      { enableHighAccuracy: true }
+    );
+  });
+}
+
+// 距離
+function dist(a, b) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+
+  const x =
+    Math.sin(dLat/2)**2 +
+    Math.cos(toRad(a.lat)) *
+    Math.cos(toRad(b.lat)) *
+    Math.sin(dLon/2)**2;
+
+  return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+}
+
+// ノイズ除去（中央値的安定化）
+function smoothSpeed(values) {
+  if (values.length < 3) return values[values.length - 1] || 0;
+
+  const sorted = [...values].sort((a,b)=>a-b);
+  return sorted[1]; // 中央値
+}
+
+// 速度計算
+function calcSpeed() {
+
+  if (buffer.length < 3) return 0;
+
+  const p1 = buffer[0];
+  const p2 = buffer[2];
+
+  const d = dist(p1, p2);
+  const dt = (p2.t - p1.t) / 1000;
+
+  if (dt <= 0) return 0;
+
+  const mps = d / dt;
+  return mps * 1.94384; // kt
+}
+
+// メイン更新
+async function update() {
+
+  const pos = await getPos();
+
+  const now = {
+    lat: pos.latitude,
+    lon: pos.longitude,
+    t: Date.now()
+  };
+
+  buffer.push(now);
+
+  // 3点保持
+  if (buffer.length > 3) buffer.shift();
+
+  const rawSpeed = calcSpeed();
+
+  speeds.push(rawSpeed);
+  if (speeds.length > 5) speeds.shift();
+
+  const stable = smoothSpeed(speeds);
+
+  const el = document.getElementById("speed");
+
+  el.textContent = stable.toFixed(1) + " kt";
+
+  document.getElementById("status").textContent =
+    "更新中（" + new Date().toLocaleTimeString() + ")";
+}
+
+// 速度履歴（さらに平滑化用）
+let speeds = [];
+
+// 開始
+function start() {
+  if (timer) clearInterval(timer);
+  update();
+  timer = setInterval(update, 2000); // 2秒周期（安定重視）
+  document.getElementById("status").textContent = "計測中";
+}
+
+// 停止
+function stop() {
+  clearInterval(timer);
+  timer = null;
+  document.getElementById("status").textContent = "停止中";
+}
+
+</script>
+
+</body>
+</html>
