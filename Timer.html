@@ -31,7 +31,7 @@
     color:#ffcc00;
   }
 
-  /* ★ タイマー */
+  /* ===== タイマー ===== */
   #timer{
     font-size:100px;
     font-weight:bold;
@@ -62,7 +62,7 @@
     border-radius:12px;
   }
 
-  .timer{
+  .timerPanel{
     right:10px;
     background:rgba(255,150,150,0.15);
     border-radius:12px;
@@ -112,7 +112,7 @@
 </div>
 
 <!-- タイマー -->
-<div class="panel timer">
+<div class="panel timerPanel">
   <button class="big tStart" onclick="startTimer()">5分開始</button>
 
   <button class="tMinus" onclick="adjustTimer(-1)">-1</button>
@@ -156,6 +156,43 @@ function formatTime(sec){
 }
 
 //////////////////////////
+// 音声タイミング
+//////////////////////////
+
+const callTimes = [
+  300,270,240,210,180,150,120,
+  105,90,75,60,
+  50,40,30,20,15,10,
+  9,8,7,6,5,4,3,2,1
+];
+
+let spokenSet = new Set();
+
+//////////////////////////
+// ナビ（そのまま）
+//////////////////////////
+
+let p1=null,p2=null;
+let navTimer=null;
+
+let buf=[];
+let speedBuf=[];
+let bearingBuf=[];
+
+function getPos(){
+  return new Promise((res,rej)=>{
+    navigator.geolocation.getCurrentPosition(
+      p=>res(p.coords),
+      e=>rej(e),
+      {enableHighAccuracy:true}
+    );
+  });
+}
+
+async function setP1(){ p1=await getPos(); alert("①セット"); }
+async function setP2(){ p2=await getPos(); alert("②セット"); }
+
+//////////////////////////
 // タイマー
 //////////////////////////
 
@@ -167,20 +204,16 @@ function updateTimer(){
   let s=t%60;
 
   const el=document.getElementById("timer");
+  el.textContent = m+":"+String(s).padStart(2,"0");
 
-  el.textContent=
-    m+":"+String(s).padStart(2,"0");
-
-  // ★ 色ルール更新（ここが変更点）
+  // ★ 背景ルール
   if(t <= 10){
     el.style.background = "red";
     el.style.color = "white";
-  }
-  else if(t <= 60){
+  } else if(t <= 60){
     el.style.background = "yellow";
     el.style.color = "black";
-  }
-  else{
+  } else {
     el.style.background = "black";
     el.style.color = "lime";
   }
@@ -191,14 +224,22 @@ function startTimer(){
   unlockAudio();
 
   t=300;
+  spokenSet.clear();
   updateTimer();
 
-  if(timer)return;
+  if(timer) return;
 
   timer=setInterval(()=>{
 
-    if(t>0)t--;
+    if(t>0) t--;
+
     updateTimer();
+
+    // ★ 音声（ここが重要：安定版）
+    if(callTimes.includes(t) && !spokenSet.has(t)){
+      speak(formatTime(t));
+      spokenSet.add(t);
+    }
 
     if(t===0){
       speak("スタート");
@@ -215,12 +256,13 @@ function stopTimer(){
 
 function resetTimer(){
   t=300;
+  spokenSet.clear();
   updateTimer();
 }
 
 function adjustTimer(v){
   t+=v;
-  if(t<0)t=0;
+  if(t<0) t=0;
   updateTimer();
 }
 
