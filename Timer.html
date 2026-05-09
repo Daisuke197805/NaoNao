@@ -99,10 +99,6 @@
     font-size:16px;
     font-weight:bold;
   }
-
-  .b1,.b2{background:#333;color:white;}
-  .startNav{background:#0066ff;color:white;}
-  .resetNav{background:#444;color:white;}
 </style>
 </head>
 
@@ -181,33 +177,41 @@ async function setP2(){
 }
 
 //////////////////////////////
-// クロストラック距離（核心）
+// ★ 重要：緯度経度→メートル変換
+//////////////////////////////
+
+function toXY(p){
+  const latScale = 111320;
+  const lonScale = 111320 * Math.cos(p.lat * Math.PI/180);
+
+  return {
+    x: p.lon * lonScale,
+    y: p.lat * latScale
+  };
+}
+
+//////////////////////////////
+// クロストラック距離（安定版）
 //////////////////////////////
 
 function crossTrackDistance(p,a,b){
 
-  const ax=a.lon*Math.cos(a.lat*Math.PI/180);
-  const ay=a.lat;
+  const P = toXY(p);
+  const A = toXY(a);
+  const B = toXY(b);
 
-  const bx=b.lon*Math.cos(b.lat*Math.PI/180);
-  const by=b.lat;
+  const ABx = B.x - A.x;
+  const ABy = B.y - A.y;
 
-  const px=p.lon*Math.cos(p.lat*Math.PI/180);
-  const py=p.lat;
+  const APx = P.x - A.x;
+  const APy = P.y - A.y;
 
-  const ABx=bx-ax;
-  const ABy=by-ay;
+  const abLen = Math.sqrt(ABx*ABx + ABy*ABy);
+  if(abLen === 0) return 0;
 
-  const APx=px-ax;
-  const APy=py-ay;
+  const cross = ABx*APy - ABy*APx;
 
-  const abLen=Math.sqrt(ABx*ABx + ABy*ABy);
-
-  if(abLen===0) return 0;
-
-  const cross=ABx*APy - ABy*APx;
-
-  return cross / abLen; // +右 / -左
+  return cross / abLen; // m単位
 }
 
 //////////////////////////////
@@ -257,11 +261,15 @@ async function updateNav(){
   if(buf.length>3) buf.shift();
 
   // ★ クロストラック距離
-  const ctd = crossTrackDistance(pos,p1,p2);
+  let ctd = crossTrackDistance(pos,p1,p2);
+
+  // ノイズ潰し（重要）
+  if(Math.abs(ctd) < 0.5) ctd = 0;
+
   document.getElementById("distance").textContent =
     ctd.toFixed(1)+" m";
 
-  // ★ 速度
+  // 速度
   let sp=0;
   if(buf.length>=2){
     sp=speed(buf[buf.length-2],buf[buf.length-1]);
@@ -269,7 +277,7 @@ async function updateNav(){
   document.getElementById("speed").textContent =
     sp.toFixed(1)+" kt";
 
-  // ★ 方位
+  // 方位
   if(buf.length>=2){
     const brg=bearing(buf[buf.length-2],buf[buf.length-1]);
     document.getElementById("bearing").textContent =
