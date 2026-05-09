@@ -132,12 +132,15 @@ function startAIS(lat, lng) {
 
   socket.onmessage = (msg) => {
 
-    log("メッセージ受信");
+  log("メッセージ受信");
 
-    try {
+  log("typeof=" + typeof msg.data);
 
-      const data = JSON.parse(msg.data);
+  log("raw=" + msg.data);
 
+  try {
+
+    const data = JSON.parse(msg.data);
       log("JSON解析OK");
 
       log(JSON.stringify(data));
