@@ -468,11 +468,12 @@ socket.addEventListener("message", (event) => {
 
     log("AIS受信");
 
-    const data = JSON.parse(event.data);
+const data = JSON.parse(event.data);
 
-    // デバッグ用
+// デバッグ
+console.log(data);
 
-    console.log(data);
+log(JSON.stringify(data));
 
     // PositionReportのみ
 
