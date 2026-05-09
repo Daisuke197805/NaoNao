@@ -1,321 +1,327 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>レースカウントダウン</title>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>レース計測＋スタートタイマー</title>
 
-    <style>
-      body {
-        margin: 0;
-        font-family: sans-serif;
-        background: black;
-        color: white;
-        text-align: center;
+<style>
+  body {
+    margin: 0;
+    background: black;
+    color: white;
+    font-family: sans-serif;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  /* ===== 表示エリア ===== */
+  #distance {
+    font-size: 70px;
+    font-weight: bold;
+    margin-top: 20px;
+  }
+
+  #speed {
+    font-size: 40px;
+    color: #00ffcc;
+  }
+
+  #bearing {
+    font-size: 28px;
+    color: #ffcc00;
+  }
+
+  /* ===== タイマー表示 ===== */
+  #timer {
+    font-size: 120px;
+    margin-top: 20px;
+    font-weight: bold;
+    color: lime;
+  }
+
+  /* ===== ボタン共通 ===== */
+  button {
+    padding: 14px 18px;
+    margin: 4px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  /* ===== 左下（ナビ系） ===== */
+  .navPanel {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    width: 48%;
+    text-align: left;
+  }
+
+  .navPanel button {
+    width: 48%;
+    background: #333;
+    color: white;
+  }
+
+  .navStart {
+    background: #0066ff !important;
+  }
+
+  .navStop {
+    background: #aa0000 !important;
+  }
+
+  /* ===== 右下（タイマー系） ===== */
+  .timerPanel {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    width: 48%;
+    text-align: right;
+  }
+
+  .timerPanel button {
+    width: 45%;
+  }
+
+  .startBtn {
+    background: limegreen;
+    color: black;
+    font-weight: bold;
+  }
+
+  .plusBtn {
+    background: yellow;
+    color: black;
+  }
+
+  .minusBtn {
+    background: yellow;
+    color: black;
+  }
+
+  .stopBtn {
+    background: red;
+    color: white;
+  }
+
+  .resetBtn {
+    background: #555;
+    color: white;
+  }
+
+</style>
+</head>
+
+<body>
+
+<!-- ===== 表示 ===== -->
+<div id="distance">---</div>
+<div id="speed">0.0 kt</div>
+<div id="bearing">--- °</div>
+
+<div id="timer">5:00</div>
+
+<!-- ===== 左下：ナビ ===== -->
+<div class="navPanel">
+  <button onclick="setP1()">地点1</button>
+  <button onclick="setP2()">地点2</button>
+  <button class="navStart" onclick="startNav()">開始</button>
+  <button class="navStop" onclick="stopNav()">停止</button>
+</div>
+
+<!-- ===== 右下：タイマー ===== -->
+<div class="timerPanel">
+  <button class="startBtn" onclick="startTimer()">スタート</button>
+  <button class="plusBtn" onclick="adjustTimer(1)">＋1</button>
+  <button class="minusBtn" onclick="adjustTimer(-1)">－1</button>
+  <button class="stopBtn" onclick="stopTimer()">ストップ</button>
+  <button class="resetBtn" onclick="resetTimer()">リセット</button>
+</div>
+
+<script>
+
+////////////////////////
+// ナビ系
+////////////////////////
+
+let p1 = null;
+let p2 = null;
+
+let navTimer = null;
+
+let posBuffer = [];
+let speedBuffer = [];
+let bearingBuffer = [];
+
+function getPos() {
+  return new Promise((res, rej) => {
+    navigator.geolocation.getCurrentPosition(
+      p => res(p.coords),
+      e => rej(e),
+      { enableHighAccuracy: true }
+    );
+  });
+}
+
+async function setP1() {
+  p1 = await getPos();
+  alert("地点1セット");
+}
+
+async function setP2() {
+  p2 = await getPos();
+  alert("地点2セット");
+}
+
+function dist(a,b){
+  const R=6371000,toRad=d=>d*Math.PI/180;
+  const dLat=toRad(b.lat-a.lat);
+  const dLon=toRad(b.lon-a.lon);
+  const x=Math.sin(dLat/2)**2+
+    Math.cos(toRad(a.lat))*
+    Math.cos(toRad(b.lat))*
+    Math.sin(dLon/2)**2;
+  return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+
+function signedDistance(p,a,b){
+  const ax=a.lon*Math.cos(a.lat*Math.PI/180);
+  const ay=a.lat;
+  const bx=b.lon*Math.cos(b.lat*Math.PI/180);
+  const by=b.lat;
+  const px=p.lon*Math.cos(p.lat*Math.PI/180);
+  const py=p.lat;
+
+  const ABx=bx-ax,ABy=by-ay;
+  const APx=px-ax,APy=py-ay;
+
+  const sign=(ABx*APy-ABy*APx)>=0?1:-1;
+
+  const t=(APx*ABx+APy*ABy)/(ABx*ABx+ABy*ABy);
+  const cx=ax+t*ABx, cy=ay+t*ABy;
+
+  return sign*dist(p,{lat:cy,lon:cx/Math.cos(p.lat*Math.PI/180)});
+}
+
+function calcSpeed(a,b,dt){
+  return (dist(a,b)/dt)*1.94384;
+}
+
+function avg(arr){
+  let x=0,y=0;
+  for(let v of arr){
+    let r=v*Math.PI/180;
+    x+=Math.cos(r);
+    y+=Math.sin(r);
+  }
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+
+function median(arr){
+  return [...arr].sort((a,b)=>a-b)[Math.floor(arr.length/2)];
+}
+
+async function updateNav(){
+
+  if(!p1||!p2) return;
+
+  const pos=await getPos();
+
+  const now={lat:pos.latitude,lon:pos.longitude,t:Date.now()};
+
+  posBuffer.push(now);
+  if(posBuffer.length>3)posBuffer.shift();
+
+  const d=signedDistance(now,p1,p2);
+
+  document.getElementById("distance").textContent=
+    Math.round(d)+" m";
+  document.getElementById("distance").style.color=
+    (d<0)?"red":"white";
+
+  let speed=0;
+  if(posBuffer.length===3){
+    const a=posBuffer[0],b=posBuffer[2];
+    speed=calcSpeed(a,b,(b.t-a.t)/1000);
+  }
+
+  speedBuffer.push(speed);
+  if(speedBuffer.length>5)speedBuffer.shift();
+
+  document.getElementById("speed").textContent=
+    median(speedBuffer).toFixed(1)+" kt";
+
+  if(posBuffer.length===3){
+    const brg=avg(posBuffer.map((_,i)=>{
+      if(i<2){
+        return calcBearing(posBuffer[i],posBuffer[i+1]);
       }
+      return 0;
+    }).filter(v=>v));
 
-      /* ===== ハンバーガー ===== */
-      header {
-        position: fixed;
-        top: 0;
-        width: 100%;
-        padding: 10px;
-        z-index: 10;
-      }
+    bearingBuffer.push(brg);
+    if(bearingBuffer.length>5)bearingBuffer.shift();
 
-      .headerRow {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
+    document.getElementById("bearing").textContent=
+      Math.round(avg(bearingBuffer))+" °";
+  }
+}
 
-      .hamburger {
-        width: 28px;
-        height: 22px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        cursor: pointer;
-      }
+function startNav(){
+  if(navTimer)clearInterval(navTimer);
+  updateNav();
+  navTimer=setInterval(updateNav,1000);
+}
 
-      .hamburger span {
-        height: 3px;
-        background: white;
-        border-radius: 2px;
-      }
+function stopNav(){
+  clearInterval(navTimer);
+  navTimer=null;
+}
 
-      /* ===== メニュー ===== */
-      #menu {
-        position: fixed;
-        top: 0;
-        left: -260px;
-        width: 240px;
-        height: 100%;
-        background: #111;
-        padding: 60px 12px; /* ←左右余白を少しだけに */
-        transition: left .25s;
-        z-index: 20;
-        text-align: left; /* ←明示的に左寄せ */
-      }
+////////////////////////
+// タイマー系
+////////////////////////
 
-      #menu a {
-        display: block;
-        padding: 12px 8px; /* ←左余白を揃える */
-        margin-bottom: 8px;
-        text-decoration: none;
-        color: white;
-        font-weight: bold;
-        border-radius: 8px;
-        text-align: left; /* ←確実に左詰め */
-      }
+let t=300;
+let timer=null;
 
-      #menu a:hover {
-        background: #333;
-      }
+function updateTimer(){
+  let m=Math.floor(t/60);
+  let s=t%60;
+  document.getElementById("timer").textContent=
+    m+":"+String(s).padStart(2,"0");
+}
 
-      #menu.open {
-        left: 0;
-      }
+function startTimer(){
+  if(timer)return;
+  timer=setInterval(()=>{
+    if(t>0)t--;
+    updateTimer();
+    if(t===0)clearInterval(timer);
+  },1000);
+}
 
-      /* オーバーレイ */
-      .menuOverlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,.5);
-        display: none;
-        z-index: 15;
-      }
+function stopTimer(){
+  clearInterval(timer);
+  timer=null;
+}
 
-      .menuOverlay.show {
-        display: block;
-      }
+function resetTimer(){
+  t=300;
+  updateTimer();
+}
 
-      /* ===== タイマー ===== */
-      #top {
-        margin-top: 60px;
-      }
+function adjustTimer(v){
+  t+=v;
+  if(t<0)t=0;
+  updateTimer();
+}
 
-      #time {
-        font-size: 28vw;
-        margin-top: 5vh;
-        font-weight: bold;
-      }
+updateTimer();
 
-      #controls {
-        position: fixed;
-        bottom: 20px;
-        width: 100%;
-      }
+</script>
 
-      button {
-        font-size: 5vw;
-        margin: 5px;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 10px;
-      }
-
-      #startBtn {
-        font-size: 8vw;
-        padding: 20px 40px;
-        background: limegreen;
-        color: black;
-        font-weight: bold;
-      }
-
-      .yellow {
-        background: yellow;
-        color: black;
-      }
-
-      .red {
-        background: red;
-        color: white;
-      }
-
-      .blue {
-        background: blue;
-        color: white;
-      }
-    </style>
-  </head>
-
-  <body>
-    <!-- メニュー -->
-    <div id="menu">
-      <a href="index.html">トップ</a>
-      <a href="event.html">レース&amp;イベント</a>
-      <a href="StartIn.html">スタートライン</a>
-      <a href="Timer.html">スタートタイマー</a>
-      <a href="RateCompare.html">レーティング比較</a>
-      <a href="M3.html">航跡表示</a>
-      <a href="AISviewer.html">AIS（テスト）</a>
-      <a href="M2.html">マニュアル</a>
-    </div>
-
-    <div class="menuOverlay" id="menuOverlay" onclick="closeMenu()"></div>
-
-    <!-- ヘッダー -->
-    <header>
-      <div class="headerRow">
-        <div class="hamburger" onclick="toggleMenu()">
-          <span></span><span></span><span></span>
-        </div>
-      </div>
-    </header>
-
-    <div id="top">
-      <button onclick="resetTimer()">リセット</button>
-    </div>
-
-    <div id="time">5:00</div>
-
-    <div id="controls">
-      <button onclick="adjust(1)">+1</button>
-      <button id="startBtn">スタート</button>
-      <button onclick="adjust(-1)">-1</button>
-      <br>
-      <button onclick="stopTimer()">ストップ</button>
-    </div>
-
-    <script>
-      // ===== メニュー制御 =====
-      function toggleMenu(){
-        document.getElementById("menu").classList.toggle("open");
-        document.getElementById("menuOverlay").classList.toggle("show");
-      }
-
-      function closeMenu(){
-        document.getElementById("menu").classList.remove("open");
-        document.getElementById("menuOverlay").classList.remove("show");
-      }
-
-      // ===== タイマー =====
-      let totalTime = 300;
-      let remaining = 300;
-      let timer = null;
-      let endTime = null;
-      let running = false;
-      let audioUnlocked = false;
-
-      const callTimes = [
-        300,270,240,210,180,150,120,
-        105,90,75,60,
-        50,40,30,20,15,10,
-        9,8,7,6,5,4,3,2,1
-      ];
-
-      let spokenSet = new Set();
-
-      function updateDisplay() {
-        let min = Math.floor(remaining / 60);
-        let sec = remaining % 60;
-        document.getElementById("time").innerText =
-          min + ":" + sec.toString().padStart(2, "0");
-
-        document.body.classList.remove("yellow", "red", "blue");
-
-        if (remaining === 0) {
-          document.body.classList.add("blue");
-        } else if (remaining <= 10) {
-          document.body.classList.add("red");
-        } else if (remaining <= 60) {
-          document.body.classList.add("yellow");
-        }
-      }
-
-      function speak(text) {
-        if (!('speechSynthesis' in window)) return;
-
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'ja-JP';
-
-        speechSynthesis.cancel();
-        speechSynthesis.speak(msg);
-      }
-
-      function unlockAudio() {
-        if (audioUnlocked) return;
-
-        const msg = new SpeechSynthesisUtterance("");
-        msg.lang = 'ja-JP';
-
-        speechSynthesis.speak(msg);
-        audioUnlocked = true;
-      }
-
-      function formatTimeSpeech(sec) {
-        let m = Math.floor(sec / 60);
-        let s = sec % 60;
-
-        if (m > 0 && s > 0) return `${m}分${s}秒`;
-        if (m > 0) return `${m}分`;
-        return `${s}`;
-      }
-
-      function startTimer() {
-        if (running) return;
-
-        unlockAudio();
-        running = true;
-
-        endTime = Date.now() + remaining * 1000;
-
-        timer = setInterval(() => {
-          let diff = Math.round((endTime - Date.now()) / 1000);
-          remaining = Math.max(diff, 0);
-
-          updateDisplay();
-
-          if (callTimes.includes(remaining) && !spokenSet.has(remaining)) {
-            speak(formatTimeSpeech(remaining));
-            spokenSet.add(remaining);
-          }
-
-          if (remaining === 0) {
-            speak("スタート");
-            clearInterval(timer);
-            running = false;
-            spokenSet.clear();
-          }
-        }, 200);
-      }
-
-      function stopTimer() {
-        clearInterval(timer);
-        running = false;
-      }
-
-      function resetTimer() {
-        clearInterval(timer);
-        remaining = totalTime;
-        running = false;
-        spokenSet.clear();
-        updateDisplay();
-      }
-
-      function adjust(sec) {
-        remaining += sec;
-        if (remaining < 0) remaining = 0;
-        updateDisplay();
-      }
-
-      let startBtn = document.getElementById("startBtn");
-      let pressTimer = null;
-
-      startBtn.addEventListener("touchstart", () => {
-        pressTimer = setTimeout(startTimer, 500);
-      });
-
-      startBtn.addEventListener("touchend", () => {
-        clearTimeout(pressTimer);
-      });
-
-      startBtn.addEventListener("click", () => {
-        startTimer();
-      });
-
-      updateDisplay();
-    </script>
-  </body>
+</body>
 </html>
