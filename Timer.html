@@ -31,13 +31,13 @@
     color:#ffcc00;
   }
 
-  /* ★ タイマー背景を制御する */
+  /* ★ タイマー */
   #timer{
     font-size:100px;
     font-weight:bold;
     margin-top:10px;
-    color:lime;
     background:black;
+    color:lime;
     display:inline-block;
     padding:10px 30px;
     border-radius:12px;
@@ -156,32 +156,6 @@ function formatTime(sec){
 }
 
 //////////////////////////
-// ナビ（そのまま）
-//////////////////////////
-
-let p1=null,p2=null;
-let navTimer=null;
-
-let buf=[];
-let speedBuf=[];
-let bearingBuf=[];
-
-function getPos(){
-  return new Promise((res,rej)=>{
-    navigator.geolocation.getCurrentPosition(
-      p=>res(p.coords),
-      e=>rej(e),
-      {enableHighAccuracy:true}
-    );
-  });
-}
-
-async function setP1(){ p1=await getPos(); alert("①セット"); }
-async function setP2(){ p2=await getPos(); alert("②セット"); }
-
-/* calcBearing未定義はそのまま（既存前提） */
-
-//////////////////////////
 // タイマー
 //////////////////////////
 
@@ -192,20 +166,23 @@ function updateTimer(){
   let m=Math.floor(t/60);
   let s=t%60;
 
-  document.getElementById("timer").textContent=
+  const el=document.getElementById("timer");
+
+  el.textContent=
     m+":"+String(s).padStart(2,"0");
 
-  // ★ 背景色ルール（ここが今回の本題）
-  const el = document.getElementById("timer");
-
-  if(t === 0){
-    el.style.background = "blue";
-  }else if(t <= 10){
+  // ★ 色ルール更新（ここが変更点）
+  if(t <= 10){
     el.style.background = "red";
-  }else if(t <= 60){
+    el.style.color = "white";
+  }
+  else if(t <= 60){
     el.style.background = "yellow";
-  }else{
+    el.style.color = "black";
+  }
+  else{
     el.style.background = "black";
+    el.style.color = "lime";
   }
 }
 
