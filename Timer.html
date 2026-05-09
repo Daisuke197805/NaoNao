@@ -181,30 +181,33 @@ async function setP2(){
 }
 
 //////////////////////////////
-// 距離（ここが核心）
+// クロストラック距離（核心）
 //////////////////////////////
 
-function signedProgress(p,a,b){
+function crossTrackDistance(p,a,b){
 
   const ax=a.lon*Math.cos(a.lat*Math.PI/180);
   const ay=a.lat;
+
   const bx=b.lon*Math.cos(b.lat*Math.PI/180);
   const by=b.lat;
+
   const px=p.lon*Math.cos(p.lat*Math.PI/180);
   const py=p.lat;
 
   const ABx=bx-ax;
   const ABy=by-ay;
+
   const APx=px-ax;
   const APy=py-ay;
 
-  const ab2=ABx*ABx+ABy*ABy;
+  const abLen=Math.sqrt(ABx*ABx + ABy*ABy);
 
-  const t=(APx*ABx+APy*ABy)/ab2;
+  if(abLen===0) return 0;
 
-  const ABlen=Math.sqrt(ab2);
+  const cross=ABx*APy - ABy*APx;
 
-  return t*ABlen; // メートル相当（簡易）
+  return cross / abLen; // +右 / -左
 }
 
 //////////////////////////////
@@ -253,10 +256,10 @@ async function updateNav(){
   buf.push(pos);
   if(buf.length>3) buf.shift();
 
-  // ★ 距離（コース進捗）
-  const prog = signedProgress(pos,p1,p2);
+  // ★ クロストラック距離
+  const ctd = crossTrackDistance(pos,p1,p2);
   document.getElementById("distance").textContent =
-    Math.round(prog)+" m";
+    ctd.toFixed(1)+" m";
 
   // ★ 速度
   let sp=0;
