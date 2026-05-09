@@ -6,7 +6,7 @@
 
 <meta charset="utf-8">
 
-<title>東京湾 海図ナビ</title>
+<title>東京湾 AIS 海図ナビ</title>
 
 <meta name="viewport"
 
@@ -74,9 +74,7 @@ html, body {
 
 <div class="info">
 
-  東京湾 海図ナビ<br>
-
-  GPS + 航路 + ブイ
+  東京湾 AIS 海図ナビ
 
 </div>
 
@@ -84,11 +82,19 @@ html, body {
 
 <script>
 
-// =====================================
+// ======================================
 
-// 地図
+// AISStream API KEY
 
-// =====================================
+// ======================================
+
+const API_KEY = "ec11fdc799701ab614b7e7e59020172c693f77ed";
+
+// ======================================
+
+// 地図作成
+
+// ======================================
 
 const map = L.map('map', {
 
@@ -96,11 +102,11 @@ const map = L.map('map', {
 
 }).setView([35.30, 139.80], 10);
 
-// =====================================
+// ======================================
 
 // OpenStreetMap
 
-// =====================================
+// ======================================
 
 L.tileLayer(
 
@@ -114,11 +120,11 @@ L.tileLayer(
 
 ).addTo(map);
 
-// =====================================
+// ======================================
 
-// OpenSeaMap
+// OpenSeaMap 海図
 
-// =====================================
+// ======================================
 
 L.tileLayer(
 
@@ -132,11 +138,11 @@ L.tileLayer(
 
 ).addTo(map);
 
-// =====================================
+// ======================================
 
 // 東京湾主要航路
 
-// =====================================
+// ======================================
 
 // 浦賀水道航路
 
@@ -192,11 +198,11 @@ L.polyline(nakanoseRoute, {
 
 .bindPopup("中ノ瀬航路");
 
-// =====================================
+// ======================================
 
 // 東京湾主要ブイ
 
-// =====================================
+// ======================================
 
 const buoys = [
 
@@ -252,11 +258,11 @@ const buoys = [
 
 ];
 
-// ブイ表示
+// ブイ描画
 
 buoys.forEach(b => {
 
-  const marker = L.circleMarker(
+  L.circleMarker(
 
     [b.lat, b.lon],
 
@@ -274,17 +280,19 @@ buoys.forEach(b => {
 
     }
 
-  ).addTo(map);
+  )
 
-  marker.bindPopup(b.name);
+  .addTo(map)
+
+  .bindPopup(b.name);
 
 });
 
-// =====================================
+// ======================================
 
 // 自船GPS
 
-// =====================================
+// ======================================
 
 let myMarker = null;
 
@@ -351,6 +359,138 @@ navigator.geolocation.watchPosition(
   }
 
 );
+
+// ======================================
+
+// AIS
+
+// ======================================
+
+const ships = {};
+
+const socket = new WebSocket(
+
+  "wss://stream.aisstream.io/v0/stream"
+
+);
+
+// 接続
+
+socket.addEventListener("open", () => {
+
+  console.log("AIS connected");
+
+  socket.send(JSON.stringify({
+
+    APIKey: API_KEY,
+
+    BoundingBoxes: [
+
+      [
+
+        [35.0, 139.6],
+
+        [35.8, 140.1]
+
+      ]
+
+    ]
+
+  }));
+
+});
+
+// データ受信
+
+socket.addEventListener("message", (event) => {
+
+  try {
+
+    const data = JSON.parse(event.data);
+
+    // PositionReportのみ処理
+
+    if (!data.Message.PositionReport)
+
+      return;
+
+    const report = data.Message.PositionReport;
+
+    const lat = report.Latitude;
+
+    const lon = report.Longitude;
+
+    const mmsi = report.UserID;
+
+    // 異常値除外
+
+    if (!lat || !lon)
+
+      return;
+
+    // 初回
+
+    if (!ships[mmsi]) {
+
+      ships[mmsi] = L.circleMarker(
+
+        [lat, lon],
+
+        {
+
+          radius: 5,
+
+          color: "lime",
+
+          fillColor: "lime",
+
+          fillOpacity: 0.8,
+
+          weight: 1
+
+        }
+
+      )
+
+      .addTo(map)
+
+      .bindPopup(
+
+        "MMSI: " + mmsi
+
+      );
+
+    } else {
+
+      // 更新
+
+      ships[mmsi].setLatLng([lat, lon]);
+
+    }
+
+  } catch(err) {
+
+    console.log(err);
+
+  }
+
+});
+
+// エラー
+
+socket.addEventListener("error", (err) => {
+
+  console.log("AIS error", err);
+
+});
+
+// 切断
+
+socket.addEventListener("close", () => {
+
+  console.log("AIS disconnected");
+
+});
 
 </script>
 
