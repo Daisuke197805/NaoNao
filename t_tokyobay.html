@@ -62,6 +62,38 @@ html, body {
 
   line-height: 1.5;
 
+  max-width: 260px;
+
+}
+
+.log {
+
+  position: absolute;
+
+  left: 10px;
+
+  bottom: 10px;
+
+  z-index: 1000;
+
+  width: 300px;
+
+  max-height: 180px;
+
+  overflow: auto;
+
+  background: rgba(0,0,0,0.75);
+
+  color: lime;
+
+  padding: 10px;
+
+  border-radius: 10px;
+
+  font-family: monospace;
+
+  font-size: 11px;
+
 }
 
 </style>
@@ -74,7 +106,15 @@ html, body {
 
 <div class="info">
 
-  東京湾 AIS 海図ナビ
+  東京湾 AIS 海図ナビ<br>
+
+  GPS + 航路 + ブイ + AIS
+
+</div>
+
+<div class="log" id="log">
+
+  ログ開始<br>
 
 </div>
 
@@ -84,7 +124,7 @@ html, body {
 
 // ======================================
 
-// AISStream API KEY
+// AISSTREAM API KEY
 
 // ======================================
 
@@ -92,7 +132,25 @@ const API_KEY = "02bfdf3e9685ae762daf1b00a97b9ef6d52ad98a";
 
 // ======================================
 
-// 地図作成
+// ログ表示
+
+// ======================================
+
+function log(msg){
+
+  console.log(msg);
+
+  const el = document.getElementById("log");
+
+  el.innerHTML += msg + "<br>";
+
+  el.scrollTop = el.scrollHeight;
+
+}
+
+// ======================================
+
+// 地図
 
 // ======================================
 
@@ -101,6 +159,8 @@ const map = L.map('map', {
   zoomControl: true
 
 }).setView([35.30, 139.80], 10);
+
+log("地図初期化");
 
 // ======================================
 
@@ -122,7 +182,7 @@ L.tileLayer(
 
 // ======================================
 
-// OpenSeaMap 海図
+// OpenSeaMap
 
 // ======================================
 
@@ -137,6 +197,8 @@ L.tileLayer(
   }
 
 ).addTo(map);
+
+log("海図レイヤ追加");
 
 // ======================================
 
@@ -198,6 +260,8 @@ L.polyline(nakanoseRoute, {
 
 .bindPopup("中ノ瀬航路");
 
+log("航路描画");
+
 // ======================================
 
 // 東京湾主要ブイ
@@ -210,29 +274,9 @@ const buoys = [
 
     name: "中ノ瀬ブイ",
 
-    lat: 35.30,
+    lat: 35.2937,
 
-    lon: 139.86
-
-  },
-
-  {
-
-    name: "浦賀水道航路第一号灯浮標",
-
-    lat: 35.18,
-
-    lon: 139.79
-
-  },
-
-  {
-
-    name: "浦賀水道航路第三号灯浮標",
-
-    lat: 35.12,
-
-    lon: 139.81
+    lon: 139.8592
 
   },
 
@@ -240,9 +284,9 @@ const buoys = [
 
     name: "第一海堡",
 
-    lat: 35.31,
+    lat: 35.3065,
 
-    lon: 139.76
+    lon: 139.7600
 
   },
 
@@ -250,9 +294,9 @@ const buoys = [
 
     name: "第二海堡",
 
-    lat: 35.29,
+    lat: 35.2890,
 
-    lon: 139.79
+    lon: 139.7880
 
   }
 
@@ -287,6 +331,8 @@ buoys.forEach(b => {
   .bindPopup(b.name);
 
 });
+
+log("ブイ描画");
 
 // ======================================
 
@@ -330,6 +376,8 @@ navigator.geolocation.watchPosition(
 
       }).addTo(map);
 
+      log("GPS取得成功");
+
     } else {
 
       myMarker.setLatLng([lat, lon]);
@@ -344,7 +392,7 @@ navigator.geolocation.watchPosition(
 
   (err) => {
 
-    alert("GPS取得失敗: " + err.message);
+    log("GPSエラー: " + err.message);
 
   },
 
@@ -368,17 +416,19 @@ navigator.geolocation.watchPosition(
 
 const ships = {};
 
+log("AIS接続開始");
+
 const socket = new WebSocket(
 
   "wss://stream.aisstream.io/v0/stream"
 
 );
 
-// 接続
+// 接続成功
 
 socket.addEventListener("open", () => {
 
-  console.log("AIS connected");
+  log("AIS connected");
 
   socket.send(JSON.stringify({
 
@@ -394,21 +444,41 @@ socket.addEventListener("open", () => {
 
       ]
 
+    ],
+
+    FilterMessageTypes: [
+
+      "PositionReport"
+
     ]
 
   }));
 
+  log("AIS購読送信");
+
 });
 
-// データ受信
+// メッセージ受信
 
 socket.addEventListener("message", (event) => {
 
   try {
 
+    // 生データ確認
+
+    log("AIS受信");
+
     const data = JSON.parse(event.data);
 
-    // PositionReportのみ処理
+    // デバッグ用
+
+    console.log(data);
+
+    // PositionReportのみ
+
+    if (!data.Message)
+
+      return;
 
     if (!data.Message.PositionReport)
 
@@ -422,13 +492,13 @@ socket.addEventListener("message", (event) => {
 
     const mmsi = report.UserID;
 
-    // 異常値除外
+    // 座標確認
 
-    if (!lat || !lon)
+    if (lat == null || lon == null)
 
       return;
 
-    // 初回
+    // 初回生成
 
     if (!ships[mmsi]) {
 
@@ -460,6 +530,8 @@ socket.addEventListener("message", (event) => {
 
       );
 
+      log("船追加: " + mmsi);
+
     } else {
 
       // 更新
@@ -469,6 +541,8 @@ socket.addEventListener("message", (event) => {
     }
 
   } catch(err) {
+
+    log("AIS解析エラー");
 
     console.log(err);
 
@@ -480,7 +554,9 @@ socket.addEventListener("message", (event) => {
 
 socket.addEventListener("error", (err) => {
 
-  console.log("AIS error", err);
+  log("AIS error");
+
+  console.log(err);
 
 });
 
@@ -488,7 +564,7 @@ socket.addEventListener("error", (err) => {
 
 socket.addEventListener("close", () => {
 
-  console.log("AIS disconnected");
+  log("AIS disconnected");
 
 });
 
