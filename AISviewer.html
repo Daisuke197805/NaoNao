@@ -16,17 +16,12 @@
 
 <style>
 
-:root{
-  --bg:#f6f7fb;
-}
-
 html, body{
   margin:0;
   height:100%;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
 }
 
-/* ヘッダー分だけ地図下げる */
 #map{
   position:absolute;
   top:0;
@@ -98,7 +93,7 @@ window.onload = () => {
 };
 
 /* =========================
-   現在地（赤丸）
+   現在地（赤丸・ラベルなし）
 ========================= */
 
 function addMyLocation(lat, lng) {
@@ -106,7 +101,6 @@ function addMyLocation(lat, lng) {
   if (myLocationMarker) {
 
     myLocationMarker.setLatLng([lat, lng]);
-
     return;
   }
 
@@ -117,15 +111,11 @@ function addMyLocation(lat, lng) {
     fillColor: 'red',
     fillOpacity: 0.9
 
-  }).addTo(map)
-    .bindTooltip("現在地", {
-      permanent: true,
-      direction: "top"
-    });
+  }).addTo(map);
 }
 
 /* =========================
-   地図初期化
+   地図
 ========================= */
 
 function initMap(lat, lng) {
@@ -148,7 +138,7 @@ function initMap(lat, lng) {
 
 function startAIS(lat, lng) {
 
-  const delta = 1.5;
+  const delta = 1.0;
 
   socket = new WebSocket(
     "wss://stream.aisstream.io/v0/stream"
@@ -213,7 +203,7 @@ function startAIS(lat, lng) {
 }
 
 /* =========================
-   船更新（AIS）
+   船更新
 ========================= */
 
 function updateShip(mmsi, lat, lng, sog, cog) {
