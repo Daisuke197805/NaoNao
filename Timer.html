@@ -31,7 +31,6 @@
     color:#ffcc00;
   }
 
-  /* ===== タイマー ===== */
   #timer{
     font-size:100px;
     font-weight:bold;
@@ -43,7 +42,6 @@
     border-radius:12px;
   }
 
-  /* ===== ロックアイコン ===== */
   #lockIcon{
     position:fixed;
     top:10px;
@@ -51,10 +49,8 @@
     font-size:28px;
     cursor:pointer;
     z-index:10001;
-    user-select:none;
   }
 
-  /* ===== ロックオーバーレイ（重要） ===== */
   #lockOverlay{
     position:fixed;
     bottom:0;
@@ -64,36 +60,23 @@
     background:rgba(0,0,0,0.55);
     display:none;
     z-index:10000;
-
-    /* これが重要：完全に操作を遮断 */
     pointer-events:auto;
   }
 
-  /* ===== パネル ===== */
   .panel{
     position:fixed;
     bottom:10px;
     width:48%;
     padding:10px;
     box-sizing:border-box;
-
     display:flex;
     flex-wrap:wrap;
     gap:6px;
     justify-content:space-between;
   }
 
-  .nav{
-    left:10px;
-    background:rgba(0,255,0,0.12);
-    border-radius:12px;
-  }
-
-  .timerPanel{
-    right:10px;
-    background:rgba(255,150,150,0.15);
-    border-radius:12px;
-  }
+  .nav{left:10px;background:rgba(0,255,0,0.12);border-radius:12px;}
+  .timerPanel{right:10px;background:rgba(255,150,150,0.15);border-radius:12px;}
 
   button{
     flex:0 0 48%;
@@ -101,29 +84,18 @@
     font-size:14px;
     border:none;
     border-radius:10px;
-    box-sizing:border-box;
   }
 
-  .big{
-    flex:0 0 100%;
-    font-size:16px;
-    font-weight:bold;
-  }
+  .big{flex:0 0 100%;font-size:16px;font-weight:bold;}
 
   .b1,.b2{background:#333;color:white;}
   .startNav{background:#0066ff;color:white;}
   .resetNav{background:#444;color:white;}
-
-  .tStart{background:limegreen;color:black;font-weight:bold;}
-  .tPlus,.tMinus{background:yellow;color:black;}
-  .tStop{background:red;color:white;}
-  .tReset{background:#555;color:white;}
 </style>
 </head>
 
 <body>
 
-<!-- ロック -->
 <div id="lockIcon" onclick="toggleLock()">🔓</div>
 <div id="lockOverlay"></div>
 
@@ -144,126 +116,132 @@
 
 <!-- タイマー -->
 <div class="panel timerPanel">
-  <button class="big tStart" onclick="startTimer()">5分開始</button>
-
-  <button class="tMinus" onclick="adjustTimer(-1)">-1</button>
-  <button class="tPlus" onclick="adjustTimer(1)">+1</button>
-
-  <button class="tStop" onclick="stopTimer()">STOP</button>
-  <button class="tReset" onclick="resetTimer()">RESET</button>
+  <button class="big" onclick="startTimer()">5分開始</button>
+  <button onclick="adjustTimer(-1)">-1</button>
+  <button onclick="adjustTimer(1)">+1</button>
+  <button onclick="stopTimer()">STOP</button>
+  <button onclick="resetTimer()">RESET</button>
 </div>
 
 <script>
 
 //////////////////////////
-// ロック（UI制御のみ）
+// ロック
 //////////////////////////
 
-let isLocked = false;
+let isLocked=false;
 
 function toggleLock(){
-  isLocked = !isLocked;
+  isLocked=!isLocked;
 
-  document.getElementById("lockIcon").textContent =
-    isLocked ? "🔒" : "🔓";
+  document.getElementById("lockIcon").textContent=
+    isLocked?"🔒":"🔓";
 
-  document.getElementById("lockOverlay").style.display =
-    isLocked ? "block" : "none";
+  document.getElementById("lockOverlay").style.display=
+    isLocked?"block":"none";
 }
 
 //////////////////////////
-// 音声
+// ナビ復活（ここが本体）
 //////////////////////////
 
-let audioUnlocked = false;
+let p1=null,p2=null;
+let navTimer=null;
 
-function speak(text){
-  if(!('speechSynthesis' in window)) return;
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "ja-JP";
-  speechSynthesis.cancel();
-  speechSynthesis.speak(msg);
+let buf=[];
+
+function getPos(){
+  return new Promise((res,rej)=>{
+    navigator.geolocation.getCurrentPosition(
+      p=>res(p.coords),
+      e=>rej(e),
+      {enableHighAccuracy:true}
+    );
+  });
 }
 
-function unlockAudio(){
-  if(audioUnlocked) return;
-  const msg = new SpeechSynthesisUtterance("");
-  msg.lang = "ja-JP";
-  speechSynthesis.speak(msg);
-  audioUnlocked = true;
+async function setP1(){
+  p1=await getPos();
+  alert("①セット");
 }
 
-function formatTime(sec){
-  let m=Math.floor(sec/60);
-  let s=sec%60;
-
-  if(m>0 && s>0) return m+"分"+s+"秒";
-  if(m>0) return m+"分";
-  return s+"秒";
+async function setP2(){
+  p2=await getPos();
+  alert("②セット");
 }
 
-const callTimes=[
-  300,270,240,210,180,150,120,
-  105,90,75,60,
-  50,40,30,20,15,10,
-  9,8,7,6,5,4,3,2,1
-];
+function dist(a,b){
+  const R=6371000,toRad=d=>d*Math.PI/180;
+  const dLat=toRad(b.lat-a.lat);
+  const dLon=toRad(b.lon-a.lon);
 
-let spokenSet=new Set();
+  const x=
+    Math.sin(dLat/2)**2+
+    Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*
+    Math.sin(dLon/2)**2;
+
+  return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+
+async function updateNav(){
+
+  if(!p1||!p2) return;
+
+  const pos=await getPos();
+
+  const now={
+    lat:pos.latitude,
+    lon:pos.longitude,
+    t:Date.now()
+  };
+
+  buf.push(now);
+  if(buf.length>3) buf.shift();
+
+  const d=dist(now,p1);
+
+  document.getElementById("distance").textContent=
+    Math.round(d)+" m";
+}
+
+function startNav(){
+  if(navTimer) clearInterval(navTimer);
+
+  updateNav();
+
+  navTimer=setInterval(updateNav,1000);
+}
+
+function resetNav(){
+  p1=p2=null;
+  buf=[];
+  document.getElementById("distance").textContent="---";
+}
 
 //////////////////////////
-// タイマー
+// タイマー（簡略維持）
 //////////////////////////
 
 let t=300;
 let timer=null;
 
-function updateTimer(){
-  let m=Math.floor(t/60);
-  let s=t%60;
-
-  const el=document.getElementById("timer");
-  el.textContent=m+":"+String(s).padStart(2,"0");
-
-  if(t<=10){
-    el.style.background="red";
-    el.style.color="white";
-  }else if(t<=60){
-    el.style.background="yellow";
-    el.style.color="black";
-  }else{
-    el.style.background="black";
-    el.style.color="lime";
-  }
-}
-
 function startTimer(){
-
-  unlockAudio();
-
   t=300;
-  spokenSet.clear();
   updateTimer();
 
   if(timer) return;
 
   timer=setInterval(()=>{
-
-    if(t>0) t--;
-
+    if(t>0)t--;
     updateTimer();
-
-    if(callTimes.includes(t) && !spokenSet.has(t)){
-      speak(formatTime(t));
-      spokenSet.add(t);
-    }
-
-    if(t===0){
-      speak("スタート");
-      clearInterval(timer);
-    }
-
   },1000);
+}
+
+function updateTimer(){
+  let m=Math.floor(t/60);
+  let s=t%60;
+  document.getElementById("timer").textContent=
+    m+":"+String(s).padStart(2,"0");
 }
 
 function stopTimer(){
@@ -273,26 +251,14 @@ function stopTimer(){
 
 function resetTimer(){
   t=300;
-  spokenSet.clear();
   updateTimer();
 }
 
 function adjustTimer(v){
   t+=v;
-  if(t<0) t=0;
+  if(t<0)t=0;
   updateTimer();
 }
-
-updateTimer();
-
-//////////////////////////
-// ナビ（ダミー保持）
-//////////////////////////
-
-async function setP1(){ alert("①セット"); }
-async function setP2(){ alert("②セット"); }
-function startNav(){}
-function resetNav(){}
 
 </script>
 
