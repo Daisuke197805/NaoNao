@@ -139,6 +139,8 @@ const timerEl  = document.getElementById("timer");
 const resetBtn = document.getElementById("resetBtn");
 
 let totalSeconds = 300;
+let startTime = null;
+let remainingAtStart = 300;
 let interval = null;
 
 /* 表示更新 */
@@ -188,27 +190,34 @@ function startTimer(){
 
   if(interval) return;
 
+  startTime = Date.now();
+  remainingAtStart = totalSeconds;
+
   interval = setInterval(() => {
 
-    if(totalSeconds > 0){
+    const elapsed =
+      Math.floor((Date.now() - startTime) / 1000);
 
-      totalSeconds--;
+    totalSeconds =
+      remainingAtStart - elapsed;
 
-      updateDisplay();
+    if(totalSeconds < 0){
+      totalSeconds = 0;
+    }
 
-      /* 0で停止 */
-      if(totalSeconds === 0){
+    updateDisplay();
 
-        clearInterval(interval);
-        interval = null;
+    if(totalSeconds === 0){
 
-        if(navigator.vibrate){
-          navigator.vibrate([300,100,300]);
-        }
+      clearInterval(interval);
+      interval = null;
+
+      if(navigator.vibrate){
+        navigator.vibrate([300,100,300]);
       }
     }
 
-  },1000);
+  },250);
 }
 
 /* 停止 */
