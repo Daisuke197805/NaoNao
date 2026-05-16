@@ -25,7 +25,6 @@ body{
   background:#000;
   overflow:hidden;
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  color:#fff;
 }
 
 body{
@@ -47,17 +46,21 @@ body{
   align-items:center;
 }
 
-/* 時間表示 */
+/* タイマー表示 */
 #timer{
 
-  width:100%;
+  width:88%;
+  height:120px;
 
-  text-align:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border-radius:28px;
 
   font-size:92px;
   font-weight:700;
   letter-spacing:2px;
-
   line-height:1;
 
   user-select:none;
@@ -66,6 +69,33 @@ body{
   touch-action:manipulation;
 
   margin-bottom:28px;
+
+  transition:
+    background-color 0.15s linear,
+    color 0.15s linear;
+}
+
+/* 点滅用 */
+.flash{
+  animation:flashAnim 1s steps(1) infinite;
+}
+
+@keyframes flashAnim{
+
+  0%{
+    background:#ff0000;
+    color:#ffffff;
+  }
+
+  50%{
+    background:#ffffff;
+    color:#ff0000;
+  }
+
+  100%{
+    background:#ff0000;
+    color:#ffffff;
+  }
 }
 
 /* リセットボタン */
@@ -105,8 +135,8 @@ body{
 
 <script>
 
-const timerEl   = document.getElementById("timer");
-const resetBtn  = document.getElementById("resetBtn");
+const timerEl  = document.getElementById("timer");
+const resetBtn = document.getElementById("resetBtn");
 
 let totalSeconds = 300;
 let interval = null;
@@ -122,15 +152,34 @@ function updateDisplay(){
     + ":"
     + String(sec).padStart(2,"0");
 
-  /* 色変更 */
-  if(totalSeconds <= 10){
-    timerEl.style.color = "#ff3b30";
-  }
-  else if(totalSeconds <= 60){
-    timerEl.style.color = "#ffd60a";
-  }
-  else{
+  /* 点滅解除 */
+  timerEl.classList.remove("flash");
+
+  /* 5分〜2分 青 */
+  if(totalSeconds > 120){
+
+    timerEl.style.background = "#007aff";
     timerEl.style.color = "#ffffff";
+  }
+
+  /* 2分〜1分 黄 */
+  else if(totalSeconds > 60){
+
+    timerEl.style.background = "#ffd60a";
+    timerEl.style.color = "#000000";
+  }
+
+  /* 1分〜30秒 赤 */
+  else if(totalSeconds > 30){
+
+    timerEl.style.background = "#ff3b30";
+    timerEl.style.color = "#ffffff";
+  }
+
+  /* 30秒以下 点滅 */
+  else{
+
+    timerEl.classList.add("flash");
   }
 }
 
@@ -153,7 +202,6 @@ function startTimer(){
         clearInterval(interval);
         interval = null;
 
-        /* バイブ */
         if(navigator.vibrate){
           navigator.vibrate([300,100,300]);
         }
@@ -170,7 +218,7 @@ function stopTimer(){
   interval = null;
 }
 
-/* スタート/ストップ切替 */
+/* スタート/停止切替 */
 function toggleTimer(){
 
   if(interval){
@@ -193,7 +241,7 @@ function resetTimer(){
   updateDisplay();
 }
 
-/* 時間タップ */
+/* タップ */
 timerEl.addEventListener("click",toggleTimer);
 
 /* リセット */
