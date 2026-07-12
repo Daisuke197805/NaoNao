@@ -4,480 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>東京ベイオープン・シミュレーター</title>
-    <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none;
-        }
-        select, input, button {
-            touch-action: manipulation;
-        }
-        ::-webkit-scrollbar {
-            display: none;
-        }
+        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+        button { touch-action: manipulation; }
+        ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-20">
 
-    <!-- 固定ヘッダー -->
     <header class="fixed top-0 left-0 right-0 bg-slate-800 border-b border-slate-700 z-50 px-4 py-3 shadow-md flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <div class="text-xl">⛵</div>
-            <h1 class="text-sm font-bold text-white leading-tight">
-                東京ベイオープン<br>
-                <span class="text-[10px] text-cyan-400 font-normal">レーティングシミュレーター</span>
-            </h1>
-        </div>
-        <button id="btn-share" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-sm">
-            結果コピー
-        </button>
+        <h1 class="text-sm font-bold text-white">東京ベイオープン勝敗条件</h1>
+        <button id="btn-share" class="bg-cyan-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg">結果コピー</button>
     </header>
 
     <main class="pt-16 px-3 max-w-lg mx-auto space-y-4">
-
-        <!-- 1. 基準設定セクション -->
-        <section class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-lg relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
-            
-            <h2 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-1.5">
-                🧭 基準艇と自分の実所要時間
-            </h2>
-
-            <div class="mb-4">
-                <select id="select-myboat" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-slate-100 font-bold appearance-none">
-                    <!-- JSで描画 -->
-                </select>
-            </div>
-
-            <!-- 時間入力 -->
-            <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 mb-3">
+        <section class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-lg">
+            <select id="select-myboat" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm font-bold"></select>
+            <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 mt-3">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs text-slate-400">自艇の実所要時間</span>
                     <button id="btn-reset-time" class="text-[10px] text-slate-500 bg-slate-800 px-2 py-1 rounded">3時間に戻す</button>
                 </div>
-
                 <div class="flex justify-between items-center gap-2 text-center">
-                    <div class="flex-1 flex flex-col">
-                        <span class="text-[10px] text-slate-500 mb-1">時(H)</span>
-                        <div class="flex bg-slate-800 rounded overflow-hidden">
-                            <button id="btn-h-minus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">-</button>
-                            <div id="val-h" class="flex-1 flex items-center justify-center font-bold text-lg">3</div>
-                            <button id="btn-h-plus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">+</button>
-                        </div>
-                    </div>
-                    <div class="flex-1 flex flex-col">
-                        <span class="text-[10px] text-slate-500 mb-1">分(M)</span>
-                        <div class="flex bg-slate-800 rounded overflow-hidden">
-                            <button id="btn-m-minus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">-</button>
-                            <div id="val-m" class="flex-1 flex items-center justify-center font-bold text-lg">0</div>
-                            <button id="btn-m-plus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">+</button>
-                        </div>
-                    </div>
-                    <div class="flex-1 flex flex-col">
-                        <span class="text-[10px] text-slate-500 mb-1">秒(S)</span>
-                        <div class="flex bg-slate-800 rounded overflow-hidden">
-                            <button id="btn-s-minus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">-</button>
-                            <div id="val-s" class="flex-1 flex items-center justify-center font-bold text-lg">0</div>
-                            <button id="btn-s-plus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">+</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-4 gap-1.5 mt-3">
-                    <button id="btn-sub-10m" class="bg-slate-700 active:bg-slate-600 text-white text-xs py-2 rounded">-10分</button>
-                    <button id="btn-sub-1m" class="bg-slate-700 active:bg-slate-600 text-white text-xs py-2 rounded">-1分</button>
-                    <button id="btn-add-1m" class="bg-slate-700 active:bg-slate-600 text-white text-xs py-2 rounded">+1分</button>
-                    <button id="btn-add-10m" class="bg-slate-700 active:bg-slate-600 text-white text-xs py-2 rounded">+10分</button>
-                </div>
-            </div>
-
-            <div class="flex justify-between items-center p-3 bg-cyan-900/30 border border-cyan-800/50 rounded-lg">
-                <div>
-                    <span class="text-[11px] text-cyan-400 font-bold block">自艇の修正時間</span>
-                    <span id="summary-tcf" class="text-slate-500 text-[9px]">TCF: 0.000</span>
-                </div>
-                <div class="text-right">
-                    <div id="summary-corrected-time" class="text-lg font-bold text-cyan-300 font-mono">00:00:00</div>
+                    <div class="flex-1 flex flex-col"><div class="flex bg-slate-800 rounded"><button id="btn-h-minus" class="w-8 h-10">-</button><div id="val-h" class="flex-1 flex items-center justify-center font-bold">3</div><button id="btn-h-plus" class="w-8 h-10">+</button></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex bg-slate-800 rounded"><button id="btn-m-minus" class="w-8 h-10">-</button><div id="val-m" class="flex-1 flex items-center justify-center font-bold">0</div><button id="btn-m-plus" class="w-8 h-10">+</button></div></div>
+                    <div class="flex-1 flex flex-col"><div class="flex bg-slate-800 rounded"><button id="btn-s-minus" class="w-8 h-10">-</button><div id="val-s" class="flex-1 flex items-center justify-center font-bold">0</div><button id="btn-s-plus" class="w-8 h-10">+</button></div></div>
                 </div>
             </div>
         </section>
 
-        <!-- 2. フィルターセクション -->
-        <section class="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-md">
-            <div class="mb-2">
-                <input type="text" id="input-search" placeholder="🔍 艇名、セール№で検索..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
-            </div>
-            <div class="flex gap-1 overflow-x-auto pb-1 mb-1">
-                <span class="text-slate-500 text-[10px] flex items-center pr-1 whitespace-nowrap">グループ</span>
-                <div id="filter-group-container" class="flex gap-1"></div>
-            </div>
-            <div class="flex gap-1 overflow-x-auto pb-1">
-                <span class="text-slate-500 text-[10px] flex items-center pr-1 whitespace-nowrap">クラス</span>
-                <div id="filter-class-container" class="flex gap-1"></div>
-            </div>
-        </section>
-
-        <div class="text-[10px] text-slate-400 px-1 flex justify-between">
-            <span id="count-display">該当: 0 艇</span>
-        </div>
-
-        <!-- 3. 結果リストセクション -->
-        <section id="result-list" class="space-y-3 pb-8">
-            <!-- JSでカードを描画 -->
-        </section>
-
+        <input type="text" id="input-search" placeholder="🔍 艇名検索..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm">
+        <section id="result-list" class="space-y-3"></section>
     </main>
 
-    <div id="toast-copy" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-4 py-2 rounded-full shadow-lg text-xs font-bold transition-opacity duration-300 opacity-0 pointer-events-none z-50">
-        📋 結果をコピーしました！
-    </div>
-
-    <!-- アプリケーションロジック -->
     <script>
         const FLEET = [
-            { id: 1, group: "A", class: "Ⅰ", sail: "6929", name: "ANTONIA", type: "マチアスパウゼン５７", tcf: 0.846, port: "夢の島" },
-            { id: 2, group: "A", class: "Ⅰ", sail: "3181", name: "Henrique Ⅸ", type: "OCEANIS 51.1", tcf: 0.841, port: "夢の島" },
-            { id: 3, group: "A", class: "Ⅰ", sail: "6854", name: "Blue Peter", type: "J111", tcf: 0.809, port: "浦安" },
-            { id: 4, group: "A", class: "Ⅰ", sail: "6095", name: "Laetitia Deux", type: "ＦＩＲＳＴ 40.7（＋１）", tcf: 0.798, port: "浦安" },
-            { id: 5, group: "A", class: "Ⅰ", sail: "4038", name: "SPIRIT OF URAYASU", type: "プレスト３６２", tcf: 0.796, port: "浦安" },
-            { id: 6, group: "A", class: "Ⅰ", sail: "6420", name: "SION", type: "横山３６クラス", tcf: 0.794, port: "夢の島" },
-            { id: 7, group: "A", class: "Ⅰ", sail: "1080", name: "FIRST LADY", type: "ＦＩＲＳＴ ４０.７", tcf: 0.784, port: "YBM" },
-            { id: 8, group: "A", class: "Ⅰ", sail: "6220", name: "Icarus", type: "３６.７", tcf: 0.781, port: "船橋" },
-            { id: 9, group: "A", class: "Ⅰ", sail: "6381", name: "Big Apple", type: "デュフォー３６（２）", tcf: 0.780, port: "夢の島" },
-            { id: 10, group: "A", class: "Ⅰ", sail: "6554", name: "L'SION", type: "ＤＵＦＯＵＲ ３６（２）", tcf: 0.780, port: "夢の島" },
-            { id: 11, group: "A", class: "Ⅱ", sail: "6269", name: "SAMOA", type: "デュフォー３４（１）", tcf: 0.762, port: "夢の島" },
-            { id: 12, group: "A", class: "Ⅱ", sail: "1125", name: "CADENZA", type: "ＥＬＡＮ ３４０", tcf: 0.762, port: "YBM" },
-            { id: 13, group: "A", class: "Ⅱ", sail: "3662", name: "LADY K", type: "ヤマハ ３３Ｓ", tcf: 0.760, port: "浦安" },
-            { id: 14, group: "A", class: "Ⅱ", sail: "6669", name: "GUMBO", type: "ヤマハ ３３Ｓ", tcf: 0.760, port: "浦安" },
-            { id: 15, group: "A", class: "Ⅱ", sail: "4323", name: "O&S", type: "デュフォー ３４", tcf: 0.758, port: "浦安" },
-            { id: 16, group: "A", class: "Ⅱ", sail: "5852", name: "EXOTIQUE", type: "プレスト ３１", tcf: 0.757, port: "YBM" },
-            { id: 17, group: "A", class: "Ⅱ", sail: "6846", name: "Big Dream", type: "ファースト３４．７", tcf: 0.754, port: "夢の島" },
-            { id: 18, group: "A", class: "Ⅱ", sail: "4500", name: "WHIPPET", type: "セーラ３２", tcf: 0.753, port: "YBM" },
-            { id: 19, group: "B", class: "Ⅲ", sail: "5824", name: "Blue Moon", type: "ヤマハ ３１Ｓ", tcf: 0.750, port: "船橋" },
-            { id: 20, group: "B", class: "Ⅲ", sail: "5545", name: "Black-Jack", type: "ババリア３５マッチ", tcf: 0.749, port: "夢の島" },
-            { id: 21, group: "B", class: "Ⅲ", sail: "5118", name: "Blue Peter", type: "ヤマハ３１S", tcf: 0.749, port: "夢の島" },
-            { id: 22, group: "B", class: "Ⅲ", sail: "6711", name: "STAR OF INDIA", type: "デュフォー３２クラシッ", tcf: 0.746, port: "浦安" },
-            { id: 23, group: "B", class: "Ⅲ", sail: "6806", name: "L'espoir", type: "ファースト300", tcf: 0.744, port: "船橋" },
-            { id: 24, group: "B", class: "Ⅲ", sail: "1010", name: "Wind Fairy", type: "ヤマハ３１Ｓ", tcf: 0.738, port: "浦安" },
-            { id: 25, group: "B", class: "Ⅲ", sail: "1455", name: "AKIZUSHIMA", type: "ババリア ３２", tcf: 0.738, port: "夢の島" },
-            { id: 26, group: "B", class: "Ⅲ", sail: "6817", name: "naonao", type: "ヤマハ３１Ｓ", tcf: 0.735, port: "浦安" },
-            { id: 27, group: "B", class: "Ⅲ", sail: "3570", name: "Team 104", type: "ヤマハ ３１Ｓ", tcf: 0.735, port: "船橋" },
-            { id: 28, group: "B", class: "Ⅲ", sail: "4565", name: "gordon", type: "ヤマハ ３１Ｓ", tcf: 0.735, port: "浦安" },
-            { id: 29, group: "B", class: "Ⅳ", sail: "1727", name: "ACCOMMODATION", type: "ヤマハ ３０Ｓ", tcf: 0.728, port: "船橋" },
-            { id: 30, group: "B", class: "Ⅳ", sail: "6680", name: "SOUBI", type: "スイング３１", tcf: 0.726, port: "夢の島" },
-            { id: 31, group: "B", class: "Ⅳ", sail: "6410", name: "Ocean Light", type: "横山３０", tcf: 0.724, port: "船橋" },
-            { id: 32, group: "B", class: "Ⅳ", sail: "3251", name: "Juggler", type: "Ｊ２４（ＯＨ）", tcf: 0.724, port: "YYC" },
-            { id: 33, group: "B", class: "Ⅳ", sail: "1008", name: "Sun Luck", type: "ヤマハ ３０Ｓ２", tcf: 0.718, port: "船橋" },
-            { id: 34, group: "B", class: "Ⅳ", sail: "150", name: "SHARK", type: "横山２９", tcf: 0.715, port: "夢の島" },
-            { id: 35, group: "B", class: "Ⅳ", sail: "1058", name: "TAM", type: "ヤマハ ３０Ｓ", tcf: 0.715, port: "船橋" },
-            { id: 36, group: "B", class: "Ⅳ", sail: "6449", name: "JADE", type: "Ｊ２４（マストハイク）", tcf: 0.713, port: "浦安" },
-            { id: 37, group: "B", class: "Ⅳ", sail: "5406", name: "WIND VALLEY", type: "ヤマハ ３０Ｓ１", tcf: 0.710, port: "船橋" },
-            { id: 38, group: "B", class: "Ⅳ", sail: "5714", name: "CRESCENT", type: "Ｊ２４", tcf: 0.709, port: "夢の島" },
-            { id: 39, group: "C", class: "Ⅴ", sail: "4801", name: "BIG MOUTH", type: "スポア９", tcf: 0.706, port: "船橋" },
-            { id: 40, group: "C", class: "Ⅴ", sail: "3055", name: "MILKY WAY", type: "ヤマハ２６Ⅱ", tcf: 0.705, port: "船橋" },
-            { id: 41, group: "C", class: "Ⅴ", sail: "6310", name: "SAKURA", type: "Ｊ２４", tcf: 0.702, port: "浦安" },
-            { id: 42, group: "C", class: "Ⅴ", sail: "4776", name: "LIBERTY", type: "ヤマハ ２８Ｓ", tcf: 0.701, port: "船橋" },
-            { id: 43, group: "C", class: "Ⅴ", sail: "6112", name: "I'll go", type: "ヤマハ ２８Ｓ", tcf: 0.699, port: "夢の島" },
-            { id: 44, group: "C", class: "Ⅴ", sail: "6736", name: "SAKURA", type: "ヤマハ２８S", tcf: 0.699, port: "浦安" },
-            { id: 45, group: "C", class: "Ⅴ", sail: "-", name: "Milky Way Ⅲ", type: "ヤマハ ２８Ｓ", tcf: 0.699, port: "船橋" },
-            { id: 46, group: "C", class: "Ⅴ", sail: "7172", name: "LAHAINA Ⅳ", type: "ヤマハ ２８Ｓ", tcf: 0.699, port: "船橋" },
-            { id: 47, group: "C", class: "Ⅴ", sail: "5510", name: "NANUAQ", type: "ＯＫＡＺＡＫＩ 33", tcf: 0.698, port: "YBM" },
-            { id: 48, group: "C", class: "Ⅴ", sail: "-", name: "AQUA", type: "林オーシャンブルー９９0", tcf: 0.696, port: "夢の島" },
-            { id: 49, group: "C", class: "Ⅴ", sail: "-", name: "PANDORA4", type: "ＴＲＥＫＫＥＲ３４", tcf: 0.696, port: "浦安" },
-            { id: 50, group: "C", class: "Ⅴ", sail: "4468", name: "FELIX", type: "Ｊ２４", tcf: 0.696, port: "ＹＹＣ" },
-            { id: 51, group: "C", class: "Ⅴ", sail: "7054", name: "AURA", type: "オークレット２６ P", tcf: 0.696, port: "船橋" }
+            { id: 1, name: "ANTONIA", tcf: 0.846 }, { id: 2, name: "Henrique Ⅸ", tcf: 0.841 }, { id: 3, name: "Blue Peter", tcf: 0.809 },
+            { id: 4, name: "Laetitia Deux", tcf: 0.798 }, { id: 5, name: "SPIRIT OF URAYASU", tcf: 0.796 }, { id: 6, name: "SION", tcf: 0.794 },
+            { id: 7, name: "FIRST LADY", tcf: 0.784 }, { id: 8, name: "Icarus", tcf: 0.781 }, { id: 26, name: "naonao", tcf: 0.735 },
+            { id: 51, name: "AURA", tcf: 0.696 }
         ];
 
-        let state = {
-            myBoatId: 26, // naonao
-            h: 3,
-            m: 0,
-            s: 0,
-            group: 'All',
-            class: 'All',
-            search: ''
-        };
-
-        const elSelect = document.getElementById('select-myboat');
-        const elValH = document.getElementById('val-h');
-        const elValM = document.getElementById('val-m');
-        const elValS = document.getElementById('val-s');
-        const elSummaryTcf = document.getElementById('summary-tcf');
-        const elSummaryCT = document.getElementById('summary-corrected-time');
-        const elResultList = document.getElementById('result-list');
-        const elCount = document.getElementById('count-display');
-        const elFilterGroup = document.getElementById('filter-group-container');
-        const elFilterClass = document.getElementById('filter-class-container');
-        const elSearch = document.getElementById('input-search');
-
-        function formatDigital(totalSeconds) {
-            const isNegative = totalSeconds < 0;
-            const abs = Math.abs(Math.round(totalSeconds));
-            const h = String(Math.floor(abs / 3600)).padStart(2, '0');
-            const m = String(Math.floor((abs % 3600) / 60)).padStart(2, '0');
-            const s = String(abs % 60).padStart(2, '0');
-            return `${isNegative ? '-' : ''}${h}:${m}:${s}`;
-        }
-
-        // 時間フォーマット (例: 7分52秒)
-        function formatTimeReadable(totalSeconds) {
-            const abs = Math.abs(Math.round(totalSeconds));
-            const h = Math.floor(abs / 3600);
-            const m = Math.floor((abs % 3600) / 60);
-            const s = abs % 60;
-            let res = '';
-            if(h > 0) res += h + '時間';
-            if(m > 0 || h > 0) res += m + '分';
-            res += s + '秒';
-            return res;
-        }
+        let state = { myBoatId: 26, h: 3, m: 0, s: 0, search: '' };
 
         function init() {
-            FLEET.forEach(boat => {
-                const opt = document.createElement('option');
-                opt.value = boat.id;
-                opt.textContent = `${boat.id === 26 ? '👑 ' : ''}${boat.name} (TCF: ${boat.tcf.toFixed(3)})`;
-                if(boat.id === state.myBoatId) opt.selected = true;
-                elSelect.appendChild(opt);
+            const elSelect = document.getElementById('select-myboat');
+            FLEET.forEach(b => elSelect.add(new Option(`${b.name} (TCF:${b.tcf})`, b.id)));
+            elSelect.value = state.myBoatId;
+
+            ['h','m','s'].forEach(unit => {
+                document.getElementById(`btn-${unit}-plus`).onclick = () => { if(unit==='h') state.h++; if(unit==='m') state.m++; if(unit==='s') state.s++; render(); };
+                document.getElementById(`btn-${unit}-minus`).onclick = () => { if(unit==='h') state.h--; if(unit==='m') state.m--; if(unit==='s') state.s--; if(state.h<0)state.h=0; render(); };
             });
 
-            const groups = ['All', 'A', 'B', 'C'];
-            groups.forEach(g => {
-                const btn = document.createElement('button');
-                btn.textContent = g === 'All' ? '全' : g;
-                btn.className = 'px-3 py-1.5 rounded text-xs font-bold border transition-colors ' + (state.group === g ? 'bg-cyan-500 text-slate-900 border-cyan-400' : 'bg-slate-900 text-slate-400 border-slate-700');
-                btn.onclick = () => { state.group = g; renderFilters(); renderList(); };
-                elFilterGroup.appendChild(btn);
-            });
-
-            const classes = ['All', 'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'];
-            classes.forEach(c => {
-                const btn = document.createElement('button');
-                btn.textContent = c === 'All' ? '全' : c;
-                btn.className = 'px-3 py-1.5 rounded text-xs font-bold border transition-colors ' + (state.class === c ? 'bg-blue-500 text-white border-blue-400' : 'bg-slate-900 text-slate-400 border-slate-700');
-                btn.onclick = () => { state.class = c; renderFilters(); renderList(); };
-                elFilterClass.appendChild(btn);
-            });
-
-            elSelect.addEventListener('change', (e) => {
-                state.myBoatId = parseInt(e.target.value);
-                renderAll();
-            });
-
-            elSearch.addEventListener('input', (e) => {
-                state.search = e.target.value.toLowerCase();
-                renderList();
-            });
-
-            const adjustTime = (addH, addM, addS) => {
-                let totalS = (state.h * 3600) + (state.m * 60) + state.s;
-                totalS += (addH * 3600) + (addM * 60) + addS;
-                if(totalS < 0) totalS = 0;
-                
-                state.h = Math.floor(totalS / 3600);
-                state.m = Math.floor((totalS % 3600) / 60);
-                state.s = totalS % 60;
-                renderAll();
-            };
-
-            document.getElementById('btn-h-minus').onclick = () => adjustTime(-1, 0, 0);
-            document.getElementById('btn-h-plus').onclick = () => adjustTime(1, 0, 0);
-            document.getElementById('btn-m-minus').onclick = () => adjustTime(0, -1, 0);
-            document.getElementById('btn-m-plus').onclick = () => adjustTime(0, 1, 0);
-            document.getElementById('btn-s-minus').onclick = () => adjustTime(0, 0, -1);
-            document.getElementById('btn-s-plus').onclick = () => adjustTime(0, 0, 1);
-
-            document.getElementById('btn-sub-10m').onclick = () => adjustTime(0, -10, 0);
-            document.getElementById('btn-sub-1m').onclick = () => adjustTime(0, -1, 0);
-            document.getElementById('btn-add-1m').onclick = () => adjustTime(0, 1, 0);
-            document.getElementById('btn-add-10m').onclick = () => adjustTime(0, 10, 0);
-
-            document.getElementById('btn-reset-time').onclick = () => {
-                state.h = 3; state.m = 0; state.s = 0;
-                renderAll();
-            };
-
-            document.getElementById('btn-share').onclick = () => {
-                const myB = FLEET.find(b => b.id === state.myBoatId);
-                const tS = (state.h * 3600) + (state.m * 60) + state.s;
-                const cS = tS * myB.tcf;
-                
-                let text = `【レース計算】基準: ${myB.name}\n所要: ${formatDigital(tS)}\n修正: ${formatDigital(cS)}\n\n`;
-                const filtered = getFilteredFleet().filter(b => b.id !== state.myBoatId).slice(0, 5);
-                filtered.forEach(b => {
-                    const tar = cS / b.tcf;
-                    const diff = tar - tS;
-                    const abs = Math.abs(Math.round(diff));
-                    if(diff < 0) {
-                        text += `・${b.name}: ${abs}秒以内の遅れなら勝\n`;
-                    } else {
-                        text += `・${b.name}: ${abs}秒以上離せば勝\n`;
-                    }
-                });
-
-                const temp = document.createElement("textarea");
-                temp.value = text;
-                document.body.appendChild(temp);
-                temp.select();
-                document.execCommand("copy");
-                document.body.removeChild(temp);
-
-                const toast = document.getElementById('toast-copy');
-                toast.classList.remove('opacity-0');
-                setTimeout(() => toast.classList.add('opacity-0'), 2000);
-            };
-
-            renderAll();
+            document.getElementById('input-search').oninput = (e) => { state.search = e.target.value.toLowerCase(); render(); };
+            render();
         }
 
-        function renderFilters() {
-            Array.from(elFilterGroup.children).forEach(btn => {
-                const g = btn.textContent === '全' ? 'All' : btn.textContent;
-                btn.className = 'px-3 py-1.5 rounded text-xs font-bold border transition-colors ' + (state.group === g ? 'bg-cyan-500 text-slate-900 border-cyan-400' : 'bg-slate-900 text-slate-400 border-slate-700');
-            });
-            Array.from(elFilterClass.children).forEach(btn => {
-                const c = btn.textContent === '全' ? 'All' : btn.textContent;
-                btn.className = 'px-3 py-1.5 rounded text-xs font-bold border transition-colors ' + (state.class === c ? 'bg-blue-500 text-white border-blue-400' : 'bg-slate-900 text-slate-400 border-slate-700');
-            });
-        }
-
-        function getFilteredFleet() {
-            let result = FLEET.filter(b => {
-                const matchG = state.group === 'All' || b.group === state.group;
-                const matchC = state.class === 'All' || b.class === state.class;
-                const matchS = state.search === '' || b.name.toLowerCase().includes(state.search) || b.sail.includes(state.search);
-                return matchG && matchC && matchS;
-            });
-            result.sort((a, b) => b.tcf - a.tcf);
-            return result;
-        }
-
-        function renderList() {
-            const list = getFilteredFleet();
-            const myBoat = FLEET.find(b => b.id === state.myBoatId);
+        function render() {
+            document.getElementById('val-h').textContent = state.h;
+            document.getElementById('val-m').textContent = state.m;
+            document.getElementById('val-s').textContent = state.s;
+            
+            const myB = FLEET.find(b => b.id === state.myBoatId);
             const totalS = (state.h * 3600) + (state.m * 60) + state.s;
-            const myCorS = totalS * myBoat.tcf;
+            const myCorS = totalS * myB.tcf;
 
-            elCount.textContent = `該当: ${list.length} 艇`;
-            elResultList.innerHTML = '';
+            const list = document.getElementById('result-list');
+            list.innerHTML = '';
 
-            if(list.length === 0) {
-                elResultList.innerHTML = '<div class="text-center text-slate-500 text-sm py-8">該当する艇がありません。</div>';
-                return;
-            }
-
-            list.forEach(boat => {
-                const isSelf = boat.id === myBoat.id;
-                
-                // 1. 勝つための実時間条件 (Allowance)
-                const targetTime = myCorS / boat.tcf;
-                const timeDiff = targetTime - totalS; // マイナス=相手が速い, プラス=相手が遅い
-                
-                let conditionText = '';
-                let conditionColor = '';
-                let conditionIcon = '';
-                
-                if (isSelf) {
-                    conditionText = '基準となる自艇です';
-                    conditionColor = 'text-cyan-400';
-                    conditionIcon = '👑';
-                } else if (timeDiff < 0) {
-                    // 相手が速い（TCFが高い）ので、先にゴールされる想定
-                    const abs = Math.abs(Math.round(timeDiff));
-                    conditionText = `相手より遅れても <span class="text-lg mx-1">${abs}</span> 秒 (<span class="text-sm">${formatTimeReadable(abs)}</span>) 以内なら自艇の勝ち`;
-                    conditionColor = 'text-emerald-400';
-                    conditionIcon = '⏱️許容ビハインド';
-                } else {
-                    // 相手が遅い（TCFが低い）ので、自分が先にゴールする想定
-                    const abs = Math.abs(Math.round(timeDiff));
-                    conditionText = `相手を <span class="text-lg mx-1">${abs}</span> 秒 (<span class="text-sm">${formatTimeReadable(abs)}</span>) 以上引き離せば自艇の勝ち`;
-                    conditionColor = 'text-amber-400';
-                    conditionIcon = '⏱️必要リード';
-                }
-
-                // 2. もし同実時間でゴールしたときの修正時間差 (Excelのギャップ)
-                const convertedTime = totalS * boat.tcf;
-                const gapToEven = myCorS - convertedTime;
-                
-                let corDiffText = '';
-                let corDiffColor = '';
-                
-                if (isSelf) {
-                    corDiffText = '±0秒';
-                    corDiffColor = 'text-slate-500';
-                } else if (gapToEven > 0) {
-                    corDiffText = `自艇が ${Math.round(gapToEven)}秒 勝ち`;
-                    corDiffColor = 'text-emerald-400';
-                } else {
-                    corDiffText = `自艇が ${Math.abs(Math.round(gapToEven))}秒 負け`;
-                    corDiffColor = 'text-rose-400';
-                }
-
-                // カード描画
+            FLEET.filter(b => b.name.toLowerCase().includes(state.search)).sort((a,b)=>b.tcf-a.tcf).forEach(b => {
+                const diff = (myCorS / b.tcf) - totalS;
+                const abs = Math.abs(Math.round(diff));
                 const card = document.createElement('div');
-                card.className = `bg-slate-800 rounded-xl p-3 border shadow-sm ${isSelf ? 'border-cyan-500 bg-cyan-950/20' : 'border-slate-700'}`;
-                
-                let html = `
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="font-bold text-slate-100 text-base">${boat.name}</span>
-                                <span class="text-xs text-slate-500">#${boat.sail}</span>
-                            </div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">${boat.type}</div>
-                        </div>
-                        <div class="text-right">
-                            <span class="bg-slate-900 text-slate-300 text-[10px] px-1.5 py-0.5 rounded border border-slate-700 font-bold">${boat.group}G / ${boat.class}C</span>
-                            <div class="text-[11px] text-slate-400 mt-1">TCF: <span class="text-slate-200 font-bold">${boat.tcf.toFixed(3)}</span></div>
-                        </div>
+                card.className = "bg-slate-800 p-4 rounded-xl border border-slate-700";
+                card.innerHTML = `
+                    <div class="font-bold text-lg">${b.name} <span class="text-xs text-slate-500">TCF:${b.tcf}</span></div>
+                    <div class="${diff < 0 ? 'text-emerald-400' : 'text-amber-400'} font-bold mt-2">
+                        ${diff < 0 ? `⏱️ ${abs}秒以内の遅れなら勝ち` : `⏱️ ${abs}秒以上離せば勝ち`}
                     </div>
                 `;
-
-                // 条件メイン表示
-                html += `
-                    <div class="bg-slate-900/80 border border-slate-700 rounded-lg p-2.5 mb-2">
-                        <div class="text-[10px] text-slate-400 mb-1 font-bold">${conditionIcon} (実時間差)</div>
-                        <div class="font-bold ${conditionColor} leading-tight">
-                            ${conditionText}
-                        </div>
-                    </div>
-                `;
-
-                // もし同着だったら表示
-                html += `
-                    <div class="bg-slate-900/40 border border-slate-700/50 rounded-lg p-2 flex justify-between items-center">
-                        <div>
-                            <div class="text-[9px] text-slate-500">もし同じ実時間でゴールしたら…</div>
-                            <div class="text-xs font-bold text-slate-300">修正時間差: <span class="${corDiffColor}">${corDiffText}</span></div>
-                        </div>
-                    </div>
-                `;
-
-                card.innerHTML = html;
-                elResultList.appendChild(card);
+                list.appendChild(card);
             });
         }
-
-        function renderAll() {
-            elValH.textContent = state.h;
-            elValM.textContent = state.m;
-            elValS.textContent = state.s;
-
-            const myBoat = FLEET.find(b => b.id === state.myBoatId);
-            const totalS = (state.h * 3600) + (state.m * 60) + state.s;
-            const myCorS = totalS * myBoat.tcf;
-
-            elSummaryTcf.textContent = `TCF: ${myBoat.tcf.toFixed(3)}`;
-            elSummaryCT.textContent = formatDigital(myCorS);
-
-            renderList();
-        }
-
-        document.addEventListener('DOMContentLoaded', init);
+        init();
     </script>
 </body>
 </html>
-
 
