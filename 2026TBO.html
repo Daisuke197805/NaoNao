@@ -2,651 +2,469 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>東京ベイオープン・レーティング計算機</title>
-    <!-- Tailwind CSS (Aesthetics and utility classes) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>東京ベイオープン・シミュレーター</title>
+    <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js (Reactive state management in single file) -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        /* タッチターゲットを確保するスタイル */
-        button, select, input {
+        /* モバイル特化のスタイル調整 */
+        body {
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+        select, input, button {
             touch-action: manipulation;
+        }
+        /* スクロールバー非表示（スッキリさせるため） */
+        ::-webkit-scrollbar {
+            display: none;
         }
     </style>
 </head>
-<body class="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-white"
-      x-data="yachtSimulator()" x-init="init()">
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-20">
 
-    <!-- ヘッダー -->
-    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-20 shadow-md px-4 py-3">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-cyan-600 text-white rounded-lg font-bold text-xl">
-                    ⛵
-                </div>
-                <div>
-                    <h1 class="text-base md:text-lg font-bold text-white">
-                        東京ベイオープン・レーティング計算機
-                    </h1>
-                    <p class="text-[11px] text-slate-400">
-                        レーティングを用いた「イーブン（同修正時間）」目標値シミュレーター
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <button 
-                    @click="showExplanation = true"
-                    class="flex items-center gap-1 px-3 py-1.5 bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs rounded-lg transition-all border border-slate-600"
-                >
-                    <span>💡 計算の解説</span>
-                </button>
-                <button 
-                    @click="copyShareText()"
-                    class="flex items-center gap-1 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-lg transition-all"
-                >
-                    <span>📋 結果をコピー</span>
-                </button>
-            </div>
+    <!-- 固定ヘッダー -->
+    <header class="fixed top-0 left-0 right-0 bg-slate-800 border-b border-slate-700 z-50 px-4 py-3 shadow-md flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="text-xl">⛵</div>
+            <h1 class="text-sm font-bold text-white leading-tight">
+                東京ベイオープン<br>
+                <span class="text-[10px] text-cyan-400 font-normal">レーティングシミュレーター</span>
+            </h1>
         </div>
+        <button id="btn-share" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-sm">
+            結果コピー
+        </button>
     </header>
 
-    <main class="flex-1 max-w-7xl mx-auto p-4 w-full grid grid-cols-1 lg:grid-cols-12 gap-5">
-        
-        <!-- 左側：設定パネル (5カラム) -->
-        <section class="lg:col-span-5 flex flex-col gap-5">
+    <!-- メインコンテンツ (ヘッダーの高さ分下げる) -->
+    <main class="pt-16 px-3 max-w-lg mx-auto space-y-4">
+
+        <!-- 1. 基準設定セクション -->
+        <section class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-lg relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
             
-            <!-- 自艇・時間設定カード -->
-            <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700 shadow-xl relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-2 h-full bg-cyan-500"></div>
-                
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-bold text-slate-200 flex items-center gap-1.5">
-                        🧭 基準艇・所要時間の設定
-                    </h2>
-                    <span class="text-[11px] text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded-full border border-cyan-800" x-text="'基準: ' + myBoat.name">
-                    </span>
-                </div>
+            <h2 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-1.5">
+                🧭 基準艇と所要時間
+            </h2>
 
-                <!-- 艇の選択プルダウン -->
-                <div class="mb-5">
-                    <label class="block text-xs text-slate-400 font-semibold mb-1">基準にする艇（自分）</label>
-                    <select 
-                        x-model="myBoatId" 
-                        @change="updateMyBoat()"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition cursor-pointer"
-                    >
-                        <template x-for="boat in fleet" :key="boat.id">
-                            <option :value="boat.id" x-text="(boat.id === 26 ? '👑 ' : '') + boat.name + ' [' + boat.type + '] (TCF: ' + boat.tcf.toFixed(3) + ')'"></option>
-                        </template>
-                    </select>
-                    <p class="text-[11px] text-slate-500 mt-1">※ デフォルトは33行目の「naonao」(TCF: 0.735)に設定されています。</p>
-                </div>
-
-                <!-- 時間入力エリア (確実に動く入力ボックス＆ボタンに変更) -->
-                <div class="mb-5 bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                            ⏱️ 基準の所要時刻 (実時間)
-                        </span>
-                        <button 
-                            @click="resetTime()"
-                            class="text-slate-400 hover:text-slate-200 text-xs flex items-center gap-0.5 transition"
-                        >
-                            🔄 3時間に戻す
-                        </button>
-                    </div>
-
-                    <!-- 直接キー入力もボタン増減も可能なハイブリッド時間設定 -->
-                    <div class="grid grid-cols-3 gap-2 text-center mb-4">
-                        <div>
-                            <div class="text-[10px] text-slate-500 font-semibold mb-1">時間 (H)</div>
-                            <div class="flex items-center bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
-                                <button @click="inputHours = Math.max(0, inputHours - 1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">-</button>
-                                <input type="number" min="0" max="23" x-model.number="inputHours" class="flex-1 bg-transparent text-center text-base font-bold text-slate-100 focus:outline-none w-full" />
-                                <button @click="inputHours++" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">+</button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="text-[10px] text-slate-500 font-semibold mb-1">分 (M)</div>
-                            <div class="flex items-center bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
-                                <button @click="adjustMinutes(-1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">-</button>
-                                <input type="number" min="0" max="59" x-model.number="inputMinutes" class="flex-1 bg-transparent text-center text-base font-bold text-slate-100 focus:outline-none w-full" />
-                                <button @click="adjustMinutes(1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">+</button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="text-[10px] text-slate-500 font-semibold mb-1">秒 (S)</div>
-                            <div class="flex items-center bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
-                                <button @click="adjustSeconds(-1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">-</button>
-                                <input type="number" min="0" max="59" x-model.number="inputSeconds" class="flex-1 bg-transparent text-center text-base font-bold text-slate-100 focus:outline-none w-full" />
-                                <button @click="adjustSeconds(1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">+</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 船上での操作を楽にする1分、10分一発増減ショートカット -->
-                    <div class="grid grid-cols-4 gap-1.5">
-                        <button @click="adjustMinutes(-10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded transition border border-slate-700 font-medium">-10分</button>
-                        <button @click="adjustMinutes(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded transition border border-slate-700 font-medium">-1分</button>
-                        <button @click="adjustMinutes(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded transition border border-slate-700 font-medium">+1分</button>
-                        <button @click="adjustMinutes(10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded transition border border-slate-700 font-medium">+10分</button>
-                    </div>
-                </div>
-
-                <!-- 自艇ステータスサマリー -->
-                <div class="space-y-3 pt-3 border-t border-slate-700/60">
-                    <div class="flex justify-between items-center text-xs">
-                        <span class="text-slate-400">設定総秒数 (トータル秒)</span>
-                        <span class="font-mono font-bold text-cyan-400 text-sm" x-text="myTotalSeconds().toLocaleString() + ' 秒'"></span>
-                    </div>
-                    <div class="flex justify-between items-center text-xs">
-                        <span class="text-slate-400">自艇レーティング (TCF)</span>
-                        <span class="font-mono font-bold text-cyan-400 text-sm" x-text="myBoat.tcf ? myBoat.tcf.toFixed(3) : '0.000'"></span>
-                    </div>
-                    <div class="flex justify-between items-center p-3 bg-cyan-950/40 border border-cyan-800/50 rounded-xl">
-                        <div>
-                            <span class="text-xs text-cyan-400 font-semibold block">自艇の修正時間</span>
-                            <span class="text-slate-500 text-[10px]">所要秒 × TCF</span>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-base font-bold text-cyan-300 font-mono" x-text="formatDigital(myCorrectedSeconds())"></div>
-                            <div class="text-[10px] text-slate-400" x-text="'(' + Math.round(myCorrectedSeconds()) + ' 秒)'"></div>
-                        </div>
-                    </div>
-                </div>
-
+            <!-- 自艇選択 -->
+            <div class="mb-4">
+                <select id="select-myboat" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm text-slate-100 font-bold appearance-none">
+                    <!-- JSで描画 -->
+                </select>
             </div>
 
-            <!-- 解説ボックス -->
-            <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700/80 shadow-md">
-                <h3 class="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1">
-                    ℹ️ シミュレーションの考え方
-                </h3>
-                <ul class="text-xs text-slate-400 space-y-2.5 leading-relaxed">
-                    <li>
-                        <strong class="text-slate-300">① 目標所要時間:</strong><br />
-                        他艇があなたと同位（修正時間で同タイム）になるために必要な、相手の<span class="text-cyan-400">フィニッシュ所要実時間</span>です。
-                    </li>
-                    <li>
-                        <strong class="text-slate-300">② イーブンにするためのギャップ:</strong><br />
-                        もし他艇と同じ実時間でフィニッシュした場合に発生する、<span class="text-amber-400">修正時間上のギャップ差（秒）</span>を表します。
-                    </li>
-                </ul>
+            <!-- 時間入力 (ハイブリッドUI) -->
+            <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 mb-3">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-slate-400">実所要時間</span>
+                    <button id="btn-reset-time" class="text-[10px] text-slate-500 bg-slate-800 px-2 py-1 rounded">3時間に戻す</button>
+                </div>
+
+                <div class="flex justify-between items-center gap-2 text-center">
+                    <!-- 時 -->
+                    <div class="flex-1 flex flex-col">
+                        <span class="text-[10px] text-slate-500 mb-1">時(H)</span>
+                        <div class="flex bg-slate-800 rounded overflow-hidden">
+                            <button id="btn-h-minus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">-</button>
+                            <div id="val-h" class="flex-1 flex items-center justify-center font-bold text-lg">3</div>
+                            <button id="btn-h-plus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">+</button>
+                        </div>
+                    </div>
+                    <!-- 分 -->
+                    <div class="flex-1 flex flex-col">
+                        <span class="text-[10px] text-slate-500 mb-1">分(M)</span>
+                        <div class="flex bg-slate-800 rounded overflow-hidden">
+                            <button id="btn-m-minus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">-</button>
+                            <div id="val-m" class="flex-1 flex items-center justify-center font-bold text-lg">0</div>
+                            <button id="btn-m-plus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">+</button>
+                        </div>
+                    </div>
+                    <!-- 秒 -->
+                    <div class="flex-1 flex flex-col">
+                        <span class="text-[10px] text-slate-500 mb-1">秒(S)</span>
+                        <div class="flex bg-slate-800 rounded overflow-hidden">
+                            <button id="btn-s-minus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">-</button>
+                            <div id="val-s" class="flex-1 flex items-center justify-center font-bold text-lg">0</div>
+                            <button id="btn-s-plus" class="w-8 h-10 bg-slate-700 text-white font-bold active:bg-slate-600">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1分・10分ショートカット -->
+                <div class="grid grid-cols-4 gap-1.5 mt-3">
+                    <button id="btn-sub-10m" class="bg-slate-700 active:bg-slate-600 text-white text-xs py-2 rounded">-10分</button>
+                    <button id="btn-sub-1m" class="bg-slate-700 active:bg-slate-600 text-white text-xs py-2 rounded">-1分</button>
+                    <button id="btn-add-1m" class="bg-slate-700 active:bg-slate-600 text-white text-xs py-2 rounded">+1分</button>
+                    <button id="btn-add-10m" class="bg-slate-700 active:bg-slate-600 text-white text-xs py-2 rounded">+10分</button>
+                </div>
             </div>
 
+            <!-- サマリー表示 -->
+            <div class="flex justify-between items-center p-3 bg-cyan-900/30 border border-cyan-800/50 rounded-lg">
+                <div>
+                    <span class="text-[11px] text-cyan-400 font-bold block">自艇の修正時間</span>
+                    <span id="summary-tcf" class="text-slate-500 text-[9px]">TCF: 0.000</span>
+                </div>
+                <div class="text-right">
+                    <div id="summary-corrected-time" class="text-lg font-bold text-cyan-300 font-mono">00:00:00</div>
+                </div>
+            </div>
         </section>
 
-        <!-- 右側：結果リスト (7カラム) -->
-        <section class="lg:col-span-7 flex flex-col gap-4">
-            
-            <!-- フィルター＆検索バー -->
-            <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-md space-y-3.5">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="relative">
-                        <input 
-                            type="text" 
-                            x-model="searchQuery"
-                            placeholder="🔍 艇名、艇種、セール№で検索..." 
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-3 pr-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                        />
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-slate-500 whitespace-nowrap">並び替え:</span>
-                        <select 
-                            x-model="sortBy"
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-2.5 text-xs text-slate-300 focus:outline-none"
-                        >
-                            <option value="tcf_desc">TCFが高い順 (高速艇順)</option>
-                            <option value="tcf_asc">TCFが低い順 (低速艇順)</option>
-                            <option value="gap_asc">勝つために要するリード差（昇順）</option>
-                            <option value="gap_desc">許容される遅れ幅（降順）</option>
-                            <option value="name">艇名順</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- フィルターボタン -->
-                <div class="space-y-2 pt-2 border-t border-slate-700/50">
-                    <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                        <span class="text-slate-500 font-semibold mr-1">👥 グループ:</span>
-                        <template x-for="g in ['All', 'A', 'B', 'C']">
-                            <button
-                                @click="selectedGroup = g"
-                                :class="selectedGroup === g ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'"
-                                class="px-2.5 py-1 rounded-md border text-[11px] transition"
-                                x-text="g === 'All' ? 'すべて' : g + 'グループ'"
-                            ></button>
-                        </template>
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                        <span class="text-slate-500 font-semibold mr-1">🏷️ クラス:</span>
-                        <template x-for="c in ['All', 'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ']">
-                            <button
-                                @click="selectedClass = c"
-                                :class="selectedClass === c ? 'bg-blue-500 text-white border-blue-400 font-bold' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'"
-                                class="px-2.5 py-1 rounded-md border text-[11px] transition"
-                                x-text="c === 'All' ? 'すべて' : c + 'クラス'"
-                            ></button>
-                        </template>
-                    </div>
-                </div>
-
+        <!-- 2. フィルターセクション -->
+        <section class="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-md">
+            <!-- 検索 -->
+            <div class="mb-2">
+                <input type="text" id="input-search" placeholder="🔍 艇名、セール№で検索..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
             </div>
-
-            <div class="flex justify-between items-center px-1 text-xs text-slate-400">
-                <span>該当: <strong class="text-slate-200" x-text="filteredFleet().length"></strong> 艇 / 全 51 艇</span>
-                <span class="text-[10px]">※ 水色の行はあなたが設定した基準艇（自艇）です</span>
+            <!-- グループ -->
+            <div class="flex gap-1 overflow-x-auto pb-1 mb-1">
+                <span class="text-slate-500 text-[10px] flex items-center pr-1 whitespace-nowrap">グループ</span>
+                <div id="filter-group-container" class="flex gap-1"></div>
             </div>
-
-            <!-- リストエリア -->
-            <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-md overflow-hidden">
-                
-                <!-- デスクトップ用テーブル (md以上) -->
-                <div class="hidden md:block overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-900/80 border-b border-slate-700 text-slate-400 text-[11px] font-bold tracking-wider">
-                                <th class="py-3 px-3 text-center">№</th>
-                                <th class="py-3 px-3">艇名 / 艇種</th>
-                                <th class="py-3 px-2 text-center">G/C</th>
-                                <th class="py-3 px-2 text-center">TCF</th>
-                                <th class="py-3 px-3 text-right">① 目標所要時間</th>
-                                <th class="py-3 px-3 text-right">② タイム換算 / ギャップ</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-700/60 text-xs">
-                            <template x-for="boat in filteredFleet()" :key="boat.id">
-                                <tr :class="boat.id === myBoat.id ? 'bg-cyan-950/40 hover:bg-cyan-900/30 font-semibold' : 'hover:bg-slate-750'">
-                                    <td class="py-3 px-3 text-center whitespace-nowrap">
-                                        <span class="text-slate-500 block text-[10px]" x-text="'No.' + boat.id"></span>
-                                        <span class="text-slate-300 font-mono block text-[11px]" x-text="'#' + boat.sail"></span>
-                                    </td>
-                                    <td class="py-3 px-3">
-                                        <div class="flex items-center gap-1.5">
-                                            <template x-if="boat.id === myBoat.id">
-                                                <span class="text-cyan-400 text-sm">👑</span>
-                                            </template>
-                                            <span class="text-slate-100 font-bold text-sm" x-text="boat.name"></span>
-                                        </div>
-                                        <div class="text-slate-400 text-[10px] mt-0.5" x-text="boat.type + ' | 泊: ' + boat.port"></div>
-                                    </td>
-                                    <td class="py-3 px-2 text-center whitespace-nowrap">
-                                        <span class="bg-slate-900 text-slate-300 text-[10px] px-1.5 py-0.5 rounded border border-slate-700 font-mono" x-text="boat.group + '-' + boat.class"></span>
-                                    </td>
-                                    <td class="py-3 px-2 text-center font-mono font-bold text-slate-300" x-text="boat.tcf.toFixed(3)"></td>
-                                    <td class="py-3 px-3 text-right">
-                                        <template x-if="boat.id === myBoat.id">
-                                            <span class="text-cyan-400 font-bold block" x-text="formatDigital(myTotalSeconds())"></span>
-                                        </template>
-                                        <template x-if="boat.id !== myBoat.id">
-                                            <div>
-                                                <span class="text-emerald-400 font-bold text-sm block font-mono" x-text="formatDigital(targetElapsedTime(boat))"></span>
-                                                <span class="text-[10px] text-slate-500 block" x-text="(physicalTimeGap(boat) > 0 ? '＋' : '') + formatTime(physicalTimeGap(boat))"></span>
-                                            </div>
-                                        </template>
-                                    </td>
-                                    <td class="py-3 px-3 text-right whitespace-nowrap">
-                                        <div class="text-slate-300 font-mono text-[11px]" x-text="'換算: ' + formatDigital(convertedTime(boat))"></div>
-                                        <template x-if="boat.id === myBoat.id">
-                                            <span class="text-slate-500 text-[10px]">基準 (±0)</span>
-                                        </template>
-                                        <template x-if="boat.id !== myBoat.id">
-                                            <span :class="gapSeconds(boat) >= 0 ? 'text-amber-400 bg-amber-950/20' : 'text-rose-400 bg-rose-950/20'"
-                                                  class="text-[10px] font-bold font-mono px-1 py-0.2 rounded inline-block mt-0.5"
-                                                  x-text="'差: ' + (gapSeconds(boat) >= 0 ? '+' : '') + Math.round(gapSeconds(boat) * 10)/10 + '秒'">
-                                            </span>
-                                        </template>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- モバイル用カードリスト (画面が小さい時) -->
-                <div class="block md:hidden divide-y divide-slate-700/60">
-                    <template x-for="boat in filteredFleet()" :key="boat.id">
-                        <div :class="boat.id === myBoat.id ? 'bg-cyan-950/40 border-l-4 border-cyan-500' : 'active:bg-slate-750'" class="p-4">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <div class="flex items-center gap-1.5">
-                                        <template x-if="boat.id === myBoat.id">
-                                            <span class="text-cyan-400">👑</span>
-                                        </template>
-                                        <h4 class="text-slate-100 font-bold text-base" x-text="boat.name"></h4>
-                                        <span class="text-[10px] text-slate-500 font-mono" x-text="'#' + boat.sail"></span>
-                                    </div>
-                                    <p class="text-xs text-slate-400 mt-0.5" x-text="boat.type + ' (' + boat.port + ')'"></p>
-                                </div>
-                                <div class="text-right">
-                                    <span class="bg-slate-900 text-slate-300 text-[10px] px-1.5 py-0.5 rounded border border-slate-700 font-mono" x-text="boat.group + 'G / ' + boat.class + 'C'"></span>
-                                    <div class="text-[10px] text-slate-400 mt-1">TCF: <strong class="text-slate-300" x-text="boat.tcf.toFixed(3)"></strong></div>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-700/40">
-                                <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
-                                    <span class="text-[10px] text-slate-400 block mb-0.5 font-semibold">① 目標所要時間</span>
-                                    <template x-if="boat.id === myBoat.id">
-                                        <span class="text-cyan-400 font-bold text-sm block font-mono" x-text="formatDigital(myTotalSeconds())"></span>
-                                    </template>
-                                    <template x-if="boat.id !== myBoat.id">
-                                        <div>
-                                            <span class="text-emerald-400 font-bold text-sm block font-mono" x-text="formatDigital(targetElapsedTime(boat))"></span>
-                                            <span class="text-[9px] text-slate-500 block" x-text="'差: ' + (physicalTimeGap(boat) > 0 ? '+' : '') + formatTime(physicalTimeGap(boat))"></span>
-                                        </div>
-                                    </template>
-                                </div>
-
-                                <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
-                                    <span class="text-[10px] text-slate-400 block mb-0.5 font-semibold">② 換算 ＆ イーブン差</span>
-                                    <span class="text-slate-300 text-xs block font-mono" x-text="'換算: ' + formatDigital(convertedTime(boat))"></span>
-                                    <template x-if="boat.id === myBoat.id">
-                                        <span class="text-slate-500 text-[9px] block">自艇基準</span>
-                                    </template>
-                                    <template x-if="boat.id !== myBoat.id">
-                                        <span :class="gapSeconds(boat) >= 0 ? 'text-amber-400' : 'text-rose-400'"
-                                              class="text-[10px] font-bold font-mono mt-0.5 inline-block"
-                                              x-text="'ギャップ: ' + (gapSeconds(boat) >= 0 ? '+' : '') + Math.round(gapSeconds(boat)) + '秒'">
-                                        </span>
-                                    </template>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                <div x-show="filteredFleet().length === 0" class="p-8 text-center text-slate-500" style="display: none;">
-                    条件に合うヨットが見つかりませんでした。フィルター設定や検索キーワードを変更してください。
-                </div>
-
+            <!-- クラス -->
+            <div class="flex gap-1 overflow-x-auto pb-1">
+                <span class="text-slate-500 text-[10px] flex items-center pr-1 whitespace-nowrap">クラス</span>
+                <div id="filter-class-container" class="flex gap-1"></div>
             </div>
+        </section>
 
+        <!-- 件数表示 -->
+        <div class="text-[10px] text-slate-400 px-1 flex justify-between">
+            <span id="count-display">該当: 0 艇</span>
+            <span>※ 目標時間はイーブンになる実所要時間</span>
+        </div>
+
+        <!-- 3. 結果リストセクション -->
+        <section id="result-list" class="space-y-3 pb-8">
+            <!-- JSでカードを描画 -->
         </section>
 
     </main>
 
-    <!-- フッター -->
-    <footer class="bg-slate-900 border-t border-slate-800 py-6 px-4 mt-8 text-center text-xs text-slate-500">
-        <div class="max-w-7xl mx-auto space-y-1">
-            <p>© 2026 東京ベイオープン レーティングシミュレーター</p>
-            <p>ヨットレースの時間・TCF換算・イーブン目標値計算アプリ（そのままGitHub対応）</p>
-        </div>
-    </footer>
-
-    <!-- コピー通知トースト -->
-    <div x-show="copied" x-transition 
-         class="fixed bottom-5 right-5 bg-emerald-600 border border-emerald-500 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 z-50" style="display: none;">
-        <span class="text-xs font-semibold">📋 結果をコピーしました！</span>
+    <!-- コピー完了通知 (非表示) -->
+    <div id="toast-copy" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-4 py-2 rounded-full shadow-lg text-xs font-bold transition-opacity duration-300 opacity-0 pointer-events-none z-50">
+        📋 結果をコピーしました！
     </div>
 
-    <!-- 解説モーダル -->
-    <div x-show="showExplanation" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto" @click.away="showExplanation = false">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                <h3 class="text-base font-bold text-white flex items-center gap-1.5">
-                    💡 レーティング計算式の解説
-                </h3>
-                <button @click="showExplanation = false" class="text-slate-400 hover:text-white text-lg font-bold px-2">✕</button>
-            </div>
-
-            <div class="text-xs text-slate-300 space-y-4 leading-relaxed">
-                <div>
-                    <h4 class="font-bold text-cyan-300 mb-1">■ 修正時間 (Corrected Time) の原則</h4>
-                    <p>ヨットレースでは、各艇の実所要時間 (Elapsed Time) に、艇ごとの性能評価指数である TCF (Time Correction Factor) を掛け算して順位を競います。</p>
-                    <div class="bg-slate-900 p-2.5 rounded-lg font-mono text-center text-cyan-400 mt-1">
-                        修正時間 (CT) ＝ 所要時間 (ET) × TCF
-                    </div>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-cyan-300 mb-1">■ ① 目標所要時間 (Target Elapsed Time) </h4>
-                    <p>他艇があなたの艇（自艇）と「修正時間で同着」になるためのフィニッシュ実時間です。他艇から見た勝負の目安になります。</p>
-                    <div class="bg-slate-900 p-2.5 rounded-lg font-mono text-[11px] mt-1 space-y-1">
-                        <div>他艇の目標実所要時間 ＝ 自艇の修正時間 ／ 他艇のTCF</div>
-                        <div class="text-slate-500 text-[10px]">※ 自艇より TCF が大きい艇（高速艇）は、あなたより早くフィニッシュする必要があります。</div>
-                    </div>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-cyan-300 mb-1">■ ② スプレッドシートの「換算」と「ギャップ」</h4>
-                    <p>提出されたシートに含まれている数式を再現しています：</p>
-                    <ul class="list-disc list-inside space-y-1.5 bg-slate-900 p-3 rounded-lg font-mono text-[11px]">
-                        <li>
-                            <strong class="text-slate-200">タイムの換算:</strong><br />
-                            自艇の所要時間 × 相手のTCF
-                        </li>
-                        <li>
-                            <strong class="text-slate-200">イーブンにするためのギャップ:</strong><br />
-                            自艇の修正時間 － タイムの換算
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="pt-3 border-t border-slate-700 flex justify-end">
-                <button @click="showExplanation = false" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-                    閉じる
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alpine.js Application Logic -->
+    <!-- アプリケーションロジック (Vanilla JS) -->
     <script>
-        function yachtSimulator() {
-            return {
-                fleet: [
-                  { id: 1, group: "A", class: "Ⅰ", sail: "6929", name: "ANTONIA", type: "マチアスパウゼン５７", tcf: 0.846, port: "夢の島" },
-                  { id: 2, group: "A", class: "Ⅰ", sail: "3181", name: "Henrique Ⅸ", type: "OCEANIS 51.1", tcf: 0.841, port: "夢の島" },
-                  { id: 3, group: "A", class: "Ⅰ", sail: "6854", name: "Blue Peter", type: "J111", tcf: 0.809, port: "浦安" },
-                  { id: 4, group: "A", class: "Ⅰ", sail: "6095", name: "Laetitia Deux", type: "ＦＩＲＳＴ 40.7（＋１）", tcf: 0.798, port: "浦安" },
-                  { id: 5, group: "A", class: "Ⅰ", sail: "4038", name: "SPIRIT OF URAYASU", type: "プレスト３６２", tcf: 0.796, port: "浦安" },
-                  { id: 6, group: "A", class: "Ⅰ", sail: "6420", name: "SION", type: "横山３６クラス", tcf: 0.794, port: "夢の島" },
-                  { id: 7, group: "A", class: "Ⅰ", sail: "1080", name: "FIRST LADY", type: "ＦＩＲＳＴ ４０.７", tcf: 0.784, port: "YBM" },
-                  { id: 8, group: "A", class: "Ⅰ", sail: "6220", name: "Icarus", type: "３６.７", tcf: 0.781, port: "船橋" },
-                  { id: 9, group: "A", class: "Ⅰ", sail: "6381", name: "Big Apple", type: "デュフォー３６（２）", tcf: 0.780, port: "夢の島" },
-                  { id: 10, group: "A", class: "Ⅰ", sail: "6554", name: "L'SION", type: "ＤＵＦＯＵＲ ３６（２）", tcf: 0.780, port: "夢の島" },
-                  { id: 11, group: "A", class: "Ⅱ", sail: "6269", name: "SAMOA", type: "デュフォー３４（１）", tcf: 0.762, port: "夢の島" },
-                  { id: 12, group: "A", class: "Ⅱ", sail: "1125", name: "CADENZA", type: "ＥＬＡＮ ３４０", tcf: 0.762, port: "YBM" },
-                  { id: 13, group: "A", class: "Ⅱ", sail: "3662", name: "LADY K", type: "ヤマハ ３３Ｓ", tcf: 0.760, port: "浦安" },
-                  { id: 14, group: "A", class: "Ⅱ", sail: "6669", name: "GUMBO", type: "ヤマハ ３３Ｓ", tcf: 0.760, port: "浦安" },
-                  { id: 15, group: "A", class: "Ⅱ", sail: "4323", name: "O&S", type: "デュフォー ３４", tcf: 0.758, port: "浦安" },
-                  { id: 16, group: "A", class: "Ⅱ", sail: "5852", name: "EXOTIQUE", type: "プレスト ３１", tcf: 0.757, port: "YBM" },
-                  { id: 17, group: "A", class: "Ⅱ", sail: "6846", name: "Big Dream", type: "ファースト３４．７", tcf: 0.754, port: "夢の島" },
-                  { id: 18, group: "A", class: "Ⅱ", sail: "4500", name: "WHIPPET", type: "セーラ３２", tcf: 0.753, port: "YBM" },
-                  { id: 19, group: "B", class: "Ⅲ", sail: "5824", name: "Blue Moon", type: "ヤマハ ３１Ｓ", tcf: 0.750, port: "船橋" },
-                  { id: 20, group: "B", class: "Ⅲ", sail: "5545", name: "Black-Jack", type: "ババリア３５マッチ", tcf: 0.749, port: "夢の島" },
-                  { id: 21, group: "B", class: "Ⅲ", sail: "5118", name: "Blue Peter", type: "ヤマハ３１S", tcf: 0.749, port: "夢の島" },
-                  { id: 22, group: "B", class: "Ⅲ", sail: "6711", name: "STAR OF INDIA", type: "デュフォー３２クラシッ", tcf: 0.746, port: "浦安" },
-                  { id: 23, group: "B", class: "Ⅲ", sail: "6806", name: "L'espoir", type: "ファースト300", tcf: 0.744, port: "船橋" },
-                  { id: 24, group: "B", class: "Ⅲ", sail: "1010", name: "Wind Fairy", type: "ヤマハ３１Ｓ", tcf: 0.738, port: "浦安" },
-                  { id: 25, group: "B", class: "Ⅲ", sail: "1455", name: "AKIZUSHIMA", type: "ババリア ３２", tcf: 0.738, port: "夢の島" },
-                  { id: 26, group: "B", class: "Ⅲ", sail: "6817", name: "naonao", type: "ヤマハ３１Ｓ", tcf: 0.735, port: "浦安" },
-                  { id: 27, group: "B", class: "Ⅲ", sail: "3570", name: "Team 104", type: "ヤマハ ３１Ｓ", tcf: 0.735, port: "船橋" },
-                  { id: 28, group: "B", class: "Ⅲ", sail: "4565", name: "gordon", type: "ヤマハ ３１Ｓ", tcf: 0.735, port: "浦安" },
-                  { id: 29, group: "B", class: "Ⅳ", sail: "1727", name: "ACCOMMODATION", type: "ヤマハ ３０Ｓ", tcf: 0.728, port: "船橋" },
-                  { id: 30, group: "B", class: "Ⅳ", sail: "6680", name: "SOUBI", type: "スイング３１", tcf: 0.726, port: "夢の島" },
-                  { id: 31, group: "B", class: "Ⅳ", sail: "6410", name: "Ocean Light", type: "横山３０", tcf: 0.724, port: "船橋" },
-                  { id: 32, group: "B", class: "Ⅳ", sail: "3251", name: "Juggler", type: "Ｊ２４（ＯＨ）", tcf: 0.724, port: "YYC" },
-                  { id: 33, group: "B", class: "Ⅳ", sail: "1008", name: "Sun Luck", type: "ヤマハ ３０Ｓ２", tcf: 0.718, port: "船橋" },
-                  { id: 34, group: "B", class: "Ⅳ", sail: "150", name: "SHARK", type: "横山２９", tcf: 0.715, port: "夢の島" },
-                  { id: 35, group: "B", class: "Ⅳ", sail: "1058", name: "TAM", type: "ヤマハ ３０Ｓ", tcf: 0.715, port: "船橋" },
-                  { id: 36, group: "B", class: "Ⅳ", sail: "6449", name: "JADE", type: "Ｊ２４（マストハイク）", tcf: 0.713, port: "浦安" },
-                  { id: 37, group: "B", class: "Ⅳ", sail: "5406", name: "WIND VALLEY", type: "ヤマハ ３０Ｓ１", tcf: 0.710, port: "船橋" },
-                  { id: 38, group: "B", class: "Ⅳ", sail: "5714", name: "CRESCENT", type: "Ｊ２４", tcf: 0.709, port: "夢の島" },
-                  { id: 39, group: "C", class: "Ⅴ", sail: "4801", name: "BIG MOUTH", type: "スポア９", tcf: 0.706, port: "船橋" },
-                  { id: 40, group: "C", class: "Ⅴ", sail: "3055", name: "MILKY WAY", type: "ヤマハ２６Ⅱ", tcf: 0.705, port: "船橋" },
-                  { id: 41, group: "C", class: "Ⅴ", sail: "6310", name: "SAKURA", type: "Ｊ２４", tcf: 0.702, port: "浦安" },
-                  { id: 42, group: "C", class: "Ⅴ", sail: "4776", name: "LIBERTY", type: "ヤマハ ２８Ｓ", tcf: 0.701, port: "船橋" },
-                  { id: 43, group: "C", class: "Ⅴ", sail: "6112", name: "I'll go", type: "ヤマハ ２８Ｓ", tcf: 0.699, port: "夢の島" },
-                  { id: 44, group: "C", class: "Ⅴ", sail: "6736", name: "SAKURA", type: "ヤマハ２８S", tcf: 0.699, port: "浦安" },
-                  { id: 45, group: "C", class: "Ⅴ", sail: "-", name: "Milky Way Ⅲ", type: "ヤマハ ２８Ｓ", tcf: 0.699, port: "船橋" },
-                  { id: 46, group: "C", class: "Ⅴ", sail: "7172", name: "LAHAINA Ⅳ", type: "ヤマハ ２８Ｓ", tcf: 0.699, port: "船橋" },
-                  { id: 47, group: "C", class: "Ⅴ", sail: "5510", name: "NANUAQ", type: "ＯＫＡＺＡＫＩ 33", tcf: 0.698, port: "YBM" },
-                  { id: 48, group: "C", class: "Ⅴ", sail: "-", name: "AQUA", type: "林オーシャンブルー９９0", tcf: 0.696, port: "夢の島" },
-                  { id: 49, group: "C", class: "Ⅴ", sail: "-", name: "PANDORA4", type: "ＴＲＥＫＫＥＲ３４", tcf: 0.696, port: "浦安" },
-                  { id: 50, group: "C", class: "Ⅴ", sail: "4468", name: "FELIX", type: "Ｊ２４", tcf: 0.696, port: "ＹＹＣ" },
-                  { id: 51, group: "C", class: "Ⅴ", sail: "7054", name: "AURA", type: "オークレット２６ P", tcf: 0.696, port: "船橋" }
-                ],
-                myBoatId: 26, // デフォルト naonao
-                myBoat: {},
-                inputHours: 3,
-                inputMinutes: 0,
-                inputSeconds: 0,
-                selectedGroup: 'All',
-                selectedClass: 'All',
-                searchQuery: '',
-                sortBy: 'tcf_desc',
-                showExplanation: false,
-                copied: false,
+        // 完全ハードコーディングされた51艇のデータ
+        const FLEET = [
+            { id: 1, group: "A", class: "Ⅰ", sail: "6929", name: "ANTONIA", type: "マチアスパウゼン５７", tcf: 0.846, port: "夢の島" },
+            { id: 2, group: "A", class: "Ⅰ", sail: "3181", name: "Henrique Ⅸ", type: "OCEANIS 51.1", tcf: 0.841, port: "夢の島" },
+            { id: 3, group: "A", class: "Ⅰ", sail: "6854", name: "Blue Peter", type: "J111", tcf: 0.809, port: "浦安" },
+            { id: 4, group: "A", class: "Ⅰ", sail: "6095", name: "Laetitia Deux", type: "ＦＩＲＳＴ 40.7（＋１）", tcf: 0.798, port: "浦安" },
+            { id: 5, group: "A", class: "Ⅰ", sail: "4038", name: "SPIRIT OF URAYASU", type: "プレスト３６２", tcf: 0.796, port: "浦安" },
+            { id: 6, group: "A", class: "Ⅰ", sail: "6420", name: "SION", type: "横山３６クラス", tcf: 0.794, port: "夢の島" },
+            { id: 7, group: "A", class: "Ⅰ", sail: "1080", name: "FIRST LADY", type: "ＦＩＲＳＴ ４０.７", tcf: 0.784, port: "YBM" },
+            { id: 8, group: "A", class: "Ⅰ", sail: "6220", name: "Icarus", type: "３６.７", tcf: 0.781, port: "船橋" },
+            { id: 9, group: "A", class: "Ⅰ", sail: "6381", name: "Big Apple", type: "デュフォー３６（２）", tcf: 0.780, port: "夢の島" },
+            { id: 10, group: "A", class: "Ⅰ", sail: "6554", name: "L'SION", type: "ＤＵＦＯＵＲ ３６（２）", tcf: 0.780, port: "夢の島" },
+            { id: 11, group: "A", class: "Ⅱ", sail: "6269", name: "SAMOA", type: "デュフォー３４（１）", tcf: 0.762, port: "夢の島" },
+            { id: 12, group: "A", class: "Ⅱ", sail: "1125", name: "CADENZA", type: "ＥＬＡＮ ３４０", tcf: 0.762, port: "YBM" },
+            { id: 13, group: "A", class: "Ⅱ", sail: "3662", name: "LADY K", type: "ヤマハ ３３Ｓ", tcf: 0.760, port: "浦安" },
+            { id: 14, group: "A", class: "Ⅱ", sail: "6669", name: "GUMBO", type: "ヤマハ ３３Ｓ", tcf: 0.760, port: "浦安" },
+            { id: 15, group: "A", class: "Ⅱ", sail: "4323", name: "O&S", type: "デュフォー ３４", tcf: 0.758, port: "浦安" },
+            { id: 16, group: "A", class: "Ⅱ", sail: "5852", name: "EXOTIQUE", type: "プレスト ３１", tcf: 0.757, port: "YBM" },
+            { id: 17, group: "A", class: "Ⅱ", sail: "6846", name: "Big Dream", type: "ファースト３４．７", tcf: 0.754, port: "夢の島" },
+            { id: 18, group: "A", class: "Ⅱ", sail: "4500", name: "WHIPPET", type: "セーラ３２", tcf: 0.753, port: "YBM" },
+            { id: 19, group: "B", class: "Ⅲ", sail: "5824", name: "Blue Moon", type: "ヤマハ ３１Ｓ", tcf: 0.750, port: "船橋" },
+            { id: 20, group: "B", class: "Ⅲ", sail: "5545", name: "Black-Jack", type: "ババリア３５マッチ", tcf: 0.749, port: "夢の島" },
+            { id: 21, group: "B", class: "Ⅲ", sail: "5118", name: "Blue Peter", type: "ヤマハ３１S", tcf: 0.749, port: "夢の島" },
+            { id: 22, group: "B", class: "Ⅲ", sail: "6711", name: "STAR OF INDIA", type: "デュフォー３２クラシッ", tcf: 0.746, port: "浦安" },
+            { id: 23, group: "B", class: "Ⅲ", sail: "6806", name: "L'espoir", type: "ファースト300", tcf: 0.744, port: "船橋" },
+            { id: 24, group: "B", class: "Ⅲ", sail: "1010", name: "Wind Fairy", type: "ヤマハ３１Ｓ", tcf: 0.738, port: "浦安" },
+            { id: 25, group: "B", class: "Ⅲ", sail: "1455", name: "AKIZUSHIMA", type: "ババリア ３２", tcf: 0.738, port: "夢の島" },
+            { id: 26, group: "B", class: "Ⅲ", sail: "6817", name: "naonao", type: "ヤマハ３１Ｓ", tcf: 0.735, port: "浦安" },
+            { id: 27, group: "B", class: "Ⅲ", sail: "3570", name: "Team 104", type: "ヤマハ ３１Ｓ", tcf: 0.735, port: "船橋" },
+            { id: 28, group: "B", class: "Ⅲ", sail: "4565", name: "gordon", type: "ヤマハ ３１Ｓ", tcf: 0.735, port: "浦安" },
+            { id: 29, group: "B", class: "Ⅳ", sail: "1727", name: "ACCOMMODATION", type: "ヤマハ ３０Ｓ", tcf: 0.728, port: "船橋" },
+            { id: 30, group: "B", class: "Ⅳ", sail: "6680", name: "SOUBI", type: "スイング３１", tcf: 0.726, port: "夢の島" },
+            { id: 31, group: "B", class: "Ⅳ", sail: "6410", name: "Ocean Light", type: "横山３０", tcf: 0.724, port: "船橋" },
+            { id: 32, group: "B", class: "Ⅳ", sail: "3251", name: "Juggler", type: "Ｊ２４（ＯＨ）", tcf: 0.724, port: "YYC" },
+            { id: 33, group: "B", class: "Ⅳ", sail: "1008", name: "Sun Luck", type: "ヤマハ ３０Ｓ２", tcf: 0.718, port: "船橋" },
+            { id: 34, group: "B", class: "Ⅳ", sail: "150", name: "SHARK", type: "横山２９", tcf: 0.715, port: "夢の島" },
+            { id: 35, group: "B", class: "Ⅳ", sail: "1058", name: "TAM", type: "ヤマハ ３０Ｓ", tcf: 0.715, port: "船橋" },
+            { id: 36, group: "B", class: "Ⅳ", sail: "6449", name: "JADE", type: "Ｊ２４（マストハイク）", tcf: 0.713, port: "浦安" },
+            { id: 37, group: "B", class: "Ⅳ", sail: "5406", name: "WIND VALLEY", type: "ヤマハ ３０Ｓ１", tcf: 0.710, port: "船橋" },
+            { id: 38, group: "B", class: "Ⅳ", sail: "5714", name: "CRESCENT", type: "Ｊ２４", tcf: 0.709, port: "夢の島" },
+            { id: 39, group: "C", class: "Ⅴ", sail: "4801", name: "BIG MOUTH", type: "スポア９", tcf: 0.706, port: "船橋" },
+            { id: 40, group: "C", class: "Ⅴ", sail: "3055", name: "MILKY WAY", type: "ヤマハ２６Ⅱ", tcf: 0.705, port: "船橋" },
+            { id: 41, group: "C", class: "Ⅴ", sail: "6310", name: "SAKURA", type: "Ｊ２４", tcf: 0.702, port: "浦安" },
+            { id: 42, group: "C", class: "Ⅴ", sail: "4776", name: "LIBERTY", type: "ヤマハ ２８Ｓ", tcf: 0.701, port: "船橋" },
+            { id: 43, group: "C", class: "Ⅴ", sail: "6112", name: "I'll go", type: "ヤマハ ２８Ｓ", tcf: 0.699, port: "夢の島" },
+            { id: 44, group: "C", class: "Ⅴ", sail: "6736", name: "SAKURA", type: "ヤマハ２８S", tcf: 0.699, port: "浦安" },
+            { id: 45, group: "C", class: "Ⅴ", sail: "-", name: "Milky Way Ⅲ", type: "ヤマハ ２８Ｓ", tcf: 0.699, port: "船橋" },
+            { id: 46, group: "C", class: "Ⅴ", sail: "7172", name: "LAHAINA Ⅳ", type: "ヤマハ ２８Ｓ", tcf: 0.699, port: "船橋" },
+            { id: 47, group: "C", class: "Ⅴ", sail: "5510", name: "NANUAQ", type: "ＯＫＡＺＡＫＩ 33", tcf: 0.698, port: "YBM" },
+            { id: 48, group: "C", class: "Ⅴ", sail: "-", name: "AQUA", type: "林オーシャンブルー９９0", tcf: 0.696, port: "夢の島" },
+            { id: 49, group: "C", class: "Ⅴ", sail: "-", name: "PANDORA4", type: "ＴＲＥＫＫＥＲ３４", tcf: 0.696, port: "浦安" },
+            { id: 50, group: "C", class: "Ⅴ", sail: "4468", name: "FELIX", type: "Ｊ２４", tcf: 0.696, port: "ＹＹＣ" },
+            { id: 51, group: "C", class: "Ⅴ", sail: "7054", name: "AURA", type: "オークレット２６ P", tcf: 0.696, port: "船橋" }
+        ];
 
-                init() {
-                    this.updateMyBoat();
-                },
+        // 状態（State）
+        let state = {
+            myBoatId: 26, // デフォルト: naonao
+            h: 3,
+            m: 0,
+            s: 0,
+            group: 'All',
+            class: 'All',
+            search: ''
+        };
 
-                updateMyBoat() {
-                    const found = this.fleet.find(b => b.id == this.myBoatId);
-                    this.myBoat = found ? found : this.fleet[25];
-                },
+        // DOM要素の取得
+        const elSelect = document.getElementById('select-myboat');
+        const elValH = document.getElementById('val-h');
+        const elValM = document.getElementById('val-m');
+        const elValS = document.getElementById('val-s');
+        const elSummaryTcf = document.getElementById('summary-tcf');
+        const elSummaryCT = document.getElementById('summary-corrected-time');
+        const elResultList = document.getElementById('result-list');
+        const elCount = document.getElementById('count-display');
+        const elFilterGroup = document.getElementById('filter-group-container');
+        const elFilterClass = document.getElementById('filter-class-container');
+        const elSearch = document.getElementById('input-search');
 
-                resetTime() {
-                    this.inputHours = 3;
-                    this.inputMinutes = 0;
-                    this.inputSeconds = 0;
-                },
-
-                adjustMinutes(amount) {
-                    let totalMins = (this.inputHours * 60) + this.inputMinutes + amount;
-                    if (totalMins < 0) totalMins = 0;
-                    this.inputHours = Math.floor(totalMins / 60);
-                    this.inputMinutes = totalMins % 60;
-                },
-
-                adjustSeconds(amount) {
-                    let totalSecs = this.myTotalSeconds() + amount;
-                    if (totalSecs < 0) totalSecs = 0;
-                    this.inputHours = Math.floor(totalSecs / 3600);
-                    this.inputMinutes = Math.floor((totalSecs % 3600) / 60);
-                    this.inputSeconds = totalSecs % 60;
-                },
-
-                myTotalSeconds() {
-                    const h = parseInt(this.inputHours) || 0;
-                    const m = parseInt(this.inputMinutes) || 0;
-                    const s = parseInt(this.inputSeconds) || 0;
-                    return (h * 3600) + (m * 60) + s;
-                },
-
-                myCorrectedSeconds() {
-                    return this.myTotalSeconds() * (this.myBoat.tcf || 0.735);
-                },
-
-                targetElapsedTime(boat) {
-                    if (!boat.tcf) return 0;
-                    return this.myCorrectedSeconds() / boat.tcf;
-                },
-
-                physicalTimeGap(boat) {
-                    return this.targetElapsedTime(boat) - this.myTotalSeconds();
-                },
-
-                convertedTime(boat) {
-                    return this.myTotalSeconds() * boat.tcf;
-                },
-
-                gapSeconds(boat) {
-                    return this.myCorrectedSeconds() - this.convertedTime(boat);
-                },
-
-                formatTime(totalSeconds) {
-                    const isNegative = totalSeconds < 0;
-                    const absSeconds = Math.abs(Math.round(totalSeconds * 10) / 10);
-                    const hours = Math.floor(absSeconds / 3600);
-                    const minutes = Math.floor((absSeconds % 3600) / 60);
-                    const seconds = (absSeconds % 60).toFixed(1);
-
-                    let result = '';
-                    if (hours > 0) result += `${hours}h `;
-                    if (minutes > 0 || hours > 0) result += `${minutes}m `;
-                    result += `${seconds}s`;
-
-                    return isNegative ? `-${result}` : result;
-                },
-
-                formatDigital(totalSeconds) {
-                    const isNegative = totalSeconds < 0;
-                    const absSeconds = Math.abs(Math.round(totalSeconds));
-                    const hours = Math.floor(absSeconds / 3600);
-                    const minutes = Math.floor((absSeconds % 3600) / 60);
-                    const seconds = absSeconds % 60;
-
-                    const hh = String(hours).padStart(2, '0');
-                    const mm = String(minutes).padStart(2, '0');
-                    const ss = String(seconds).padStart(2, '0');
-
-                    return `${isNegative ? '-' : ''}${hh}:${mm}:${ss}`;
-                },
-
-                filteredFleet() {
-                    return this.fleet.filter(boat => {
-                        const matchesGroup = this.selectedGroup === 'All' || boat.group === this.selectedGroup;
-                        const matchesClass = this.selectedClass === 'All' || boat.class === this.selectedClass;
-                        
-                        const normQuery = this.searchQuery.toLowerCase();
-                        const matchesSearch = this.searchQuery === '' || 
-                          boat.name.toLowerCase().includes(normQuery) ||
-                          boat.type.toLowerCase().includes(normQuery) ||
-                          boat.sail.toLowerCase().includes(normQuery) ||
-                          boat.port.toLowerCase().includes(normQuery);
-
-                        return matchesGroup && matchesClass && matchesSearch;
-                    }).sort((a, b) => {
-                        if (this.sortBy === 'tcf_desc') return b.tcf - a.tcf;
-                        if (this.sortBy === 'tcf_asc') return a.tcf - b.tcf;
-                        if (this.sortBy === 'gap_asc') return this.gapSeconds(a) - this.gapSeconds(b);
-                        if (this.sortBy === 'gap_desc') return this.gapSeconds(b) - this.gapSeconds(a);
-                        if (this.sortBy === 'name') return a.name.localeCompare(b.name);
-                        return 0;
-                    });
-                },
-
-                copyShareText() {
-                    const baseSecs = this.myTotalSeconds();
-                    const corrSecs = this.myCorrectedSeconds();
-                    
-                    let text = `【ヨットレース・シミュレーション】\n`;
-                    text += `基準艇: ${this.myBoat.name} (TCF: ${this.myBoat.tcf})\n`;
-                    text += `所要時間: ${this.formatDigital(baseSecs)}\n`;
-                    text += `修正時間: ${this.formatDigital(corrSecs)}\n\n`;
-                    text += `ライバル艇の目標フィニッシュ時間（イーブンにするため）:\n`;
-                    
-                    const rivals = this.fleet.filter(b => b.id !== this.myBoat.id && (b.class === this.myBoat.class || b.group === this.myBoat.group)).slice(0, 5);
-                    rivals.forEach(b => {
-                        const target = this.targetElapsedTime(b);
-                        const gap = this.physicalTimeGap(b);
-                        text += `・${b.name} (${b.type}): 目標 ${this.formatDigital(target)} (差: ${gap > 0 ? '+' : ''}${Math.round(gap)}秒)\n`;
-                    });
-
-                    const tempInput = document.createElement("textarea");
-                    tempInput.value = text;
-                    document.body.appendChild(tempInput);
-                    tempInput.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(tempInput);
-
-                    this.copied = true;
-                    setTimeout(() => this.copied = false, 2000);
-                }
-            }
+        // フォーマット関数
+        function formatDigital(totalSeconds) {
+            const isNegative = totalSeconds < 0;
+            const abs = Math.abs(Math.round(totalSeconds));
+            const h = String(Math.floor(abs / 3600)).padStart(2, '0');
+            const m = String(Math.floor((abs % 3600) / 60)).padStart(2, '0');
+            const s = String(abs % 60).padStart(2, '0');
+            return `${isNegative ? '-' : ''}${h}:${m}:${s}`;
         }
+
+        // 初期化処理
+        function init() {
+            // セレクトボックスの生成
+            FLEET.forEach(boat => {
+                const opt = document.createElement('option');
+                opt.value = boat.id;
+                opt.textContent = `${boat.id === 26 ? '👑 ' : ''}${boat.name} (TCF: ${boat.tcf.toFixed(3)})`;
+                if(boat.id === state.myBoatId) opt.selected = true;
+                elSelect.appendChild(opt);
+            });
+
+            // フィルターボタン生成
+            const groups = ['All', 'A', 'B', 'C'];
+            groups.forEach(g => {
+                const btn = document.createElement('button');
+                btn.textContent = g === 'All' ? '全' : g;
+                btn.className = 'px-2 py-1 rounded text-xs font-bold border transition-colors ' + (state.group === g ? 'bg-cyan-500 text-slate-900 border-cyan-400' : 'bg-slate-900 text-slate-400 border-slate-700');
+                btn.onclick = () => { state.group = g; renderFilters(); renderList(); };
+                elFilterGroup.appendChild(btn);
+            });
+
+            const classes = ['All', 'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'];
+            classes.forEach(c => {
+                const btn = document.createElement('button');
+                btn.textContent = c === 'All' ? '全' : c;
+                btn.className = 'px-2 py-1 rounded text-xs font-bold border transition-colors ' + (state.class === c ? 'bg-blue-500 text-white border-blue-400' : 'bg-slate-900 text-slate-400 border-slate-700');
+                btn.onclick = () => { state.class = c; renderFilters(); renderList(); };
+                elFilterClass.appendChild(btn);
+            });
+
+            // イベントリスナーの登録
+            elSelect.addEventListener('change', (e) => {
+                state.myBoatId = parseInt(e.target.value);
+                renderAll();
+            });
+
+            elSearch.addEventListener('input', (e) => {
+                state.search = e.target.value.toLowerCase();
+                renderList();
+            });
+
+            // 時間調整ボタン
+            const adjustTime = (addH, addM, addS) => {
+                let totalS = (state.h * 3600) + (state.m * 60) + state.s;
+                totalS += (addH * 3600) + (addM * 60) + addS;
+                if(totalS < 0) totalS = 0;
+                
+                state.h = Math.floor(totalS / 3600);
+                state.m = Math.floor((totalS % 3600) / 60);
+                state.s = totalS % 60;
+                renderAll();
+            };
+
+            document.getElementById('btn-h-minus').onclick = () => adjustTime(-1, 0, 0);
+            document.getElementById('btn-h-plus').onclick = () => adjustTime(1, 0, 0);
+            document.getElementById('btn-m-minus').onclick = () => adjustTime(0, -1, 0);
+            document.getElementById('btn-m-plus').onclick = () => adjustTime(0, 1, 0);
+            document.getElementById('btn-s-minus').onclick = () => adjustTime(0, 0, -1);
+            document.getElementById('btn-s-plus').onclick = () => adjustTime(0, 0, 1);
+
+            document.getElementById('btn-sub-10m').onclick = () => adjustTime(0, -10, 0);
+            document.getElementById('btn-sub-1m').onclick = () => adjustTime(0, -1, 0);
+            document.getElementById('btn-add-1m').onclick = () => adjustTime(0, 1, 0);
+            document.getElementById('btn-add-10m').onclick = () => adjustTime(0, 10, 0);
+
+            document.getElementById('btn-reset-time').onclick = () => {
+                state.h = 3; state.m = 0; state.s = 0;
+                renderAll();
+            };
+
+            // コピー機能
+            document.getElementById('btn-share').onclick = () => {
+                const myB = FLEET.find(b => b.id === state.myBoatId);
+                const tS = (state.h * 3600) + (state.m * 60) + state.s;
+                const cS = tS * myB.tcf;
+                
+                let text = `基準: ${myB.name}\n所要: ${formatDigital(tS)}\n修正: ${formatDigital(cS)}\n\n【ライバル目標時間】\n`;
+                const filtered = getFilteredFleet().filter(b => b.id !== state.myBoatId).slice(0, 5);
+                filtered.forEach(b => {
+                    const tar = cS / b.tcf;
+                    const gap = tar - tS;
+                    text += `・${b.name}: ${formatDigital(tar)} (${gap >= 0 ? '+' : ''}${Math.round(gap)}秒)\n`;
+                });
+
+                const temp = document.createElement("textarea");
+                temp.value = text;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand("copy");
+                document.body.removeChild(temp);
+
+                const toast = document.getElementById('toast-copy');
+                toast.classList.remove('opacity-0');
+                setTimeout(() => toast.classList.add('opacity-0'), 2000);
+            };
+
+            // 初回描画
+            renderAll();
+        }
+
+        // フィルターボタンの見た目更新
+        function renderFilters() {
+            Array.from(elFilterGroup.children).forEach(btn => {
+                const g = btn.textContent === '全' ? 'All' : btn.textContent;
+                btn.className = 'px-3 py-1 rounded text-xs font-bold border transition-colors ' + (state.group === g ? 'bg-cyan-500 text-slate-900 border-cyan-400' : 'bg-slate-900 text-slate-400 border-slate-700');
+            });
+            Array.from(elFilterClass.children).forEach(btn => {
+                const c = btn.textContent === '全' ? 'All' : btn.textContent;
+                btn.className = 'px-3 py-1 rounded text-xs font-bold border transition-colors ' + (state.class === c ? 'bg-blue-500 text-white border-blue-400' : 'bg-slate-900 text-slate-400 border-slate-700');
+            });
+        }
+
+        // 絞り込みとソート処理
+        function getFilteredFleet() {
+            const myBoat = FLEET.find(b => b.id === state.myBoatId);
+            const totalS = (state.h * 3600) + (state.m * 60) + state.s;
+            const myCorS = totalS * myBoat.tcf;
+
+            let result = FLEET.filter(b => {
+                const matchG = state.group === 'All' || b.group === state.group;
+                const matchC = state.class === 'All' || b.class === state.class;
+                const matchS = state.search === '' || b.name.toLowerCase().includes(state.search) || b.sail.includes(state.search);
+                return matchG && matchC && matchS;
+            });
+
+            // 今回は TCF 降順固定でシンプルにする
+            result.sort((a, b) => b.tcf - a.tcf);
+            return result;
+        }
+
+        // リスト描画
+        function renderList() {
+            const list = getFilteredFleet();
+            const myBoat = FLEET.find(b => b.id === state.myBoatId);
+            const totalS = (state.h * 3600) + (state.m * 60) + state.s;
+            const myCorS = totalS * myBoat.tcf;
+
+            elCount.textContent = `該当: ${list.length} 艇`;
+            elResultList.innerHTML = '';
+
+            if(list.length === 0) {
+                elResultList.innerHTML = '<div class="text-center text-slate-500 text-sm py-8">該当する艇がありません。</div>';
+                return;
+            }
+
+            list.forEach(boat => {
+                const isSelf = boat.id === myBoat.id;
+                
+                // 計算
+                const targetTime = myCorS / boat.tcf;
+                const timeGap = targetTime - totalS;
+                const convertedTime = totalS * boat.tcf;
+                const gapToEven = myCorS - convertedTime;
+
+                // カードHTML構築
+                const card = document.createElement('div');
+                card.className = `bg-slate-800 rounded-xl p-3 border shadow-sm ${isSelf ? 'border-cyan-500 bg-cyan-950/20' : 'border-slate-700'}`;
+                
+                let html = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="flex items-center gap-1">
+                                ${isSelf ? '<span class="text-cyan-400 text-sm">👑</span>' : ''}
+                                <span class="font-bold text-slate-100 text-sm">${boat.name}</span>
+                                <span class="text-[10px] text-slate-500">#${boat.sail}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">${boat.type}</div>
+                        </div>
+                        <div class="text-right">
+                            <span class="bg-slate-900 text-slate-300 text-[9px] px-1.5 py-0.5 rounded border border-slate-700">${boat.group}G / ${boat.class}C</span>
+                            <div class="text-[10px] text-slate-400 mt-1">TCF: <span class="text-slate-200 font-bold">${boat.tcf.toFixed(3)}</span></div>
+                        </div>
+                    </div>
+                `;
+
+                // 下部：計算結果（2カラム）
+                html += `<div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-700/50">`;
+                
+                // 左: 目標時間
+                html += `
+                    <div class="bg-slate-900/50 rounded p-2">
+                        <div class="text-[9px] text-slate-400 mb-0.5">① 目標所要時間</div>
+                        <div class="font-mono font-bold text-sm ${isSelf ? 'text-cyan-400' : 'text-emerald-400'}">
+                            ${isSelf ? formatDigital(totalS) : formatDigital(targetTime)}
+                        </div>
+                        ${!isSelf ? `<div class="text-[9px] text-slate-500 mt-0.5">差: ${timeGap >= 0 ? '+' : ''}${Math.round(timeGap)}秒</div>` : '<div class="text-[9px] text-transparent mt-0.5">-</div>'}
+                    </div>
+                `;
+
+                // 右: ギャップ
+                const gapColor = gapToEven >= 0 ? 'text-amber-400' : 'text-rose-400';
+                html += `
+                    <div class="bg-slate-900/50 rounded p-2">
+                        <div class="text-[9px] text-slate-400 mb-0.5">② イーブン差(ギャップ)</div>
+                        <div class="font-mono text-xs text-slate-300">換算: ${formatDigital(convertedTime)}</div>
+                        ${!isSelf ? `<div class="text-[10px] font-bold font-mono mt-0.5 ${gapColor}">差: ${gapToEven >= 0 ? '+' : ''}${Math.round(gapToEven)}秒</div>` : '<div class="text-[10px] text-slate-500 mt-0.5">自艇基準 (±0)</div>'}
+                    </div>
+                `;
+                html += `</div>`;
+
+                card.innerHTML = html;
+                elResultList.appendChild(card);
+            });
+        }
+
+        // 状態を画面全体に反映
+        function renderAll() {
+            elValH.textContent = state.h;
+            elValM.textContent = state.m;
+            elValS.textContent = state.s;
+
+            const myBoat = FLEET.find(b => b.id === state.myBoatId);
+            const totalS = (state.h * 3600) + (state.m * 60) + state.s;
+            const myCorS = totalS * myBoat.tcf;
+
+            elSummaryTcf.textContent = `TCF: ${myBoat.tcf.toFixed(3)}`;
+            elSummaryCT.textContent = formatDigital(myCorS);
+
+            renderList();
+        }
+
+        // アプリ起動
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
+
 
