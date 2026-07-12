@@ -3,44 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ヨットレース・レーティングシミュレーター</title>
+    <title>東京ベイオープン・レーティング計算機</title>
     <!-- Tailwind CSS (Aesthetics and utility classes) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js (Reactive state management in single file) -->
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Tailwind Config for Dark Mode styling -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        slate: {
-                            750: '#1e293b',
-                            850: '#1e293b',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Custom scrollbar styling for slick design */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+        /* タッチターゲットを確保するスタイル */
+        button, select, input {
+            touch-action: manipulation;
         }
     </style>
 </head>
@@ -51,14 +22,14 @@
     <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-20 shadow-md px-4 py-3">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-                <div class="p-2 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg shadow-inner text-white">
-                    <i data-lucide="anchor" class="w-6 h-6"></i>
+                <div class="p-2 bg-cyan-600 text-white rounded-lg font-bold text-xl">
+                    ⛵
                 </div>
                 <div>
-                    <h1 class="text-lg md:text-xl font-bold bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+                    <h1 class="text-base md:text-lg font-bold text-white">
                         東京ベイオープン・レーティング計算機
                     </h1>
-                    <p class="text-xs text-slate-400">
+                    <p class="text-[11px] text-slate-400">
                         レーティングを用いた「イーブン（同修正時間）」目標値シミュレーター
                     </p>
                 </div>
@@ -66,17 +37,15 @@
             <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
                 <button 
                     @click="showExplanation = true"
-                    class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs rounded-lg transition-all border border-slate-600"
+                    class="flex items-center gap-1 px-3 py-1.5 bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs rounded-lg transition-all border border-slate-600"
                 >
-                    <i data-lucide="help-circle" class="w-4 h-4 text-cyan-400"></i>
-                    <span>計算の解説</span>
+                    <span>💡 計算の解説</span>
                 </button>
                 <button 
                     @click="copyShareText()"
-                    class="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium rounded-lg transition-all shadow-sm shadow-cyan-900/30"
+                    class="flex items-center gap-1 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-lg transition-all"
                 >
-                    <i data-lucide="share-2" class="w-4 h-4"></i>
-                    <span>結果をコピー</span>
+                    <span>📋 結果をコピー</span>
                 </button>
             </div>
         </div>
@@ -92,11 +61,10 @@
                 <div class="absolute top-0 left-0 w-2 h-full bg-cyan-500"></div>
                 
                 <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="compass" class="w-5 h-5 text-cyan-400"></i>
-                        <h2 class="text-base font-bold text-slate-200">基準艇・所要時間の設定</h2>
-                    </div>
-                    <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-0.5 rounded-full border border-slate-600/50" x-text="'基準: ' + myBoat.name">
+                    <h2 class="text-sm font-bold text-slate-200 flex items-center gap-1.5">
+                        🧭 基準艇・所要時間の設定
+                    </h2>
+                    <span class="text-[11px] text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded-full border border-cyan-800" x-text="'基準: ' + myBoat.name">
                     </span>
                 </div>
 
@@ -106,7 +74,7 @@
                     <select 
                         x-model="myBoatId" 
                         @change="updateMyBoat()"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition cursor-pointer"
                     >
                         <template x-for="boat in fleet" :key="boat.id">
                             <option :value="boat.id" x-text="(boat.id === 26 ? '👑 ' : '') + boat.name + ' [' + boat.type + '] (TCF: ' + boat.tcf.toFixed(3) + ')'"></option>
@@ -115,69 +83,56 @@
                     <p class="text-[11px] text-slate-500 mt-1">※ デフォルトは33行目の「naonao」(TCF: 0.735)に設定されています。</p>
                 </div>
 
-                <!-- 時間入力エリア -->
+                <!-- 時間入力エリア (確実に動く入力ボックス＆ボタンに変更) -->
                 <div class="mb-5 bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center justify-between mb-3">
                         <span class="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                            <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i> 基準の所要時刻 (実時間)
+                            ⏱️ 基準の所要時刻 (実時間)
                         </span>
                         <button 
                             @click="resetTime()"
-                            class="text-slate-500 hover:text-slate-300 text-xs flex items-center gap-0.5 transition"
+                            class="text-slate-400 hover:text-slate-200 text-xs flex items-center gap-0.5 transition"
                         >
-                            <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
-                            <span>3時間に戻す</span>
+                            🔄 3時間に戻す
                         </button>
                     </div>
 
-                    <!-- H/M/S 入力スピンナー -->
-                    <div class="grid grid-cols-3 gap-3 text-center">
+                    <!-- 直接キー入力もボタン増減も可能なハイブリッド時間設定 -->
+                    <div class="grid grid-cols-3 gap-2 text-center mb-4">
                         <div>
-                          <div class="text-[10px] text-slate-500 font-semibold mb-1">時間 (H)</div>
-                          <div class="flex items-center justify-between bg-slate-900 rounded-lg p-1 border border-slate-700">
-                            <button @click="inputHours = Math.max(0, inputHours - 1)" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
-                              <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-                            </button>
-                            <span class="text-lg font-bold text-slate-100" x-text="inputHours"></span>
-                            <button @click="inputHours++" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
-                              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            </button>
-                          </div>
+                            <div class="text-[10px] text-slate-500 font-semibold mb-1">時間 (H)</div>
+                            <div class="flex items-center bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+                                <button @click="inputHours = Math.max(0, inputHours - 1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">-</button>
+                                <input type="number" min="0" max="23" x-model.number="inputHours" class="flex-1 bg-transparent text-center text-base font-bold text-slate-100 focus:outline-none w-full" />
+                                <button @click="inputHours++" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">+</button>
+                            </div>
                         </div>
 
                         <div>
-                          <div class="text-[10px] text-slate-500 font-semibold mb-1">分 (M)</div>
-                          <div class="flex items-center justify-between bg-slate-900 rounded-lg p-1 border border-slate-700">
-                            <button @click="adjustMinutes(-1)" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
-                              <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-                            </button>
-                            <span class="text-lg font-bold text-slate-100" x-text="inputMinutes"></span>
-                            <button @click="adjustMinutes(1)" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
-                              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            </button>
-                          </div>
+                            <div class="text-[10px] text-slate-500 font-semibold mb-1">分 (M)</div>
+                            <div class="flex items-center bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+                                <button @click="adjustMinutes(-1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">-</button>
+                                <input type="number" min="0" max="59" x-model.number="inputMinutes" class="flex-1 bg-transparent text-center text-base font-bold text-slate-100 focus:outline-none w-full" />
+                                <button @click="adjustMinutes(1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">+</button>
+                            </div>
                         </div>
 
                         <div>
-                          <div class="text-[10px] text-slate-500 font-semibold mb-1">秒 (S)</div>
-                          <div class="flex items-center justify-between bg-slate-900 rounded-lg p-1 border border-slate-700">
-                            <button @click="adjustSeconds(-1)" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
-                              <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-                            </button>
-                            <span class="text-lg font-bold text-slate-100" x-text="inputSeconds"></span>
-                            <button @click="adjustSeconds(1)" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
-                              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            </button>
-                          </div>
+                            <div class="text-[10px] text-slate-500 font-semibold mb-1">秒 (S)</div>
+                            <div class="flex items-center bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+                                <button @click="adjustSeconds(-1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">-</button>
+                                <input type="number" min="0" max="59" x-model.number="inputSeconds" class="flex-1 bg-transparent text-center text-base font-bold text-slate-100 focus:outline-none w-full" />
+                                <button @click="adjustSeconds(1)" class="w-8 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg select-none">+</button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- 揺れ対応クイックボタン -->
-                    <div class="grid grid-cols-4 gap-1.5 mt-3">
-                        <button @click="adjustMinutes(-10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1 rounded transition border border-slate-700">-10分</button>
-                        <button @click="adjustMinutes(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1 rounded transition border border-slate-700">-1分</button>
-                        <button @click="adjustMinutes(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1 rounded transition border border-slate-700">+1分</button>
-                        <button @click="adjustMinutes(10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1 rounded transition border border-slate-700">+10分</button>
+                    <!-- 船上での操作を楽にする1分、10分一発増減ショートカット -->
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button @click="adjustMinutes(-10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded transition border border-slate-700 font-medium">-10分</button>
+                        <button @click="adjustMinutes(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded transition border border-slate-700 font-medium">-1分</button>
+                        <button @click="adjustMinutes(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded transition border border-slate-700 font-medium">+1分</button>
+                        <button @click="adjustMinutes(10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded transition border border-slate-700 font-medium">+10分</button>
                     </div>
                 </div>
 
@@ -189,7 +144,7 @@
                     </div>
                     <div class="flex justify-between items-center text-xs">
                         <span class="text-slate-400">自艇レーティング (TCF)</span>
-                        <span class="font-mono font-bold text-cyan-400 text-sm" x-text="myBoat.tcf.toFixed(3)"></span>
+                        <span class="font-mono font-bold text-cyan-400 text-sm" x-text="myBoat.tcf ? myBoat.tcf.toFixed(3) : '0.000'"></span>
                     </div>
                     <div class="flex justify-between items-center p-3 bg-cyan-950/40 border border-cyan-800/50 rounded-xl">
                         <div>
@@ -207,18 +162,17 @@
 
             <!-- 解説ボックス -->
             <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700/80 shadow-md">
-                <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-1.5">
-                    <i data-lucide="info" class="w-4 h-4 text-cyan-400"></i>
-                    <span>シミュレーションの考え方</span>
+                <h3 class="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1">
+                    ℹ️ シミュレーションの考え方
                 </h3>
                 <ul class="text-xs text-slate-400 space-y-2.5 leading-relaxed">
                     <li>
                         <strong class="text-slate-300">① 目標所要時間:</strong><br />
-                        ライバルがあなたと同位（修正秒でイーブン）になるために必要な、相手の<span class="text-cyan-400">実際のフィニッシュ実時間</span>です。
+                        他艇があなたと同位（修正時間で同タイム）になるために必要な、相手の<span class="text-cyan-400">フィニッシュ所要実時間</span>です。
                     </li>
                     <li>
                         <strong class="text-slate-300">② イーブンにするためのギャップ:</strong><br />
-                        もし他艇と完全に同時フィニッシュした場合、<span class="text-amber-400">修正時間上で発生するタイム差（秒）</span>を表します。
+                        もし他艇と同じ実時間でフィニッシュした場合に発生する、<span class="text-amber-400">修正時間上のギャップ差（秒）</span>を表します。
                     </li>
                 </ul>
             </div>
@@ -233,14 +187,11 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <i data-lucide="search" class="w-4 h-4 text-slate-500"></i>
-                        </span>
                         <input 
                             type="text" 
                             x-model="searchQuery"
-                            placeholder="艇名、艇種、セール№、泊地で検索..." 
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                            placeholder="🔍 艇名、艇種、セール№で検索..." 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-3 pr-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                         />
                     </div>
 
@@ -262,28 +213,24 @@
                 <!-- フィルターボタン -->
                 <div class="space-y-2 pt-2 border-t border-slate-700/50">
                     <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                        <span class="text-slate-500 font-semibold mr-1 flex items-center gap-1">
-                            <i data-lucide="layers" class="w-3 h-3"></i> グループ:
-                        </span>
+                        <span class="text-slate-500 font-semibold mr-1">👥 グループ:</span>
                         <template x-for="g in ['All', 'A', 'B', 'C']">
                             <button
                                 @click="selectedGroup = g"
-                                :class="selectedGroup === g ? 'bg-cyan-500 text-slate-950 border-cyan-400' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'"
-                                class="px-2.5 py-1 rounded-md border font-medium transition"
+                                :class="selectedGroup === g ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'"
+                                class="px-2.5 py-1 rounded-md border text-[11px] transition"
                                 x-text="g === 'All' ? 'すべて' : g + 'グループ'"
                             ></button>
                         </template>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                        <span class="text-slate-500 font-semibold mr-1 flex items-center gap-1">
-                            <i data-lucide="sliders-horizontal" class="w-3 h-3"></i> クラス:
-                        </span>
+                        <span class="text-slate-500 font-semibold mr-1">🏷️ クラス:</span>
                         <template x-for="c in ['All', 'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ']">
                             <button
                                 @click="selectedClass = c"
-                                :class="selectedClass === c ? 'bg-blue-500 text-white border-blue-400' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'"
-                                class="px-2.5 py-1 rounded-md border font-medium transition"
+                                :class="selectedClass === c ? 'bg-blue-500 text-white border-blue-400 font-bold' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'"
+                                class="px-2.5 py-1 rounded-md border text-[11px] transition"
                                 x-text="c === 'All' ? 'すべて' : c + 'クラス'"
                             ></button>
                         </template>
@@ -300,13 +247,13 @@
             <!-- リストエリア -->
             <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-md overflow-hidden">
                 
-                <!-- デスクトップ用テーブル -->
+                <!-- デスクトップ用テーブル (md以上) -->
                 <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-900/80 border-b border-slate-700 text-slate-400 text-[11px] font-bold tracking-wider">
                                 <th class="py-3 px-3 text-center">№</th>
-                                <th className="py-3 px-3">艇名 / 艇種</th>
+                                <th class="py-3 px-3">艇名 / 艇種</th>
                                 <th class="py-3 px-2 text-center">G/C</th>
                                 <th class="py-3 px-2 text-center">TCF</th>
                                 <th class="py-3 px-3 text-right">① 目標所要時間</th>
@@ -362,7 +309,7 @@
                     </table>
                 </div>
 
-                <!-- モバイル用カードリスト -->
+                <!-- モバイル用カードリスト (画面が小さい時) -->
                 <div class="block md:hidden divide-y divide-slate-700/60">
                     <template x-for="boat in filteredFleet()" :key="boat.id">
                         <div :class="boat.id === myBoat.id ? 'bg-cyan-950/40 border-l-4 border-cyan-500' : 'active:bg-slate-750'" class="p-4">
@@ -415,7 +362,7 @@
                     </template>
                 </div>
 
-                <div x-show="filteredFleet().length === 0" class="p-8 text-center text-slate-500">
+                <div x-show="filteredFleet().length === 0" class="p-8 text-center text-slate-500" style="display: none;">
                     条件に合うヨットが見つかりませんでした。フィルター設定や検索キーワードを変更してください。
                 </div>
 
@@ -435,9 +382,8 @@
 
     <!-- コピー通知トースト -->
     <div x-show="copied" x-transition 
-         class="fixed bottom-5 right-5 bg-emerald-600 border border-emerald-500 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 z-50">
-        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
-        <span class="text-xs font-semibold">シミュレーション結果をコピーしました！</span>
+         class="fixed bottom-5 right-5 bg-emerald-600 border border-emerald-500 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 z-50" style="display: none;">
+        <span class="text-xs font-semibold">📋 結果をコピーしました！</span>
     </div>
 
     <!-- 解説モーダル -->
@@ -445,8 +391,7 @@
         <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto" @click.away="showExplanation = false">
             <div class="flex items-center justify-between border-b border-slate-700 pb-3">
                 <h3 class="text-base font-bold text-white flex items-center gap-1.5">
-                    <i data-lucide="help-circle" class="w-5 h-5 text-cyan-400"></i>
-                    <span>レーティング計算式の解説</span>
+                    💡 レーティング計算式の解説
                 </h3>
                 <button @click="showExplanation = false" class="text-slate-400 hover:text-white text-lg font-bold px-2">✕</button>
             </div>
@@ -497,7 +442,6 @@
     <script>
         function yachtSimulator() {
             return {
-                // 全51艇のデータをハードコーディング
                 fleet: [
                   { id: 1, group: "A", class: "Ⅰ", sail: "6929", name: "ANTONIA", type: "マチアスパウゼン５７", tcf: 0.846, port: "夢の島" },
                   { id: 2, group: "A", class: "Ⅰ", sail: "3181", name: "Henrique Ⅸ", type: "OCEANIS 51.1", tcf: 0.841, port: "夢の島" },
@@ -551,7 +495,7 @@
                   { id: 50, group: "C", class: "Ⅴ", sail: "4468", name: "FELIX", type: "Ｊ２４", tcf: 0.696, port: "ＹＹＣ" },
                   { id: 51, group: "C", class: "Ⅴ", sail: "7054", name: "AURA", type: "オークレット２６ P", tcf: 0.696, port: "船橋" }
                 ],
-                myBoatId: 26, // 初期値は naonao
+                myBoatId: 26, // デフォルト naonao
                 myBoat: {},
                 inputHours: 3,
                 inputMinutes: 0,
@@ -565,12 +509,6 @@
 
                 init() {
                     this.updateMyBoat();
-                    // Lucideアイコンの初期化
-                    setTimeout(() => {
-                        if (typeof lucide !== 'undefined') {
-                            lucide.createIcons();
-                        }
-                    }, 100);
                 },
 
                 updateMyBoat() {
@@ -600,14 +538,18 @@
                 },
 
                 myTotalSeconds() {
-                    return (this.inputHours * 3600) + (this.inputMinutes * 60) + this.inputSeconds;
+                    const h = parseInt(this.inputHours) || 0;
+                    const m = parseInt(this.inputMinutes) || 0;
+                    const s = parseInt(this.inputSeconds) || 0;
+                    return (h * 3600) + (m * 60) + s;
                 },
 
                 myCorrectedSeconds() {
-                    return this.myTotalSeconds() * this.myBoat.tcf;
+                    return this.myTotalSeconds() * (this.myBoat.tcf || 0.735);
                 },
 
                 targetElapsedTime(boat) {
+                    if (!boat.tcf) return 0;
                     return this.myCorrectedSeconds() / boat.tcf;
                 },
 
@@ -692,7 +634,6 @@
                         text += `・${b.name} (${b.type}): 目標 ${this.formatDigital(target)} (差: ${gap > 0 ? '+' : ''}${Math.round(gap)}秒)\n`;
                     });
 
-                    // Clipboard fallback
                     const tempInput = document.createElement("textarea");
                     tempInput.value = text;
                     document.body.appendChild(tempInput);
