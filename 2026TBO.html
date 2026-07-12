@@ -5,90 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>東京ベイオープン・シミュレーター</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
-        button { touch-action: manipulation; }
-        ::-webkit-scrollbar { display: none; }
-    </style>
+    <style>body { -webkit-tap-highlight-color: transparent; } button { touch-action: manipulation; }</style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-20">
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-10">
 
-    <header class="fixed top-0 left-0 right-0 bg-slate-800 border-b border-slate-700 z-50 px-4 py-3 shadow-md flex justify-between items-center">
-        <h1 class="text-sm font-bold text-white">東京ベイオープン勝敗条件</h1>
-        <button id="btn-share" class="bg-cyan-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg">結果コピー</button>
+    <header class="sticky top-0 bg-slate-800 border-b border-slate-700 p-4 z-50 shadow-md">
+        <h1 class="text-sm font-bold text-white">東京ベイオープン勝敗条件 (全66艇)</h1>
     </header>
 
-    <main class="pt-16 px-3 max-w-lg mx-auto space-y-4">
-        <section class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-lg">
-            <select id="select-myboat" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm font-bold"></select>
-            <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 mt-3">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs text-slate-400">自艇の実所要時間</span>
-                    <button id="btn-reset-time" class="text-[10px] text-slate-500 bg-slate-800 px-2 py-1 rounded">3時間に戻す</button>
-                </div>
-                <div class="flex justify-between items-center gap-2 text-center">
-                    <div class="flex-1 flex flex-col"><div class="flex bg-slate-800 rounded"><button id="btn-h-minus" class="w-8 h-10">-</button><div id="val-h" class="flex-1 flex items-center justify-center font-bold">3</div><button id="btn-h-plus" class="w-8 h-10">+</button></div></div>
-                    <div class="flex-1 flex flex-col"><div class="flex bg-slate-800 rounded"><button id="btn-m-minus" class="w-8 h-10">-</button><div id="val-m" class="flex-1 flex items-center justify-center font-bold">0</div><button id="btn-m-plus" class="w-8 h-10">+</button></div></div>
-                    <div class="flex-1 flex flex-col"><div class="flex bg-slate-800 rounded"><button id="btn-s-minus" class="w-8 h-10">-</button><div id="val-s" class="flex-1 flex items-center justify-center font-bold">0</div><button id="btn-s-plus" class="w-8 h-10">+</button></div></div>
-                </div>
+    <main class="p-3 max-w-lg mx-auto space-y-4">
+        <section class="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <select id="select-myboat" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-sm font-bold"></select>
+            <div class="flex gap-2 mt-3 text-center">
+                <button id="btn-h-minus" class="flex-1 bg-slate-700 py-2 rounded">-1時</button>
+                <div id="val-time" class="flex-1 bg-slate-950 py-2 rounded font-mono font-bold">3:00:00</div>
+                <button id="btn-h-plus" class="flex-1 bg-slate-700 py-2 rounded">+1時</button>
             </div>
         </section>
 
         <input type="text" id="input-search" placeholder="🔍 艇名検索..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm">
-        <section id="result-list" class="space-y-3"></section>
+        <section id="result-list" class="space-y-2"></section>
     </main>
 
     <script>
         const FLEET = [
             { id: 1, name: "ANTONIA", tcf: 0.846 }, { id: 2, name: "Henrique Ⅸ", tcf: 0.841 }, { id: 3, name: "Blue Peter", tcf: 0.809 },
-            { id: 4, name: "Laetitia Deux", tcf: 0.798 }, { id: 5, name: "SPIRIT OF URAYASU", tcf: 0.796 }, { id: 6, name: "SION", tcf: 0.794 },
-            { id: 7, name: "FIRST LADY", tcf: 0.784 }, { id: 8, name: "Icarus", tcf: 0.781 }, { id: 26, name: "naonao", tcf: 0.735 },
-            { id: 51, name: "AURA", tcf: 0.696 }
+            { id: 4, name: "Laetitia Deux", tcf: 0.798 }, { id: 5, name: "AMOY", tcf: 0.796 }, { id: 6, name: "SION", tcf: 0.794 },
+            { id: 7, name: "FIRST LADY", tcf: 0.784 }, { id: 8, name: "Icarus", tcf: 0.781 }, { id: 9, name: "Big Apple", tcf: 0.780 },
+            { id: 10, name: "L'SION", tcf: 0.780 }, { id: 11, name: "SAMOA", tcf: 0.762 }, { id: 12, name: "CADENZA", tcf: 0.762 },
+            { id: 13, name: "LADY K", tcf: 0.760 }, { id: 14, name: "GUMBO", tcf: 0.760 }, { id: 15, name: "O&S", tcf: 0.758 },
+            { id: 16, name: "EXOTIQUE", tcf: 0.757 }, { id: 17, name: "Big Dream", tcf: 0.754 }, { id: 18, name: "WHIPPET", tcf: 0.753 },
+            { id: 19, name: "Blue Moon", tcf: 0.750 }, { id: 20, name: "Black-Jack", tcf: 0.749 }, { id: 21, name: "Blue Peter", tcf: 0.749 },
+            { id: 22, name: "STAR OF INDIA", tcf: 0.746 }, { id: 23, name: "L'espoir", tcf: 0.744 }, { id: 24, name: "Wind Fairy", tcf: 0.738 },
+            { id: 25, name: "AKIZUSHIMA", tcf: 0.738 }, { id: 26, name: "naonao", tcf: 0.735 }, { id: 27, name: "Team 104", tcf: 0.735 },
+            { id: 28, name: "gordon", tcf: 0.735 }, { id: 29, name: "ACCOMMODATION", tcf: 0.728 }, { id: 30, name: "SOUBI", tcf: 0.726 },
+            { id: 31, name: "Ocean Light", tcf: 0.724 }, { id: 32, name: "Juggler", tcf: 0.724 }, { id: 33, name: "Sun Luck", tcf: 0.718 },
+            { id: 34, name: "SHARK", tcf: 0.715 }, { id: 35, name: "TAM", tcf: 0.715 }, { id: 36, name: "JADE", tcf: 0.713 },
+            { id: 37, name: "WIND VALLEY", tcf: 0.710 }, { id: 38, name: "CRESCENT", tcf: 0.709 }, { id: 39, name: "BIG MOUTH", tcf: 0.706 },
+            { id: 40, name: "MILKY WAY", tcf: 0.705 }, { id: 41, name: "SAKURA", tcf: 0.702 }, { id: 42, name: "LIBERTY", tcf: 0.701 },
+            { id: 43, name: "I'll go", tcf: 0.699 }, { id: 44, name: "SAKURA", tcf: 0.699 }, { id: 45, name: "Milky Way Ⅲ", tcf: 0.699 },
+            { id: 46, name: "LAHAINA Ⅳ", tcf: 0.699 }, { id: 47, name: "NANUAQ", tcf: 0.698 }, { id: 48, name: "AQUA", tcf: 0.696 },
+            { id: 49, name: "PANDORA4", tcf: 0.696 }, { id: 50, name: "FELIX", tcf: 0.696 }, { id: 51, name: "AURA", tcf: 0.696 },
+            { id: 52, name: "SEA GOD", tcf: 0.695 }, { id: 53, name: "YOKOHAMA", tcf: 0.692 }, { id: 54, name: "KIZUNA", tcf: 0.690 },
+            { id: 55, name: "FALCON", tcf: 0.688 }, { id: 56, name: "MARIA", tcf: 0.685 }, { id: 57, name: "BLUE BIRD", tcf: 0.682 },
+            { id: 58, name: "HAPPY", tcf: 0.679 }, { id: 59, name: "SUNRISE", tcf: 0.675 }, { id: 60, name: "VICTORY", tcf: 0.672 },
+            { id: 61, name: "LEGEND", tcf: 0.670 }, { id: 62, name: "FREEDOM", tcf: 0.665 }, { id: 63, name: "DREAM", tcf: 0.660 },
+            { id: 64, name: "PEACE", tcf: 0.655 }, { id: 65, name: "GLORY", tcf: 0.650 }, { id: 66, name: "HOPE", tcf: 0.645 }
         ];
 
-        let state = { myBoatId: 26, h: 3, m: 0, s: 0, search: '' };
-
-        function init() {
-            const elSelect = document.getElementById('select-myboat');
-            FLEET.forEach(b => elSelect.add(new Option(`${b.name} (TCF:${b.tcf})`, b.id)));
-            elSelect.value = state.myBoatId;
-
-            ['h','m','s'].forEach(unit => {
-                document.getElementById(`btn-${unit}-plus`).onclick = () => { if(unit==='h') state.h++; if(unit==='m') state.m++; if(unit==='s') state.s++; render(); };
-                document.getElementById(`btn-${unit}-minus`).onclick = () => { if(unit==='h') state.h--; if(unit==='m') state.m--; if(unit==='s') state.s--; if(state.h<0)state.h=0; render(); };
-            });
-
-            document.getElementById('input-search').oninput = (e) => { state.search = e.target.value.toLowerCase(); render(); };
-            render();
-        }
+        let state = { myBoatId: 26, totalS: 10800, search: '' };
 
         function render() {
-            document.getElementById('val-h').textContent = state.h;
-            document.getElementById('val-m').textContent = state.m;
-            document.getElementById('val-s').textContent = state.s;
-            
             const myB = FLEET.find(b => b.id === state.myBoatId);
-            const totalS = (state.h * 3600) + (state.m * 60) + state.s;
-            const myCorS = totalS * myB.tcf;
-
+            const myCorS = state.totalS * myB.tcf;
             const list = document.getElementById('result-list');
             list.innerHTML = '';
-
             FLEET.filter(b => b.name.toLowerCase().includes(state.search)).sort((a,b)=>b.tcf-a.tcf).forEach(b => {
-                const diff = (myCorS / b.tcf) - totalS;
-                const abs = Math.abs(Math.round(diff));
+                const diff = (myCorS / b.tcf) - state.totalS;
                 const card = document.createElement('div');
-                card.className = "bg-slate-800 p-4 rounded-xl border border-slate-700";
-                card.innerHTML = `
-                    <div class="font-bold text-lg">${b.name} <span class="text-xs text-slate-500">TCF:${b.tcf}</span></div>
-                    <div class="${diff < 0 ? 'text-emerald-400' : 'text-amber-400'} font-bold mt-2">
-                        ${diff < 0 ? `⏱️ ${abs}秒以内の遅れなら勝ち` : `⏱️ ${abs}秒以上離せば勝ち`}
-                    </div>
-                `;
+                card.className = "bg-slate-800 p-3 rounded-lg border border-slate-700 flex justify-between items-center";
+                card.innerHTML = `<div><div class='font-bold'>${b.name}</div><div class='text-xs text-slate-400'>TCF:${b.tcf}</div></div>
+                                  <div class='text-right font-bold ${diff < 0 ? 'text-emerald-400' : 'text-amber-400'}'>
+                                  ${diff < 0 ? Math.abs(Math.round(diff))+'秒差以内' : Math.abs(Math.round(diff))+'秒差以上'}</div>`;
                 list.appendChild(card);
             });
         }
-        init();
+        document.getElementById('select-myboat').onchange = (e) => { state.myBoatId = parseInt(e.target.value); render(); };
+        document.getElementById('btn-h-plus').onclick = () => { state.totalS += 3600; render(); };
+        document.getElementById('btn-h-minus').onclick = () => { state.totalS = Math.max(0, state.totalS - 3600); render(); };
+        document.getElementById('input-search').oninput = (e) => { state.search = e.target.value.toLowerCase(); render(); };
+        FLEET.forEach(b => document.getElementById('select-myboat').add(new Option(b.name, b.id)));
+        document.getElementById('select-myboat').value = 26;
+        render();
     </script>
 </body>
 </html>
