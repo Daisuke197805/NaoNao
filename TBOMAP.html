@@ -70,9 +70,9 @@ button.active{
 </div>
 
 <div id="buttons">
-<button class="active" onclick="selectMark(0)">①</button>
-<button onclick="selectMark(1)">②</button>
-<button onclick="selectMark(2)">③</button>
+    <button class="active" onclick="selectMark(0)">①</button>
+    <button onclick="selectMark(1)">②</button>
+    <button onclick="selectMark(2)">③</button>
 </div>
 
 <script>
@@ -186,26 +186,19 @@ function updatePosition(pos){
 
 function selectMark(index){
 
-    selected=index;
+    selected = index;
 
-    document.getElementById("targetName").innerHTML=
+    document.getElementById("targetName").textContent =
         marks[index].name;
 
-    document
-        .querySelectorAll("button")
-        .forEach((b,i)=>{
+    const buttons =
+        document.querySelectorAll("#buttons button");
 
-            if(i===index){
+    buttons.forEach((button, i) => {
 
-                b.classList.add("active");
+        button.classList.toggle("active", i === index);
 
-            }else{
-
-                b.classList.remove("active");
-
-            }
-
-        });
+    });
 
 }
 
