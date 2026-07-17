@@ -83,13 +83,13 @@
     background: #fff;
   }
 
-  /* ===== Summary ===== */
+  /* ===== Summary (数字のみ) ===== */
   .summary { display: flex; gap: 8px; }
   .sum-box {
     flex: 1; padding: 10px; border-radius: 8px; text-align: center;
   }
-  .sum-box .num { font-size: 22px; font-weight: 700; }
-  .sum-box .lbl { font-size: 11px; margin-top: 2px; }
+  .sum-box .num { font-size: 24px; font-weight: 700; }
+  .sum-box .lbl { font-size: 11px; margin-top: 2px; color: #6b7280; }
   .sum-adv { background: #dcfce7; color: #166534; }
   .sum-eq  { background: #f3f4f6; color: #374151; }
   .sum-dis { background: #fee2e2; color: #991b1b; }
@@ -119,13 +119,10 @@
   .card-verdict {
     margin-top: 10px; padding: 8px 10px;
     border-radius: 6px; font-size: 13px;
+    background: #f9fafb;
   }
-  .verdict-adv { background: #dcfce7; color: #14532d; }
-  .verdict-eq  { background: #f3f4f6; color: #1f2937; }
-  .verdict-dis { background: #fee2e2; color: #7f1d1d; }
-  .verdict-label { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
-  .verdict-main { font-size: 14px; font-weight: 600; }
-  .verdict-sub  { font-size: 11px; opacity: 0.8; margin-top: 3px; }
+  .verdict-main { font-size: 14px; font-weight: 600; color: #111827; }
+  .verdict-sub  { font-size: 11px; color: #4b5563; margin-top: 4px; }
   .mono { font-family: "SF Mono", Consolas, monospace; font-weight: 700; }
 
   .self-inner {
@@ -199,13 +196,13 @@
     </div>
   </div>
 
-  <!-- Summary -->
+  <!-- Summary (数字のみ) -->
   <div class="section" id="summarySection" style="display:none;">
     <h2>集計（表示中）</h2>
     <div class="summary">
-      <div class="sum-box sum-adv"><div class="num" id="cntAdv">0</div><div class="lbl">🟢 自艇有利</div></div>
-      <div class="sum-box sum-eq"><div class="num" id="cntEq">0</div><div class="lbl">⚪ 同着</div></div>
-      <div class="sum-box sum-dis"><div class="num" id="cntDis">0</div><div class="lbl">🔴 自艇不利</div></div>
+      <div class="sum-box sum-adv"><div class="num" id="cntAdv">0</div><div class="lbl">艇</div></div>
+      <div class="sum-box sum-eq"><div class="num" id="cntEq">0</div><div class="lbl">艇</div></div>
+      <div class="sum-box sum-dis"><div class="num" id="cntDis">0</div><div class="lbl">艇</div></div>
     </div>
   </div>
 
@@ -219,7 +216,7 @@
 
 <script>
 // ===== Boat data (66 boats) =====
-const SELF_NO = 26; // リコールNo of self
+const SELF_NO = 26;
 const boats = [
   {no:1, group:"A", cls:"Ⅰ",  sailNo:"6929", name:"ANTONIA",         tcf:0.846},
   {no:2, group:"A", cls:"Ⅰ",  sailNo:"3181", name:"Henrique IX",     tcf:0.841},
@@ -292,7 +289,7 @@ const SELF_TCF = 0.735;
 
 // ===== State =====
 let state = {
-  selfSec: null,       // 自艇所要時間(秒)
+  selfSec: null,
   groups: new Set(["A","B","C"]),
   classes: new Set(["Ⅰ","Ⅱ","Ⅲ","Ⅳ","Ⅴ","Ⅵ"]),
 };
@@ -376,23 +373,23 @@ function loadLocal(){
 function render(){
   if(state.selfSec === null) return;
 
-  const selfCorrected = state.selfSec * SELF_TCF; // 秒
+  const selfCorrected = state.selfSec * SELF_TCF;
   document.getElementById("selfCorrected").style.display = "block";
   document.getElementById("selfCorrectedVal").textContent = secToHMS(selfCorrected);
 
   // Filter
   let list = boats.filter(b => {
-    if(b.no === SELF_NO) return true; // 自艇は必ず含める
+    if(b.no === SELF_NO) return true;
     return state.groups.has(b.group) && state.classes.has(b.cls);
   });
 
-  // Compute diff for each
+  // Compute diff
   list = list.map(b => {
     if(b.no === SELF_NO){
       return {...b, isSelf:true, targetSec:state.selfSec, diffSec:0, verdict:"self"};
     }
-    const target = selfCorrected / b.tcf; // 他艇のターゲット所要時間
-    const diff = target - state.selfSec;  // + なら自艇有利
+    const target = selfCorrected / b.tcf;
+    const diff = target - state.selfSec; // + なら自艇有利
     let verdict;
     if(Math.abs(diff) < 0.5) verdict = "eq";
     else if(diff > 0) verdict = "adv";
@@ -457,25 +454,22 @@ function makeCard(b){
   el.className = "card " + b.verdict;
   const nameLine = b.sailNo ? `${b.name} <span style="font-size:12px;color:#6b7280;">(No.${b.sailNo})</span>` : b.name;
 
-  let vClass, vLabel, vMain, vSub;
   const absDiff = secToHMS(b.diffSec);
   const target  = secToHMS(b.targetSec);
 
+  let vMain, vSub;
+
   if(b.verdict === "adv"){
-    vClass = "verdict-adv";
-    vLabel = "🟢 自艇有利";
-    vMain  = `相手より <span class="mono">+${absDiff}</span> 遅くゴールされない限り勝ち`;
-    vSub   = `＝ 相手が <span class="mono">${target}</span> より遅くゴールなら自艇の勝ち`;
+    // 自艇有利：相手TCFが低い
+    vMain = `相手より <span class="mono">${absDiff}</span> 以上先着すれば勝ち`;
+    vSub  = `＝ 相手が <span class="mono">${target}</span> より遅くゴールなら自艇の勝ち`;
   } else if(b.verdict === "eq"){
-    vClass = "verdict-eq";
-    vLabel = "⚪ 同着ライン";
-    vMain  = `相手が <span class="mono">${target}</span> ちょうどでゴールなら同着`;
-    vSub   = `同TCF (${b.tcf.toFixed(3)}) の同格艇`;
+    vMain = `相手が <span class="mono">${target}</span> ちょうどでゴールなら同着`;
+    vSub  = `同TCF (${b.tcf.toFixed(3)}) の同格艇`;
   } else {
-    vClass = "verdict-dis";
-    vLabel = "🔴 自艇不利";
-    vMain  = `相手より <span class="mono">${absDiff}</span> 以上先にゴールされたら負け`;
-    vSub   = `＝ 相手が <span class="mono">${target}</span> より早くゴールすると負け`;
+    // 自艇不利：相手TCFが高い
+    vMain = `相手に先着されても <span class="mono">${absDiff}</span> 以内の差なら勝ち`;
+    vSub  = `＝ 相手が <span class="mono">${target}</span> より早くゴールすると負け`;
   }
 
   el.innerHTML = `
@@ -484,8 +478,7 @@ function makeCard(b){
       <div class="card-tcf">TCF ${b.tcf.toFixed(3)}</div>
     </div>
     <div class="card-meta">Group ${b.group} ／ Class ${b.cls}</div>
-    <div class="card-verdict ${vClass}">
-      <div class="verdict-label">${vLabel}</div>
+    <div class="card-verdict">
       <div class="verdict-main">${vMain}</div>
       <div class="verdict-sub">${vSub}</div>
     </div>
