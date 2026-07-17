@@ -1,83 +1,501 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>東京ベイオープン・シミュレーター</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>body { -webkit-tap-highlight-color: transparent; } button { touch-action: manipulation; }</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ヨットレース 修正時間計算</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    background: #f2f4f7;
+    color: #1f2937;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .app { max-width: 640px; margin: 0 auto; padding-bottom: 40px; }
+
+  /* ===== Header ===== */
+  .header {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #fff;
+    padding: 12px 16px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .header .title { font-size: 12px; opacity: 0.85; margin-bottom: 4px; }
+  .header .boat-name { font-size: 18px; font-weight: 700; }
+  .header .boat-meta { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+
+  /* ===== Section ===== */
+  .section { background: #fff; margin: 10px; border-radius: 10px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .section h2 { font-size: 13px; margin: 0 0 10px; color: #374151; font-weight: 600; }
+
+  /* ===== Time Input ===== */
+  .time-input { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 12px; }
+  .time-input input {
+    width: 62px; height: 52px;
+    font-size: 24px; font-weight: 600; text-align: center;
+    border: 2px solid #d1d5db; border-radius: 8px;
+    background: #f9fafb;
+    -moz-appearance: textfield;
+  }
+  .time-input input:focus { outline: none; border-color: #2563eb; background: #fff; }
+  .time-input input::-webkit-outer-spin-button,
+  .time-input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .time-input .sep { font-size: 22px; font-weight: 600; color: #6b7280; }
+  .time-input .label { font-size: 12px; color: #6b7280; margin: 0 2px; }
+
+  .btn-row { display: flex; gap: 8px; }
+  .btn {
+    flex: 1; padding: 12px; font-size: 14px; font-weight: 600;
+    border: none; border-radius: 8px; cursor: pointer;
+  }
+  .btn-clear { background: #e5e7eb; color: #374151; }
+  .btn-primary { background: #2563eb; color: #fff; }
+  .btn:active { opacity: 0.7; }
+
+  .self-corrected {
+    margin-top: 12px; padding: 10px; background: #eff6ff; border-radius: 8px;
+    text-align: center; font-size: 13px; color: #1e40af;
+  }
+  .self-corrected strong { font-size: 18px; font-family: "SF Mono", Consolas, monospace; }
+
+  /* ===== Filter ===== */
+  .filter-row { margin-bottom: 8px; }
+  .filter-row:last-child { margin-bottom: 0; }
+  .filter-row .flabel { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 6px 12px; font-size: 13px;
+    background: #f3f4f6; border: 1px solid #d1d5db;
+    border-radius: 999px; cursor: pointer;
+    color: #374151;
+  }
+  .chip.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+  .sort-select {
+    width: 100%; padding: 10px; font-size: 14px;
+    border: 1px solid #d1d5db; border-radius: 8px;
+    background: #fff;
+  }
+
+  /* ===== Summary ===== */
+  .summary { display: flex; gap: 8px; }
+  .sum-box {
+    flex: 1; padding: 10px; border-radius: 8px; text-align: center;
+  }
+  .sum-box .num { font-size: 22px; font-weight: 700; }
+  .sum-box .lbl { font-size: 11px; margin-top: 2px; }
+  .sum-adv { background: #dcfce7; color: #166534; }
+  .sum-eq  { background: #f3f4f6; color: #374151; }
+  .sum-dis { background: #fee2e2; color: #991b1b; }
+
+  /* ===== Cards ===== */
+  .card-list { padding: 0 10px; }
+  .card {
+    background: #fff; border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-left: 5px solid #d1d5db;
+  }
+  .card.adv { border-left-color: #16a34a; }
+  .card.eq  { border-left-color: #6b7280; }
+  .card.dis { border-left-color: #dc2626; }
+  .card.self {
+    background: linear-gradient(135deg, #dbeafe, #eff6ff);
+    border-left-color: #2563eb;
+    border: 2px solid #2563eb;
+  }
+
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .card-name { font-size: 16px; font-weight: 700; color: #111827; }
+  .card-tcf { font-size: 13px; color: #4b5563; font-family: "SF Mono", Consolas, monospace; white-space: nowrap; }
+  .card-meta { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+  .card-verdict {
+    margin-top: 10px; padding: 8px 10px;
+    border-radius: 6px; font-size: 13px;
+  }
+  .verdict-adv { background: #dcfce7; color: #14532d; }
+  .verdict-eq  { background: #f3f4f6; color: #1f2937; }
+  .verdict-dis { background: #fee2e2; color: #7f1d1d; }
+  .verdict-label { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+  .verdict-main { font-size: 14px; font-weight: 600; }
+  .verdict-sub  { font-size: 11px; opacity: 0.8; margin-top: 3px; }
+  .mono { font-family: "SF Mono", Consolas, monospace; font-weight: 700; }
+
+  .self-inner {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    margin-top: 8px; padding: 8px; background: rgba(255,255,255,0.6); border-radius: 6px;
+    font-size: 12px;
+  }
+  .self-inner div span { color: #4b5563; font-size: 11px; display: block; }
+  .self-inner div strong { font-size: 14px; font-family: "SF Mono", Consolas, monospace; color: #1e3a8a; }
+
+  .empty {
+    text-align: center; padding: 40px 20px;
+    color: #9ca3af; font-size: 13px;
+  }
+
+  .footnote { font-size: 10px; color: #9ca3af; text-align: center; padding: 10px; }
+</style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-10">
+<body>
+<div class="app">
 
-    <header class="sticky top-0 bg-slate-800 border-b border-slate-700 p-4 z-50 shadow-md">
-        <h1 class="text-sm font-bold text-white">東京ベイオープン勝敗条件 (全66艇)</h1>
-    </header>
+  <!-- Header: Self boat -->
+  <div class="header">
+    <div class="title">⛵ 自艇</div>
+    <div class="boat-name">naonao carrera S <span style="font-size:13px;opacity:0.85;">(No.6139)</span></div>
+    <div class="boat-meta">TCF 0.735 ／ Group B ／ Class Ⅲ</div>
+  </div>
 
-    <main class="p-3 max-w-lg mx-auto space-y-4">
-        <section class="bg-slate-800 rounded-xl p-4 border border-slate-700">
-            <select id="select-myboat" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-sm font-bold"></select>
-            <div class="flex gap-2 mt-3 text-center">
-                <button id="btn-h-minus" class="flex-1 bg-slate-700 py-2 rounded">-1時</button>
-                <div id="val-time" class="flex-1 bg-slate-950 py-2 rounded font-mono font-bold">3:00:00</div>
-                <button id="btn-h-plus" class="flex-1 bg-slate-700 py-2 rounded">+1時</button>
-            </div>
-        </section>
+  <!-- Time Input -->
+  <div class="section">
+    <h2>自艇の所要時間</h2>
+    <div class="time-input">
+      <input type="number" id="hh" inputmode="numeric" min="0" max="23" placeholder="00">
+      <span class="label">時</span>
+      <span class="sep">:</span>
+      <input type="number" id="mm" inputmode="numeric" min="0" max="59" placeholder="00">
+      <span class="label">分</span>
+      <span class="sep">:</span>
+      <input type="number" id="ss" inputmode="numeric" min="0" max="59" placeholder="00">
+      <span class="label">秒</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-clear" onclick="clearTime()">クリア</button>
+      <button class="btn btn-primary" onclick="calculate()">計算する</button>
+    </div>
+    <div class="self-corrected" id="selfCorrected" style="display:none;">
+      自艇の修正時間 <strong id="selfCorrectedVal">--:--:--</strong>
+    </div>
+  </div>
 
-        <input type="text" id="input-search" placeholder="🔍 艇名検索..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm">
-        <section id="result-list" class="space-y-2"></section>
-    </main>
+  <!-- Filter -->
+  <div class="section">
+    <h2>フィルタ</h2>
+    <div class="filter-row">
+      <div class="flabel">Group</div>
+      <div class="chips" id="groupChips"></div>
+    </div>
+    <div class="filter-row" style="margin-top:10px;">
+      <div class="flabel">Class</div>
+      <div class="chips" id="classChips"></div>
+    </div>
+    <div class="filter-row" style="margin-top:10px;">
+      <div class="flabel">並び順</div>
+      <select class="sort-select" id="sortSel" onchange="render()">
+        <option value="tcfDesc">TCF 高い順（強い艇順）</option>
+        <option value="tcfAsc">TCF 低い順</option>
+        <option value="diffAbs">接戦順（差の小さい順）</option>
+        <option value="name">艇名順</option>
+        <option value="original">元の順（リコールNo順）</option>
+      </select>
+    </div>
+  </div>
 
-    <script>
-        const FLEET = [
-            { id: 1, name: "ANTONIA", tcf: 0.846 }, { id: 2, name: "Henrique Ⅸ", tcf: 0.841 }, { id: 3, name: "Blue Peter", tcf: 0.809 },
-            { id: 4, name: "Laetitia Deux", tcf: 0.798 }, { id: 5, name: "AMOY", tcf: 0.796 }, { id: 6, name: "SION", tcf: 0.794 },
-            { id: 7, name: "FIRST LADY", tcf: 0.784 }, { id: 8, name: "Icarus", tcf: 0.781 }, { id: 9, name: "Big Apple", tcf: 0.780 },
-            { id: 10, name: "L'SION", tcf: 0.780 }, { id: 11, name: "SAMOA", tcf: 0.762 }, { id: 12, name: "CADENZA", tcf: 0.762 },
-            { id: 13, name: "LADY K", tcf: 0.760 }, { id: 14, name: "GUMBO", tcf: 0.760 }, { id: 15, name: "O&S", tcf: 0.758 },
-            { id: 16, name: "EXOTIQUE", tcf: 0.757 }, { id: 17, name: "Big Dream", tcf: 0.754 }, { id: 18, name: "WHIPPET", tcf: 0.753 },
-            { id: 19, name: "Blue Moon", tcf: 0.750 }, { id: 20, name: "Black-Jack", tcf: 0.749 }, { id: 21, name: "Blue Peter", tcf: 0.749 },
-            { id: 22, name: "STAR OF INDIA", tcf: 0.746 }, { id: 23, name: "L'espoir", tcf: 0.744 }, { id: 24, name: "Wind Fairy", tcf: 0.738 },
-            { id: 25, name: "AKIZUSHIMA", tcf: 0.738 }, { id: 26, name: "naonao", tcf: 0.735 }, { id: 27, name: "Team 104", tcf: 0.735 },
-            { id: 28, name: "gordon", tcf: 0.735 }, { id: 29, name: "ACCOMMODATION", tcf: 0.728 }, { id: 30, name: "SOUBI", tcf: 0.726 },
-            { id: 31, name: "Ocean Light", tcf: 0.724 }, { id: 32, name: "Juggler", tcf: 0.724 }, { id: 33, name: "Sun Luck", tcf: 0.718 },
-            { id: 34, name: "SHARK", tcf: 0.715 }, { id: 35, name: "TAM", tcf: 0.715 }, { id: 36, name: "JADE", tcf: 0.713 },
-            { id: 37, name: "WIND VALLEY", tcf: 0.710 }, { id: 38, name: "CRESCENT", tcf: 0.709 }, { id: 39, name: "BIG MOUTH", tcf: 0.706 },
-            { id: 40, name: "MILKY WAY", tcf: 0.705 }, { id: 41, name: "SAKURA", tcf: 0.702 }, { id: 42, name: "LIBERTY", tcf: 0.701 },
-            { id: 43, name: "I'll go", tcf: 0.699 }, { id: 44, name: "SAKURA", tcf: 0.699 }, { id: 45, name: "Milky Way Ⅲ", tcf: 0.699 },
-            { id: 46, name: "LAHAINA Ⅳ", tcf: 0.699 }, { id: 47, name: "NANUAQ", tcf: 0.698 }, { id: 48, name: "AQUA", tcf: 0.696 },
-            { id: 49, name: "PANDORA4", tcf: 0.696 }, { id: 50, name: "FELIX", tcf: 0.696 }, { id: 51, name: "AURA", tcf: 0.696 },
-            { id: 52, name: "SEA GOD", tcf: 0.695 }, { id: 53, name: "YOKOHAMA", tcf: 0.692 }, { id: 54, name: "KIZUNA", tcf: 0.690 },
-            { id: 55, name: "FALCON", tcf: 0.688 }, { id: 56, name: "MARIA", tcf: 0.685 }, { id: 57, name: "BLUE BIRD", tcf: 0.682 },
-            { id: 58, name: "HAPPY", tcf: 0.679 }, { id: 59, name: "SUNRISE", tcf: 0.675 }, { id: 60, name: "VICTORY", tcf: 0.672 },
-            { id: 61, name: "LEGEND", tcf: 0.670 }, { id: 62, name: "FREEDOM", tcf: 0.665 }, { id: 63, name: "DREAM", tcf: 0.660 },
-            { id: 64, name: "PEACE", tcf: 0.655 }, { id: 65, name: "GLORY", tcf: 0.650 }, { id: 66, name: "HOPE", tcf: 0.645 }
-        ];
+  <!-- Summary -->
+  <div class="section" id="summarySection" style="display:none;">
+    <h2>集計（表示中）</h2>
+    <div class="summary">
+      <div class="sum-box sum-adv"><div class="num" id="cntAdv">0</div><div class="lbl">🟢 自艇有利</div></div>
+      <div class="sum-box sum-eq"><div class="num" id="cntEq">0</div><div class="lbl">⚪ 同着</div></div>
+      <div class="sum-box sum-dis"><div class="num" id="cntDis">0</div><div class="lbl">🔴 自艇不利</div></div>
+    </div>
+  </div>
 
-        let state = { myBoatId: 26, totalS: 10800, search: '' };
+  <!-- Result cards -->
+  <div class="card-list" id="cardList">
+    <div class="empty">自艇の所要時間を入力して「計算する」を押してください</div>
+  </div>
 
-        function render() {
-            const myB = FLEET.find(b => b.id === state.myBoatId);
-            const myCorS = state.totalS * myB.tcf;
-            const list = document.getElementById('result-list');
-            list.innerHTML = '';
-            FLEET.filter(b => b.name.toLowerCase().includes(state.search)).sort((a,b)=>b.tcf-a.tcf).forEach(b => {
-                const diff = (myCorS / b.tcf) - state.totalS;
-                const card = document.createElement('div');
-                card.className = "bg-slate-800 p-3 rounded-lg border border-slate-700 flex justify-between items-center";
-                card.innerHTML = `<div><div class='font-bold'>${b.name}</div><div class='text-xs text-slate-400'>TCF:${b.tcf}</div></div>
-                                  <div class='text-right font-bold ${diff < 0 ? 'text-emerald-400' : 'text-amber-400'}'>
-                                  ${diff < 0 ? Math.abs(Math.round(diff))+'秒差以内' : Math.abs(Math.round(diff))+'秒差以上'}</div>`;
-                list.appendChild(card);
-            });
-        }
-        document.getElementById('select-myboat').onchange = (e) => { state.myBoatId = parseInt(e.target.value); render(); };
-        document.getElementById('btn-h-plus').onclick = () => { state.totalS += 3600; render(); };
-        document.getElementById('btn-h-minus').onclick = () => { state.totalS = Math.max(0, state.totalS - 3600); render(); };
-        document.getElementById('input-search').oninput = (e) => { state.search = e.target.value.toLowerCase(); render(); };
-        FLEET.forEach(b => document.getElementById('select-myboat').add(new Option(b.name, b.id)));
-        document.getElementById('select-myboat').value = 26;
-        render();
-    </script>
+  <div class="footnote">全66艇 ／ 自艇: naonao carrera S (SailNo 6139, TCF 0.735)</div>
+</div>
+
+<script>
+// ===== Boat data (66 boats) =====
+const SELF_NO = 26; // リコールNo of self
+const boats = [
+  {no:1, group:"A", cls:"Ⅰ",  sailNo:"6929", name:"ANTONIA",         tcf:0.846},
+  {no:2, group:"A", cls:"Ⅰ",  sailNo:"3181", name:"Henrique IX",     tcf:0.841},
+  {no:3, group:"A", cls:"Ⅰ",  sailNo:"6854", name:"Blue Peter",      tcf:0.809},
+  {no:4, group:"A", cls:"Ⅰ",  sailNo:"6095", name:"Laetitia Deux",   tcf:0.798},
+  {no:5, group:"A", cls:"Ⅰ",  sailNo:"4004", name:"AMOY",            tcf:0.798},
+  {no:6, group:"A", cls:"Ⅰ",  sailNo:"7255", name:"GUMBO Ⅳ",         tcf:0.797},
+  {no:7, group:"A", cls:"Ⅰ",  sailNo:"7159", name:"Anything Goes",   tcf:0.797},
+  {no:8, group:"A", cls:"Ⅰ",  sailNo:"1961", name:"白翠Ⅱ",           tcf:0.794},
+  {no:9, group:"A", cls:"Ⅰ",  sailNo:"7021", name:"TURUGI",          tcf:0.789},
+  {no:10,group:"A", cls:"Ⅰ",  sailNo:"7115", name:"CAVOK",           tcf:0.789},
+  {no:11,group:"A", cls:"Ⅰ",  sailNo:"6115", name:"Forte",           tcf:0.778},
+  {no:12,group:"A", cls:"Ⅱ",  sailNo:"7064", name:"ZZTOP",           tcf:0.770},
+  {no:13,group:"A", cls:"Ⅱ",  sailNo:"",     name:"Felice",          tcf:0.767},
+  {no:14,group:"A", cls:"Ⅱ",  sailNo:"7148", name:"Nefertiti",       tcf:0.765},
+  {no:15,group:"A", cls:"Ⅱ",  sailNo:"5234", name:"ASTO",            tcf:0.764},
+  {no:16,group:"A", cls:"Ⅱ",  sailNo:"5619", name:"HIRO",            tcf:0.760},
+  {no:17,group:"A", cls:"Ⅱ",  sailNo:"7090", name:"Mikey Ⅱ",         tcf:0.760},
+  {no:18,group:"A", cls:"Ⅱ",  sailNo:"5650", name:"En Famille",      tcf:0.758},
+  {no:19,group:"A", cls:"Ⅱ",  sailNo:"6426", name:"U.LA.LA",         tcf:0.758},
+  {no:20,group:"A", cls:"Ⅱ",  sailNo:"5909", name:"VIRGO jr",        tcf:0.755},
+  {no:21,group:"A", cls:"Ⅱ",  sailNo:"5002", name:"Rabbit's Tail",   tcf:0.754},
+  {no:22,group:"A", cls:"Ⅱ",  sailNo:"7083", name:"Sahara",          tcf:0.751},
+  {no:23,group:"B", cls:"Ⅲ",  sailNo:"6908", name:"SPEEDSTER Ⅱ",     tcf:0.746},
+  {no:24,group:"B", cls:"Ⅲ",  sailNo:"",     name:"Catalina42",      tcf:0.744},
+  {no:25,group:"B", cls:"Ⅲ",  sailNo:"4417", name:"Heart of Nippon", tcf:0.740},
+  {no:26,group:"B", cls:"Ⅲ",  sailNo:"6139", name:"naonao carrera S",tcf:0.735},
+  {no:27,group:"B", cls:"Ⅲ",  sailNo:"6998", name:"POPEYE Jr.",      tcf:0.735},
+  {no:28,group:"B", cls:"Ⅲ",  sailNo:"7189", name:"パルファイブ",    tcf:0.725},
+  {no:29,group:"B", cls:"Ⅲ",  sailNo:"",     name:"ISLAY",           tcf:0.721},
+  {no:30,group:"B", cls:"Ⅲ",  sailNo:"",     name:"早稲丸",          tcf:0.720},
+  {no:31,group:"B", cls:"Ⅲ",  sailNo:"6933", name:"PHOENIX Ⅳ",       tcf:0.720},
+  {no:32,group:"B", cls:"Ⅲ",  sailNo:"",     name:"SPIRIT OF HAYAMA",tcf:0.720},
+  {no:33,group:"B", cls:"Ⅲ",  sailNo:"6969", name:"Porco Rosso",     tcf:0.720},
+  {no:34,group:"B", cls:"Ⅳ",  sailNo:"642",  name:"ネプチューン",    tcf:0.717},
+  {no:35,group:"B", cls:"Ⅳ",  sailNo:"6817", name:"LEON Ⅵ",          tcf:0.715},
+  {no:36,group:"B", cls:"Ⅳ",  sailNo:"7102", name:"HALCYON",         tcf:0.712},
+  {no:37,group:"B", cls:"Ⅳ",  sailNo:"6439", name:"Zephyros",        tcf:0.707},
+  {no:38,group:"B", cls:"Ⅳ",  sailNo:"6407", name:"Puffin Ⅳ",        tcf:0.706},
+  {no:39,group:"B", cls:"Ⅳ",  sailNo:"",     name:"ポールスターⅡ",  tcf:0.706},
+  {no:40,group:"B", cls:"Ⅳ",  sailNo:"3988", name:"淳洋",            tcf:0.706},
+  {no:41,group:"B", cls:"Ⅳ",  sailNo:"",     name:"CONDOR",          tcf:0.706},
+  {no:42,group:"B", cls:"Ⅳ",  sailNo:"7076", name:"TWILIGHT",        tcf:0.706},
+  {no:43,group:"B", cls:"Ⅳ",  sailNo:"7154", name:"Noah's Ark",      tcf:0.704},
+  {no:44,group:"C", cls:"Ⅴ",  sailNo:"",     name:"PHOENIX Ⅱ",       tcf:0.699},
+  {no:45,group:"C", cls:"Ⅴ",  sailNo:"",     name:"Milky Way Ⅲ",     tcf:0.699},
+  {no:46,group:"C", cls:"Ⅴ",  sailNo:"7172", name:"LAHAINA Ⅳ",       tcf:0.699},
+  {no:47,group:"C", cls:"Ⅴ",  sailNo:"5510", name:"NANUAQ",          tcf:0.698},
+  {no:48,group:"C", cls:"Ⅴ",  sailNo:"",     name:"AQUA",            tcf:0.696},
+  {no:49,group:"C", cls:"Ⅴ",  sailNo:"",     name:"PANDORA4",        tcf:0.696},
+  {no:50,group:"C", cls:"Ⅴ",  sailNo:"4468", name:"FELIX",           tcf:0.696},
+  {no:51,group:"C", cls:"Ⅴ",  sailNo:"7054", name:"AURA",            tcf:0.696},
+  {no:52,group:"C", cls:"Ⅴ",  sailNo:"",     name:"尾長鮫3",         tcf:0.686},
+  {no:53,group:"C", cls:"Ⅴ",  sailNo:"",     name:"アロハ",          tcf:0.685},
+  {no:54,group:"C", cls:"Ⅴ",  sailNo:"",     name:"Ulka2",           tcf:0.685},
+  {no:55,group:"C", cls:"Ⅴ",  sailNo:"",     name:"ハングリーキャット",tcf:0.681},
+  {no:56,group:"C", cls:"Ⅵ",  sailNo:"6859", name:"GOBLIN",          tcf:0.680},
+  {no:57,group:"C", cls:"Ⅵ",  sailNo:"2851", name:"ANAIS",           tcf:0.680},
+  {no:58,group:"C", cls:"Ⅵ",  sailNo:"",     name:"OHANA",           tcf:0.680},
+  {no:59,group:"C", cls:"Ⅵ",  sailNo:"6448", name:"FREEDOM",         tcf:0.675},
+  {no:60,group:"C", cls:"Ⅵ",  sailNo:"",     name:"海人",            tcf:0.667},
+  {no:61,group:"C", cls:"Ⅵ",  sailNo:"",     name:"Delorean70",      tcf:0.667},
+  {no:62,group:"C", cls:"Ⅵ",  sailNo:"3406", name:"TWILIGHT",        tcf:0.663},
+  {no:63,group:"C", cls:"Ⅵ",  sailNo:"6990", name:"MIYAKO MARU",     tcf:0.659},
+  {no:64,group:"C", cls:"Ⅵ",  sailNo:"6834", name:"MINERVA",         tcf:0.659},
+  {no:65,group:"C", cls:"Ⅵ",  sailNo:"7057", name:"ZERO",            tcf:0.659},
+  {no:66,group:"C", cls:"Ⅵ",  sailNo:"",     name:"Mistral",         tcf:0.657},
+];
+const SELF_TCF = 0.735;
+
+// ===== State =====
+let state = {
+  selfSec: null,       // 自艇所要時間(秒)
+  groups: new Set(["A","B","C"]),
+  classes: new Set(["Ⅰ","Ⅱ","Ⅲ","Ⅳ","Ⅴ","Ⅵ"]),
+};
+
+// ===== Utility =====
+function pad2(n){ return String(n).padStart(2,"0"); }
+function secToHMS(sec){
+  const s = Math.round(Math.abs(sec));
+  const h = Math.floor(s/3600);
+  const m = Math.floor((s%3600)/60);
+  const ss = s%60;
+  return `${pad2(h)}:${pad2(m)}:${pad2(ss)}`;
+}
+function hmsToSec(h,m,s){ return h*3600 + m*60 + s; }
+
+// ===== Init chips =====
+function initChips(){
+  const gEl = document.getElementById("groupChips");
+  ["A","B","C"].forEach(g=>{
+    const c = document.createElement("div");
+    c.className = "chip active"; c.textContent = g;
+    c.onclick = ()=>{ toggleSet(state.groups, g); c.classList.toggle("active"); render(); };
+    gEl.appendChild(c);
+  });
+  const cEl = document.getElementById("classChips");
+  ["Ⅰ","Ⅱ","Ⅲ","Ⅳ","Ⅴ","Ⅵ"].forEach(cl=>{
+    const c = document.createElement("div");
+    c.className = "chip active"; c.textContent = cl;
+    c.onclick = ()=>{ toggleSet(state.classes, cl); c.classList.toggle("active"); render(); };
+    cEl.appendChild(c);
+  });
+}
+function toggleSet(set, v){ if(set.has(v)) set.delete(v); else set.add(v); }
+
+// ===== Time I/O =====
+function readInputs(){
+  const h = parseInt(document.getElementById("hh").value)||0;
+  const m = parseInt(document.getElementById("mm").value)||0;
+  const s = parseInt(document.getElementById("ss").value)||0;
+  return {h,m,s};
+}
+function calculate(){
+  const {h,m,s} = readInputs();
+  if(h===0 && m===0 && s===0){ alert("所要時間を入力してください"); return; }
+  state.selfSec = hmsToSec(h,m,s);
+  saveLocal();
+  render();
+}
+function clearTime(){
+  document.getElementById("hh").value = "";
+  document.getElementById("mm").value = "";
+  document.getElementById("ss").value = "";
+  state.selfSec = null;
+  localStorage.removeItem("yacht_input");
+  document.getElementById("selfCorrected").style.display = "none";
+  document.getElementById("summarySection").style.display = "none";
+  document.getElementById("cardList").innerHTML = '<div class="empty">自艇の所要時間を入力して「計算する」を押してください</div>';
+}
+
+// ===== LocalStorage =====
+function saveLocal(){
+  const {h,m,s} = readInputs();
+  localStorage.setItem("yacht_input", JSON.stringify({h,m,s}));
+}
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem("yacht_input");
+    if(!raw) return;
+    const {h,m,s} = JSON.parse(raw);
+    document.getElementById("hh").value = h||"";
+    document.getElementById("mm").value = m||"";
+    document.getElementById("ss").value = s||"";
+    if(h||m||s){
+      state.selfSec = hmsToSec(h||0,m||0,s||0);
+      render();
+    }
+  }catch(e){}
+}
+
+// ===== Render =====
+function render(){
+  if(state.selfSec === null) return;
+
+  const selfCorrected = state.selfSec * SELF_TCF; // 秒
+  document.getElementById("selfCorrected").style.display = "block";
+  document.getElementById("selfCorrectedVal").textContent = secToHMS(selfCorrected);
+
+  // Filter
+  let list = boats.filter(b => {
+    if(b.no === SELF_NO) return true; // 自艇は必ず含める
+    return state.groups.has(b.group) && state.classes.has(b.cls);
+  });
+
+  // Compute diff for each
+  list = list.map(b => {
+    if(b.no === SELF_NO){
+      return {...b, isSelf:true, targetSec:state.selfSec, diffSec:0, verdict:"self"};
+    }
+    const target = selfCorrected / b.tcf; // 他艇のターゲット所要時間
+    const diff = target - state.selfSec;  // + なら自艇有利
+    let verdict;
+    if(Math.abs(diff) < 0.5) verdict = "eq";
+    else if(diff > 0) verdict = "adv";
+    else verdict = "dis";
+    return {...b, isSelf:false, targetSec:target, diffSec:diff, verdict};
+  });
+
+  // Sort
+  const sortKey = document.getElementById("sortSel").value;
+  list.sort((a,b)=>{
+    if(sortKey === "tcfDesc") return b.tcf - a.tcf;
+    if(sortKey === "tcfAsc")  return a.tcf - b.tcf;
+    if(sortKey === "diffAbs"){
+      if(a.isSelf) return -1; if(b.isSelf) return 1;
+      return Math.abs(a.diffSec) - Math.abs(b.diffSec);
+    }
+    if(sortKey === "name") return a.name.localeCompare(b.name, "ja");
+    if(sortKey === "original") return a.no - b.no;
+    return 0;
+  });
+
+  // Summary
+  let adv=0, eq=0, dis=0;
+  list.forEach(b=>{
+    if(b.isSelf) return;
+    if(b.verdict === "adv") adv++;
+    else if(b.verdict === "eq") eq++;
+    else dis++;
+  });
+  document.getElementById("summarySection").style.display = "block";
+  document.getElementById("cntAdv").textContent = adv;
+  document.getElementById("cntEq").textContent  = eq;
+  document.getElementById("cntDis").textContent = dis;
+
+  // Cards
+  const cardList = document.getElementById("cardList");
+  cardList.innerHTML = "";
+  list.forEach(b=>{
+    cardList.appendChild(makeCard(b));
+  });
+}
+
+function makeCard(b){
+  const el = document.createElement("div");
+  if(b.isSelf){
+    el.className = "card self";
+    const selfCorrected = state.selfSec * SELF_TCF;
+    el.innerHTML = `
+      <div class="card-head">
+        <div class="card-name">⭐【自艇】${b.name}</div>
+        <div class="card-tcf">TCF ${b.tcf.toFixed(3)}</div>
+      </div>
+      <div class="card-meta">${b.sailNo?"No."+b.sailNo+" ／ ":""}Group ${b.group} ／ Class ${b.cls}</div>
+      <div class="self-inner">
+        <div><span>所要時間</span><strong>${secToHMS(state.selfSec)}</strong></div>
+        <div><span>修正時間</span><strong>${secToHMS(selfCorrected)}</strong></div>
+      </div>
+    `;
+    return el;
+  }
+
+  el.className = "card " + b.verdict;
+  const nameLine = b.sailNo ? `${b.name} <span style="font-size:12px;color:#6b7280;">(No.${b.sailNo})</span>` : b.name;
+
+  let vClass, vLabel, vMain, vSub;
+  const absDiff = secToHMS(b.diffSec);
+  const target  = secToHMS(b.targetSec);
+
+  if(b.verdict === "adv"){
+    vClass = "verdict-adv";
+    vLabel = "🟢 自艇有利";
+    vMain  = `相手より <span class="mono">+${absDiff}</span> 遅くゴールされない限り勝ち`;
+    vSub   = `＝ 相手が <span class="mono">${target}</span> より遅くゴールなら自艇の勝ち`;
+  } else if(b.verdict === "eq"){
+    vClass = "verdict-eq";
+    vLabel = "⚪ 同着ライン";
+    vMain  = `相手が <span class="mono">${target}</span> ちょうどでゴールなら同着`;
+    vSub   = `同TCF (${b.tcf.toFixed(3)}) の同格艇`;
+  } else {
+    vClass = "verdict-dis";
+    vLabel = "🔴 自艇不利";
+    vMain  = `相手より <span class="mono">${absDiff}</span> 以上先にゴールされたら負け`;
+    vSub   = `＝ 相手が <span class="mono">${target}</span> より早くゴールすると負け`;
+  }
+
+  el.innerHTML = `
+    <div class="card-head">
+      <div class="card-name">${nameLine}</div>
+      <div class="card-tcf">TCF ${b.tcf.toFixed(3)}</div>
+    </div>
+    <div class="card-meta">Group ${b.group} ／ Class ${b.cls}</div>
+    <div class="card-verdict ${vClass}">
+      <div class="verdict-label">${vLabel}</div>
+      <div class="verdict-main">${vMain}</div>
+      <div class="verdict-sub">${vSub}</div>
+    </div>
+  `;
+  return el;
+}
+
+// ===== Init =====
+initChips();
+loadLocal();
+</script>
 </body>
 </html>
-
