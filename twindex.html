@@ -169,6 +169,16 @@
 .payer-totals strong {
   font-size: 17px;
 }
+
+.delete-button {
+  margin-top: 6px;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: #d00;
+  font-size: 13px;
+}
   </style>
 </head>
 
@@ -382,23 +392,79 @@ function displayExpenses(data) {
       String(date.getHours()).padStart(2, "0") + ":" +
       String(date.getMinutes()).padStart(2, "0");
 
-    div.innerHTML = `
-      <div class="expense-main">
-        <div class="expense-item">${expense.item}</div>
-        <div class="expense-time">${time}</div>
-      </div>
+   div.innerHTML = `
+  <div class="expense-main">
+    <div class="expense-item">${expense.item}</div>
+    <div class="expense-time">${time}</div>
+  </div>
 
-      <div class="expense-right">
-        <div class="expense-amount">
-          NT$ ${Number(expense.amount).toLocaleString()}
-        </div>
-        <div class="expense-payer">
-          ${expense.payer}
-        </div>
-      </div>
-    `;
+  <div class="expense-right">
+    <div class="expense-amount">
+      NT$ ${Number(expense.amount).toLocaleString()}
+    </div>
+    <div class="expense-payer">
+      ${expense.payer}
+    </div>
+    <button class="delete-button" data-id="${expense.id}">
+      削除
+    </button>
+  </div>
+`;
 
     expenses.appendChild(div);
+
+    const deleteButton = div.querySelector(".delete-button");
+
+deleteButton.addEventListener("click", async () => {
+
+  const confirmed = confirm(
+    "この支出を削除しますか？\n\n" +
+    expense.item + "　NT$ " +
+    Number(expense.amount).toLocaleString()
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  deleteButton.disabled = true;
+  deleteButton.textContent = "削除中...";
+
+  try {
+
+    const response = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "delete",
+        id: expense.id
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+
+      loadExpenses();
+
+    } else {
+
+      alert("削除できませんでした");
+      deleteButton.disabled = false;
+      deleteButton.textContent = "削除";
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("削除に失敗しました");
+
+    deleteButton.disabled = false;
+    deleteButton.textContent = "削除";
+  }
+
+});
 
   });
 
