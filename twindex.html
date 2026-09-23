@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -177,17 +176,17 @@
 
 <div class="container">
 
-  <h1>旅行支出（台湾ドル）</h1>
+  <h1>旅行支出</h1>
 
   <div class="total">
   <div class="total-label">現在の合計</div>
-  <div class="total-value" id="total">TWD 0</div>
+  <div class="total-value" id="total">¥0</div>
 
   <div class="payer-totals">
-    <div><span>だいすけ</span><strong id="total-daisuke">TWD 0</strong></div>
-    <div><span>ふじも</span><strong id="total-fujimo">TWD 0</strong></div>
-    <div><span>ちかこ</span><strong id="total-chikako">TWD 0</strong></div>
-    <div><span>みか</span><strong id="total-mika">TWD 0</strong></div>
+    <div><span>だいすけ</span><strong id="total-daisuke">¥0</strong></div>
+    <div><span>ふじも</span><strong id="total-fujimo">¥0</strong></div>
+    <div><span>ちかこ</span><strong id="total-chikako">¥0</strong></div>
+    <div><span>みか</span><strong id="total-mika">¥0</strong></div>
   </div>
 </div>
 
@@ -404,13 +403,19 @@ function displayExpenses(data) {
   });
 
   document.getElementById("total").textContent =
-ん
+    "¥" + total.toLocaleString();
+
+  document.getElementById("total-daisuke").textContent =
+  "¥" + payerTotals["だいすけ"].toLocaleString();
+
+document.getElementById("total-fujimo").textContent =
+  "¥" + payerTotals["ふじも"].toLocaleString();
 
 document.getElementById("total-chikako").textContent =
-  "TWD " + payerTotals["ちかこ"].toLocaleString();
+  "¥" + payerTotals["ちかこ"].toLocaleString();
 
 document.getElementById("total-mika").textContent =
-  "TWD " + payerTotals["みか"].toLocaleString();
+  "¥" + payerTotals["みか"].toLocaleString();
 
 }
 
