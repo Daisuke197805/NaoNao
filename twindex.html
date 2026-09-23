@@ -176,17 +176,17 @@
 
 <div class="container">
 
-  <h1>旅行支出</h1>
+  <h1>旅行支出（台湾ドル）</h1>
 
   <div class="total">
   <div class="total-label">現在の合計</div>
-  <div class="total-value" id="total">¥0</div>
+  <div class="total-value" id="total">NT$0</div>
 
   <div class="payer-totals">
-    <div><span>だいすけ</span><strong id="total-daisuke">¥0</strong></div>
-    <div><span>ふじも</span><strong id="total-fujimo">¥0</strong></div>
-    <div><span>ちかこ</span><strong id="total-chikako">¥0</strong></div>
-    <div><span>みか</span><strong id="total-mika">¥0</strong></div>
+    <div><span>だいすけ</span><strong id="total-daisuke">NT$0</strong></div>
+    <div><span>ふじも</span><strong id="total-fujimo">NT$0</strong></div>
+    <div><span>ちかこ</span><strong id="total-chikako">NT$0</strong></div>
+    <div><span>みか</span><strong id="total-mika">NT$0</strong></div>
   </div>
 </div>
 
@@ -203,7 +203,7 @@
     <input
       type="number"
       id="amount"
-      placeholder="例：8000"
+      placeholder="例：800"
       inputmode="numeric"
     >
 
@@ -403,19 +403,19 @@ function displayExpenses(data) {
   });
 
   document.getElementById("total").textContent =
-    "¥" + total.toLocaleString();
+    "NT$" + total.toLocaleString(); 
 
   document.getElementById("total-daisuke").textContent =
-  "¥" + payerTotals["だいすけ"].toLocaleString();
+  "NT$" + payerTotals["だいすけ"].toLocaleString();
 
 document.getElementById("total-fujimo").textContent =
-  "¥" + payerTotals["ふじも"].toLocaleString();
+  "NT$" + payerTotals["ふじも"].toLocaleString();
 
 document.getElementById("total-chikako").textContent =
-  "¥" + payerTotals["ちかこ"].toLocaleString();
+  "NT$" + payerTotals["ちかこ"].toLocaleString();
 
 document.getElementById("total-mika").textContent =
-  "¥" + payerTotals["みか"].toLocaleString();
+  "NT$" + payerTotals["みか"].toLocaleString();
 
 }
 
