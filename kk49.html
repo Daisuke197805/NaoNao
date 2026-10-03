@@ -105,10 +105,11 @@ header {
     padding: 55px 20px 50px;
 }
 .school-name {
-    font-size: 14px;
-    letter-spacing: 0.15em;
-    opacity: 0.75;
-    margin-bottom: 12px;
+    font-size: clamp(24px, 5vw, 38px);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    opacity: 0.9;
+    margin-bottom: 8px;
 }
 h1 {
     margin: 0;
@@ -276,6 +277,15 @@ main {
     opacity: 0.8;
 }
 /* =========================
+   銀行直接振込ボタン
+========================= */
+.bank-transfer-button {
+    background: #8a8f95;
+}
+.bank-transfer-button:hover {
+    background: #747980;
+}
+/* =========================
    銀行振込ポップアップ
 ========================= */
 .bank-modal {
@@ -366,8 +376,6 @@ main {
 }
 /* =========================
    注意事項
-   ※項目を追加するときは
-   .notice-item をコピー
 ========================= */
 .notice-list {
     margin-top: 8px;
@@ -651,10 +659,14 @@ footer {
             </p>
             <!-- =====================
                  銀行直接振込
-            ====================== -->
+            ===================== -->
+            <p style="font-size:14px;color:#555;margin-top:24px;margin-bottom:0;">
+                上記リンク先でのカード支払いができない方は、<br>
+                以下ボタンより銀行振込をお願いします。
+            </p>
             <button
                 type="button"
-                class="link-button"
+                class="link-button bank-transfer-button"
                 id="bankTransferButton">
                 🏦 銀行直接振込の方はこちら
             </button>
@@ -771,34 +783,6 @@ footer {
                     <small>
                         幹事
                     </small>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- =====================
-         最新アップデート一覧
-    ====================== -->
-    <section class="accordion">
-        <button class="accordion-button">
-            <div class="accordion-left">
-                <div class="icon">
-                    📰
-                </div>
-                <div>
-                    最新アップデート一覧
-                </div>
-            </div>
-            <div class="arrow">
-                ⌄
-            </div>
-        </button>
-        <div class="accordion-content">
-            <div class="news-item">
-                <div class="news-date">
-                    2026.10.03
-                </div>
-                <div>
-                    同窓会ホームページを公開しました。
                 </div>
             </div>
         </div>
